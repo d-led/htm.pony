@@ -50,8 +50,10 @@ class iso _DenseRowReplace is UnitTest
         h.assert_false(sm.get(8,6))
         h.assert_true(sm.get(8,8))
 
+        // row dimension must match the matrix width
         h.assert_false(sm.replace_row(8,[false;false]) is SetOk)
 
+        // if the dimension matches, replace the row
         let new_row: Array[Bool] = [false;false;false;false;false;false;true /*@6*/;false;false;false]
         h.assert_true(sm.replace_row(8, new_row) is SetOk)
         
