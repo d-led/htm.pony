@@ -1,6 +1,6 @@
 # HTM.Pony
 
-- Status: experiment
+- Status: a small experiment, work in progress
 - based off https://github.com/htm-community/htm (Go, MIT License)
 - no dependency on other implementations
 

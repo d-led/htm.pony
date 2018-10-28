@@ -28,3 +28,22 @@ class DenseBinaryMatrix
         else
             false
         end
+
+    fun ref replace_row(row: USize, values: Array[Bool]) : MatrixResult =>
+        if (values.size() != width) then
+            return SetFailed
+        end
+
+        try
+            var col: USize = 0
+            
+            while col < width do
+                // should not return an error, as per range check above
+                set(row, col, values(col) ?)
+                col = col + 1
+            end
+
+            SetOk
+        else
+            SetFailed
+        end

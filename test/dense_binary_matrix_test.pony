@@ -8,6 +8,7 @@ class DenseBinaryMatrixTest is TestList
   
   fun tag tests(test: PonyTest) =>
     test(_DenseGetSet)
+    test(_DenseRowReplace)
 
 class iso _DenseGetSet is UnitTest
   fun name(): String => "setting and getting values"
@@ -34,3 +35,26 @@ class iso _DenseGetSet is UnitTest
     h.assert_true(sm.get(2,4))
     h.assert_true(sm.get(6,5))
     h.assert_false(sm.get(7,5))
+
+class iso _DenseRowReplace is UnitTest
+    fun name(): String => "replacing a whole row"
+
+    fun apply(h: TestHelper) =>
+        let sm = DenseBinaryMatrix(10, 10)
+	    sm.set(2, 4, true)
+	    sm.set(6, 5, true)
+	    sm.set(7, 5, true)
+	    sm.set(8, 8, true)
+
+        // before replacement
+        h.assert_false(sm.get(8,6))
+        h.assert_true(sm.get(8,8))
+
+        h.assert_false(sm.replace_row(8,[false;false]) is SetOk)
+
+        let new_row: Array[Bool] = [false;false;false;false;false;false;true /*@6*/;false;false;false]
+        h.assert_true(sm.replace_row(8, new_row) is SetOk)
+        
+        // after replacement
+        h.assert_true(sm.get(8,6))
+        h.assert_false(sm.get(8,8))
