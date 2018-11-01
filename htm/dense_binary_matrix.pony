@@ -63,3 +63,20 @@ class DenseBinaryMatrix
         else
             SetFailed
         end
+
+    fun get_row_indices(row: USize) : Array[USize] =>
+        var result = Array[USize]
+        result.reserve(width) // <- this might be unnecessary (try benchmark)
+        let start = row * width
+        var i: USize = 0
+        while i < width do
+            try
+                if entries(start + i)? then
+                    result.push(i)
+                end
+            end
+
+            i = i + 1
+        end
+
+        result

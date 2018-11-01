@@ -10,6 +10,7 @@ class DenseBinaryMatrixTest is TestList
     test(_DenseGetSet)
     test(_DenseRowReplace)
     test(_DenseRowReplaceByIndices)
+    test(_DenseGetRowIndices)
 
 class iso _DenseGetSet is UnitTest
   fun name(): String => "setting and getting values"
@@ -92,3 +93,13 @@ class iso _DenseRowReplaceByIndices is UnitTest
         // out-of-range row is a failure to insert
         h.assert_true(sm.replace_row_by_indices(99, [0; 1]) is SetFailed)
 
+class iso _DenseGetRowIndices is UnitTest
+    fun name(): String => "getting the 'on' indices in a row"
+
+    fun apply(h: TestHelper) =>
+        let sm = DenseBinaryMatrix(10, 10)
+        sm.replace_row_by_indices(4, [3; 6; 9])
+
+        let indices_on = sm.get_row_indices(4)
+
+        h.assert_array_eq[USize]([3; 6; 9], indices_on)
