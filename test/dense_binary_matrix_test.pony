@@ -83,3 +83,12 @@ class iso _DenseRowReplaceByIndices is UnitTest
         h.assert_false(sm.get(4,9))
         h.assert_true(sm.get(4,4))
 
+        // having out of range column indices in the list
+        // resets the row to all false values, and doesn't fail
+        h.assert_true(sm.replace_row_by_indices(5, [99; 100]) is SetOk)
+        h.assert_false(sm.get(5,0))
+        h.assert_false(sm.get(5,9))
+
+        // out-of-range row is a failure to insert
+        h.assert_true(sm.replace_row_by_indices(99, [0; 1]) is SetFailed)
+
