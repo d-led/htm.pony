@@ -28,7 +28,8 @@ class DenseBinaryMatrix
         else
             false
         end
-
+    
+    // Replaces specified row with values
     fun ref replace_row(row: USize, values: Array[Bool]) : MatrixResult =>
         if (values.size() != width) then
             return SetFailed
@@ -41,6 +42,21 @@ class DenseBinaryMatrix
                 // should not return an error, as per range check above
                 set(row, col, values(col) ?)
                 col = col + 1
+            end
+
+            SetOk
+        else
+            SetFailed
+        end
+
+    // Replaces row with true values at specified indices
+    fun ref replace_row_by_indices(row: USize, indices: Array[USize]) : MatrixResult =>
+        try
+            let start = row * width
+            var i: USize = 0
+            while i < width do
+                entries(start + i) ? = indices.contains(i)
+                i = i + 1
             end
 
             SetOk

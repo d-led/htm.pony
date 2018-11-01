@@ -9,6 +9,7 @@ class DenseBinaryMatrixTest is TestList
   fun tag tests(test: PonyTest) =>
     test(_DenseGetSet)
     test(_DenseRowReplace)
+    test(_DenseRowReplaceByIndices)
 
 class iso _DenseGetSet is UnitTest
   fun name(): String => "setting and getting values"
@@ -60,3 +61,25 @@ class iso _DenseRowReplace is UnitTest
         // after replacement
         h.assert_true(sm.get(8,6))
         h.assert_false(sm.get(8,8))
+
+class iso _DenseRowReplaceByIndices is UnitTest
+    fun name(): String => "replacing row items by indices"
+
+    fun apply(h: TestHelper) =>
+        let sm = DenseBinaryMatrix(10, 10)
+        let indices: Array[USize] = [3; 9; 6]
+        // the row entries with the indices
+        //   included in the array will be set to true
+        sm.replace_row_by_indices(4, indices)
+        h.assert_true(sm.get(4,3))
+        h.assert_true(sm.get(4,9))
+        h.assert_true(sm.get(4,6))
+        h.assert_false(sm.get(4,5))
+        h.assert_false(sm.get(4,0))
+
+        // running with other indices replaces the row values 
+        sm.replace_row_by_indices(4, [4])
+        h.assert_false(sm.get(4,3))
+        h.assert_false(sm.get(4,9))
+        h.assert_true(sm.get(4,4))
+
