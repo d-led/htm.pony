@@ -19,10 +19,10 @@ class iso _DenseGetSet is UnitTest
     let sm = DenseBinaryMatrix(10, 10)
 
     // setting a value within range
-	h.assert_true(sm.set(2, 4, true) is SetOk)
+	h.assert_is[MatrixResult](SetOk, sm.set(2, 4, true))
 
     // setting a value outside the range is an error
-    h.assert_false(sm.set(10, 10, true) is SetOk)
+    h.assert_isnt[MatrixResult](SetOk, sm.set(10, 10, true))
 
 	sm.set(6, 5, true)
 	sm.set(7, 5, false)
@@ -53,11 +53,11 @@ class iso _DenseRowReplace is UnitTest
         h.assert_true(sm.get(8,8))
 
         // row dimension must match the matrix width
-        h.assert_false(sm.replace_row(8,[false;false]) is SetOk)
+        h.assert_isnt[MatrixResult](SetOk, sm.replace_row(8,[false;false]))
 
         // if the dimension matches, replace the row
         let new_row: Array[Bool] = [false;false;false;false;false;false;true /*@6*/;false;false;false]
-        h.assert_true(sm.replace_row(8, new_row) is SetOk)
+        h.assert_is[MatrixResult](SetOk, sm.replace_row(8, new_row))
         
         // after replacement
         h.assert_true(sm.get(8,6))
@@ -86,10 +86,10 @@ class iso _DenseRowReplaceByIndices is UnitTest
 
         // having out of range column indices in the list
         // resets the row to all false values, and doesn't fail
-        h.assert_true(sm.replace_row_by_indices(5, [0; 9]) is SetOk)
+        h.assert_is[MatrixResult](SetOk, sm.replace_row_by_indices(5, [0; 9]))
         h.assert_true(sm.get(5,0))
         h.assert_true(sm.get(5,9))
-        h.assert_true(sm.replace_row_by_indices(5, [99; 100]) is SetOk)
+        h.assert_is[MatrixResult](SetOk, sm.replace_row_by_indices(5, [99; 100]))
         h.assert_false(sm.get(5,0))
         h.assert_false(sm.get(5,9))
 
