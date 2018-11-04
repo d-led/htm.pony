@@ -11,6 +11,15 @@
             "options": {
                 "cwd": "${workspaceFolder}/test"
             },
+        },
+        {
+            "label": "benchmark (X)",
+            "type": "shell",
+            "command": "ponyc && ./microbenchmarks",
+            "group": "test",
+            "options": {
+                "cwd": "${workspaceFolder}/microbenchmarks"
+            },
         }
     ]
 }
