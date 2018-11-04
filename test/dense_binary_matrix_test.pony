@@ -15,7 +15,7 @@ class DenseBinaryMatrixTest is TestList
     test(_DenseNewFromDense)
 
 class iso _DenseGetSet is UnitTest
-  fun name(): String => "setting and getting values"
+  fun name(): String => "dense matrix: setting and getting values"
 
   fun apply(h: TestHelper) =>
     let sm = DenseBinaryMatrix(10, 10)

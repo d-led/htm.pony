@@ -1,9 +1,5 @@
 // https://github.com/htm-community/htm/blob/master/denseBinaryMatrix.go
 
-primitive SetOk
-primitive SetFailed
-type MatrixResult is (SetOk | SetFailed)
-
 /*
     current error handling: try setting or getting values and exit on error
     (no transactionality)
