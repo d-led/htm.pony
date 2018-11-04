@@ -19,6 +19,24 @@ class DenseBinaryMatrix
         height = height'
         entries = Array[Bool].init(false, width*height)
 
+    new from_dense_2d_array(array_of_rows: Array[Array[Bool]]) ? =>
+        if array_of_rows.size() == 0 then
+            error
+        end
+
+        height = array_of_rows.size()
+        width = array_of_rows(0)?.size()
+        entries = Array[Bool].init(false, width*height)
+
+        var r: USize = 0
+        while r < height do
+            if set_row_from_dense(r, array_of_rows(r)?) is SetFailed then
+                error
+            end
+
+            r = r + 1
+        end
+
     fun ref set(row: USize, col: USize, value: Bool) : MatrixResult =>
         try 
             entries((row * width) + col) ? = value
