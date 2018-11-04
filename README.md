@@ -4,7 +4,12 @@
 
 - Status: a small experiment, work in progress
 - based off https://github.com/htm-community/htm (Go, MIT License)
-- no dependency on other implementations
+- no direct dependency on other implementations
+
+## Progress
+
+- Dense Binary Matrix: Go tests translated & running. Untested Go code left for later
+- Sparse Binary Matrix: in progress
 
 # License
 
