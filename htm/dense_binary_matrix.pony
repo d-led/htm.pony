@@ -4,6 +4,11 @@ primitive SetOk
 primitive SetFailed
 type MatrixResult is (SetOk | SetFailed)
 
+/*
+    current error handling: try setting or getting values and exit on error
+    (no transactionality)
+*/
+
 class DenseBinaryMatrix
     let width: USize
     let height: USize
@@ -77,6 +82,49 @@ class DenseBinaryMatrix
             end
 
             i = i + 1
+        end
+
+        result
+
+    // Replaces row with true values at specified indices
+    fun ref set_row_from_dense(row: USize, row_values: Array[Bool]) : MatrixResult =>
+        try
+            let start = row * width
+            var i: USize = 0
+            while i < width do
+                entries(start + i) ? = row_values(i) ?
+                i = i + 1
+            end
+
+            SetOk
+        else
+            SetFailed
+        end
+
+    fun _split_index(index: USize) : (USize, USize) =>
+        let row = index / width
+        let col = index % width
+	    (row, col)
+
+    // looks like a matrix product with a vector + sum of the true entries
+    // needs a better name, perhaps
+    fun row_and_sum(row_to_sum: Array[Bool]) : Array[USize] =>
+        var result = Array[USize].init(0, height)
+
+        try
+            var i: USize = 0
+            let size = entries.size()
+
+            while i < size do
+                if entries(i) ? then
+                    (var row, var col) = _split_index(i)
+                    if row_to_sum(col)? then
+                        result(row)? = result(row)? + 1
+                    end
+                end
+                
+                i = i + 1
+            end
         end
 
         result

@@ -11,6 +11,7 @@ class DenseBinaryMatrixTest is TestList
     test(_DenseRowReplace)
     test(_DenseRowReplaceByIndices)
     test(_DenseGetRowIndices)
+    test(_DenseGetRowAndSum)
 
 class iso _DenseGetSet is UnitTest
   fun name(): String => "setting and getting values"
@@ -106,3 +107,20 @@ class iso _DenseGetRowIndices is UnitTest
         let indices_on = sm.get_row_indices(4)
 
         h.assert_array_eq[USize]([3; 6; 9], indices_on)
+
+class iso _DenseGetRowAndSum is UnitTest
+    fun name(): String => "getting specific sums of row values"
+
+    fun apply(h: TestHelper) =>
+        let sm = DenseBinaryMatrix(10, 10)
+
+        sm.set_row_from_dense(0, [true; false; true; true; false])
+        sm.set_row_from_dense(1, [false; false; false; true; false])
+        sm.set_row_from_dense(2, [false; false; false; false; false])
+        sm.set_row_from_dense(3, [true; true; true; true; true])
+
+        let rows_to_sum = [true; false; true; true; false]
+        let result = sm.row_and_sum(rows_to_sum)
+
+        // result array has the dimension of the matrix height
+        h.assert_array_eq[USize]([3; 1; 0; 3; /* 0s after last true input*/ 0;0;0;0;0;0], result)
