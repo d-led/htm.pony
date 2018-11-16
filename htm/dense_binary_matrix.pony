@@ -83,8 +83,14 @@ class DenseBinaryMatrix
             SetFailed
         end
 
+    // empty array returned might indicate a range error
     fun get_row_indices(row: USize) : Array[USize] =>
         var result = Array[USize]
+
+        if row > (height - 1) then
+            return result
+        end
+
         result.reserve(width) // <- this might be unnecessary (try benchmark)
         let start = row * width
         var i: USize = 0
@@ -102,6 +108,10 @@ class DenseBinaryMatrix
 
     // Replaces row with true values at specified indices
     fun ref set_row_from_dense(row: USize, row_values: Array[Bool]) : MatrixResult =>
+        if row > (height - 1) then
+            return SetFailed
+        end
+    
         try
             let start = row * width
             var i: USize = 0
@@ -124,6 +134,10 @@ class DenseBinaryMatrix
     // needs a better name, perhaps
     fun row_and_sum(row_to_sum: Array[Bool]) : Array[USize] =>
         var result = Array[USize].init(0, height)
+
+        if row_to_sum.size() > (width - 1) then
+            return result            
+        end
 
         try
             var i: USize = 0

@@ -94,6 +94,70 @@ class SparseBinaryMatrix
             SetFailed
         end
 
+    // empty array returned might indicate a range error
+    fun get_row_indices(row: USize) : Array[USize] =>
+        var result = Array[USize](width)
+        
+        if row > (height - 1) then
+            return result
+        end
+
+        let size = entries.size()
+        var i: USize = 0
+        while i < size do
+            try
+                if entries(i)?.row == row then
+                    result.push(entries(i)?.col)
+                end
+            end
+
+            i = i + 1
+        end
+
+        result
+
+    // Replaces row with true values at specified indices
+    fun ref set_row_from_dense(row: USize, row_values: Array[Bool]) : MatrixResult =>
+        if row > (height - 1) then
+            return SetFailed
+        end
+
+        try
+            var i: USize = 0
+            while i < width do
+                set(row, i, row_values(i)?)
+                i = i + 1
+            end
+
+            SetOk
+        else
+            SetFailed
+        end
+
+    fun row_and_sum(row_to_sum: Array[Bool]) : Array[USize] =>
+        var result = Array[USize].init(0, height)
+
+        if row_to_sum.size() > (width - 1) then
+            return result            
+        end
+
+        try
+            var i: USize = 0
+            let size = entries.size()
+
+            while i < size do
+                let entry = entries(i)?
+                if row_to_sum(entry.col) ? then
+                    result(entry.row)? = result(entry.row)? + 1
+                end
+                
+                i = i + 1
+            end
+        end
+
+        result
+
+
     fun _lookup(row: USize, col: USize) : USize ? =>
         // somewhat contrived
         entries.find((recover SparseEntry(row,col) end) where predicate = {

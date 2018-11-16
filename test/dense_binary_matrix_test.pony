@@ -109,6 +109,8 @@ class iso _DenseGetRowIndices is UnitTest
 
         h.assert_array_eq[USize]([3; 6; 9], indices_on)
 
+        h.assert_array_eq[USize]([], sm.get_row_indices(42))
+
 class iso _DenseGetRowAndSum is UnitTest
     fun name(): String => "getting specific sums of row values"
 
