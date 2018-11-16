@@ -12,6 +12,7 @@ class SparseBinaryMatrixTest is TestList
     test(_SparseRowReplaceByIndices)
     test(_SparseGetRowIndices)
     test(_SparseGetRowAndSum)
+    test(_SparseNewFromDense)
 
 class iso _SparseGetSet is UnitTest
   fun name(): String => "sparse matrix: setting and getting values"
@@ -129,3 +130,18 @@ class iso _SparseGetRowAndSum is UnitTest
 
     // result array has the dimension of the matrix height
     h.assert_array_eq[USize]([3; 1; 0; 3; /* 0s after last true input*/ 0;0;0;0;0;0], result)
+
+class _SparseNewFromDense is UnitTest
+  fun name(): String => "construction from a dense 2d array"
+
+  fun apply(h: TestHelper) ? =>
+    let sbm = SparseBinaryMatrix.from_dense_2d_array([
+        [true; true; true]
+        [false; false; false]
+        [false; true; false]
+        [true; false; true]       
+    ])?
+
+    h.assert_eq[USize](4, sbm.height)
+    h.assert_eq[USize](3, sbm.width)
+    h.assert_true(sbm.get(3,2))
