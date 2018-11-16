@@ -8,3 +8,4 @@ actor Main is TestList
   fun tag tests(test: PonyTest) =>
     DenseBinaryMatrixTest.tests(test)
     SparseBinaryMatrixTest.tests(test)
+    ScalarEncoderTest.tests(test)

@@ -75,7 +75,7 @@ class SparseBinaryMatrix
             var col: USize = 0
             
             while col < width do
-                // should not return an error, as per range check above
+                // should not return an error, as per range check above. todo: check
                 set(row, col, values(col) ?)
                 col = col + 1
             end
@@ -104,7 +104,7 @@ class SparseBinaryMatrix
                     end
                     x = x + 1
                 end
-                set(row, i, value)
+                set(row, i, value) // todo: check
                 i = i + 1
             end
 
@@ -144,7 +144,7 @@ class SparseBinaryMatrix
         try
             var i: USize = 0
             while i < width do
-                set(row, i, row_values(i)?)
+                set(row, i, row_values(i)?) // todo: check
                 i = i + 1
             end
 

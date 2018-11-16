@@ -58,7 +58,7 @@ class DenseBinaryMatrix
             var col: USize = 0
             
             while col < width do
-                // should not return an error, as per range check above
+                // should not return an error, as per range check above. todo: check
                 set(row, col, values(col) ?)
                 col = col + 1
             end
