@@ -1,7 +1,7 @@
 // https://github.com/htm-community/htm/blob/master/encoders/scalerEncoder.go
 
 
-// comment taken verbatim from original
+// comment taken verbatim from the original
 /*
  A scalar encoder encodes a numeric (floating point) value into an array
 of bits. The output is 0's except for a contiguous block of 1's. The
