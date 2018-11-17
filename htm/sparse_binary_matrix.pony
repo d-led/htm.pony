@@ -5,7 +5,7 @@ class val SparseEntry
     let row: USize
     let col: USize
 
-    new create(row': USize, col': USize) =>
+    new val create(row': USize, col': USize) =>
         row = row'
         col = col'
 
@@ -52,7 +52,7 @@ class SparseBinaryMatrix
             return SetOk
         end
         
-        entries.push(recover SparseEntry(row, col) end)
+        entries.push(SparseEntry(row, col))
 
         SetOk
 
@@ -179,7 +179,7 @@ class SparseBinaryMatrix
 
     fun _lookup(row: USize, col: USize) : USize ? =>
         // somewhat contrived
-        entries.find((recover SparseEntry(row,col) end) where predicate = {
+        entries.find(SparseEntry(row,col) where predicate = {
             (l: SparseEntry, r: SparseEntry): Bool => (l.row == r.row) and (l.col == r.col)
         }) ?
 
