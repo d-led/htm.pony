@@ -6,7 +6,7 @@
         {
             "label": "test (X)",
             "type": "shell",
-            "command": "ponyc && ./test",
+            "command": "ponyc -d && ./test",
             "group": "test",
             "options": {
                 "cwd": "${workspaceFolder}/test"

@@ -1,5 +1,7 @@
 // https://github.com/htm-community/htm/blob/master/encoders/scalerEncoder.go
 
+use "../../htm"
+use "debug"
 
 // comment taken verbatim from the original
 /*
@@ -18,5 +20,22 @@ the data (a piecewise transformation is fine).
 class ScalarEncoder
     let params: ScalarEncoderParams
 
-    new create(params': ScalarEncoderParams val) =>
+    // let padding: USize
+    let half_width: USize
+    // let range_internal: F64
+    // let top_down_mapping: SparseBinaryMatrix
+    // let top_down_values: Array[F64]
+    // let bucket_values: Array[F64]
+
+	// n_internal represents the output area excluding the possible padding on each
+	// let n_internal: I64
+
+    new create(params': ScalarEncoderParams val) ? =>
         params = params'
+
+        if (params.width % 2) == 0 then
+		    Debug.out("ScalarEncoder: width must be an odd number.")
+            error
+	    end
+
+        half_width = (params.width - 1) / 2

@@ -17,7 +17,7 @@ class val ScalarEncoderParams
     let radius:     F64
     let clip_input:  Bool
     let verbosity:  U8
-    let n:          I64
+    let n:          USize
 
     new val create(
         width': USize,
@@ -31,7 +31,7 @@ class val ScalarEncoderParams
         radius': F64 = 0.0 ,
         clip_input': Bool = false,
         verbosity': U8 = 0,
-        n': I64 = 0
+        n': USize = 0
     ) =>
         width = width'
         min_val = min_val'

@@ -1,3 +1,4 @@
 test/test
 *.o
 microbenchmarks/microbenchmarks
+test/test.d*

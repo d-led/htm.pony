@@ -12,10 +12,11 @@ class ScalarEncoderTest is TestList
 class iso _TestSimpleEncoding is UnitTest
   fun name(): String => "scalar encoding basics"
 
-  fun apply(h: TestHelper) =>
+  fun apply(h: TestHelper) ? =>
     let p = ScalarEncoderParams(3, 1, 8 where
       n' = 14,
       periodic' = true
     )
 
-    let e = ScalarEncoder(p)
+    let e = ScalarEncoder(p) ?
+    // let encoded = e.encode(1, false)?

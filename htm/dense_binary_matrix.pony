@@ -5,6 +5,8 @@
     (no transactionality)
 */
 
+use "debug"
+
 class DenseBinaryMatrix
     let width: USize
     let height: USize
@@ -17,6 +19,7 @@ class DenseBinaryMatrix
 
     new from_dense_2d_array(array_of_rows: Array[Array[Bool]]) ? =>
         if array_of_rows.size() == 0 then
+            Debug.out("DenseBinaryMatrix.from_dense_2d_array: empty input")
             error
         end
 
@@ -27,6 +30,7 @@ class DenseBinaryMatrix
         var r: USize = 0
         while r < height do
             if set_row_from_dense(r, array_of_rows(r)?) is SetFailed then
+                Debug.out("DenseBinaryMatrix.from_dense_2d_array: set_row_from_dense failed")
                 error
             end
 
@@ -51,6 +55,7 @@ class DenseBinaryMatrix
     // Replaces specified row with values
     fun ref replace_row(row: USize, values: Array[Bool]) : MatrixResult =>
         if (values.size() != width) then
+            Debug.out("DenseBinaryMatrix.replace_row: size mismatch values vs. width")
             return SetFailed
         end
 
