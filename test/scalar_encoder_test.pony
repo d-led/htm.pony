@@ -1,5 +1,6 @@
 use "ponytest"
 use "../htm/encoders"
+use "debug"
 
 // https://github.com/htm-community/htm/blob/master/encoders/scalerEncoder_test.go
 
@@ -19,4 +20,9 @@ class iso _TestSimpleEncoding is UnitTest
     )
 
     let e = ScalarEncoder(p) ?
-    // let encoded = e.encode(1, false)?
+
+    let encoded = e.encode(1, false)?
+    h.assert_array_eq[Bool](
+      [true; true; false; false; false; false; false; false; false; false; false; false; false; true],
+      encoded
+    )
