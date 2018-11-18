@@ -1,4 +1,5 @@
 use "collections"
+use "debug"
 
 // entries are positions of non-zero values
 class val SparseEntry
@@ -22,6 +23,7 @@ class SparseBinaryMatrix
 
     new from_dense_2d_array(array_of_rows: Array[Array[Bool]]) ? =>
         if array_of_rows.size() == 0 then
+            Debug.err("SparseBinaryMatrix.from_dense_2d_array: empty input")
             error
         end
 
@@ -32,6 +34,7 @@ class SparseBinaryMatrix
         var r: USize = 0
         while r < height do
             if set_row_from_dense(r, array_of_rows(r)?) is SetFailed then
+                Debug.err("SparseBinaryMatrix.from_dense_2d_array: set_row_from_dense failed")
                 error
             end
 
@@ -41,6 +44,7 @@ class SparseBinaryMatrix
 
     fun ref set(row: USize, col: USize, value: Bool) : MatrixResult =>
         if (row > (height - 1)) or (col > (width - 1)) then
+            Debug.err("SparseBinaryMatrix.set: wrong row/col: " + row.string() + "/" + col.string())
             return SetFailed
         end
 
@@ -68,6 +72,7 @@ class SparseBinaryMatrix
     // Replaces specified row with values
     fun ref replace_row(row: USize, values: Array[Bool]) : MatrixResult =>
         if (values.size() != width) then
+            Debug.err("SparseBinaryMatrix.replace_row: widths mismatch values/width: " + values.size().string() + "/" + width.string())
             return SetFailed
         end
         
@@ -82,12 +87,14 @@ class SparseBinaryMatrix
 
             SetOk
         else
+            Debug.err("SparseBinaryMatrix.replace_row returned: SetFailed")
             SetFailed
         end
 
     // Replaces row with true values at specified indices
     fun ref replace_row_by_indices(row: USize, indices: Array[USize]) : MatrixResult =>
         if row > (height - 1) then
+            Debug.err("SparseBinaryMatrix.replace_row_by_indices: wrong row index: row/height: " + row.string() + "/" + height.string())
             return SetFailed
         end
 
@@ -110,6 +117,7 @@ class SparseBinaryMatrix
 
             SetOk
         else
+            Debug.err("SparseBinaryMatrix.replace_row_by_indices returned: SetFailed")
             SetFailed
         end
 
@@ -118,6 +126,7 @@ class SparseBinaryMatrix
         var result = Array[USize](width)
         
         if row > (height - 1) then
+            Debug.err("SparseBinaryMatrix.get_row_indices: wrong row index: row/height: " + row.string() + "/" + height.string())
             return result
         end
 
@@ -138,6 +147,7 @@ class SparseBinaryMatrix
     // Replaces row with true values at specified indices
     fun ref set_row_from_dense(row: USize, row_values: Array[Bool]) : MatrixResult =>
         if row > (height - 1) then
+            Debug.err("SparseBinaryMatrix.set_row_from_dense: wrong row index: row/height: " + row.string() + "/" + height.string())
             return SetFailed
         end
 
@@ -157,6 +167,7 @@ class SparseBinaryMatrix
         var result = Array[USize].init(0, height)
 
         if row_to_sum.size() > (width - 1) then
+            Debug.err("SparseBinaryMatrix.row_and_sum: width mismatch: row_to_sum/width: " + row_to_sum.size().string() + "/" + width.string())
             return result            
         end
 
@@ -178,7 +189,7 @@ class SparseBinaryMatrix
 
 
     fun _lookup(row: USize, col: USize) : USize ? =>
-        // somewhat contrived
+        // somewhat contrived. find returns an error if nothing is found
         entries.find(SparseEntry(row,col) where predicate = {
             (l: SparseEntry, r: SparseEntry): Bool => (l.row == r.row) and (l.col == r.col)
         }) ?
@@ -189,5 +200,6 @@ class SparseBinaryMatrix
             entries.remove(pos,1)
             SetOk
         else
+            // Debug.err("SparseBinaryMatrix._delete returned: SetFailed")
             SetFailed
         end

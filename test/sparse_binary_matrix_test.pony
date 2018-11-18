@@ -41,6 +41,9 @@ class iso _SparseGetSet is UnitTest
     h.assert_true(sm.get(6,5))
     h.assert_false(sm.get(7,5))
 
+    sm.set(2,4, false)
+    h.assert_false(sm.get(2,4))
+
 class iso _SparseRowReplace is UnitTest
   fun name(): String => "replacing a whole row"
 
