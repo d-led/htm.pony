@@ -32,9 +32,8 @@ class ScalarEncoder
     let n: USize
     let radius: F64
     let range: F64
-
-	// n_internal represents the output area excluding the possible padding on each
-	// let n_internal: USize
+	let n_internal: USize // represents the output area excluding the possible padding on each
+    let name: String
 
     new create(params': ScalarEncoderParams val) ? =>
         params = params'
@@ -127,15 +126,15 @@ class ScalarEncoder
             n = nfloat.ceil().usize()
         end
 
-        // // nInternal represents the output area excluding the possible padding on each
-        // // side
-        // params.n_internal = params.n - (2 * padding)
+        n_internal = n - (2 * padding)
 
-        // // Our name
-        // if len(params.Name) == 0 {
-        // 	params.Name = fmt.Sprintf("[%v:%v]", params.min_val, params.max_val)
-        // }
+        if params.name.size() == 0 then
+        	name = "[" + params.min_val.string() + ":" + params.max_val.string() + "]"
+        else 
+            name = params.name
+        end
 
-        // if params.width < 21 {
-        // 	fmt.Println("Number of bits in the SDR must be greater than 21")
-        // }
+        if params.width < 21 then
+        	Debug.out("WARNING: ScalarEncoder: Number of bits in the SDR must be greater than 21. Now: " + params.width.string())
+            // error // not an error in the original
+        end
