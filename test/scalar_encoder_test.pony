@@ -1,6 +1,6 @@
 use "ponytest"
 use "../htm/encoders"
-use "../htm/conversions"
+use "../htm/util"
 use "debug"
 
 // https://github.com/htm-community/htm/blob/master/encoders/scalerEncoder_test.go
@@ -91,7 +91,7 @@ class iso _TestSimpleDecoding is UnitTest
 
     // Test with a "hole"
     var encoded = BoolArray.from01([1;0;0;0;0;0;0;0;0;0;0;0;1;0])
-    var decoded = e.decode(encoded)
+    var decoded = e.decode(encoded) ?
     // h.assert_array_eq[ScalarRange](
     //   decoded,
     //   [ScalarRange(7.5, 7.5)]

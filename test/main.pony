@@ -9,4 +9,5 @@ actor Main is TestList
     DenseBinaryMatrixTest.tests(test)
     SparseBinaryMatrixTest.tests(test)
     ScalarEncoderTest.tests(test)
-    test(_ArrayConversionsTest)
+    ArrayConversionsTest.tests(test)
+

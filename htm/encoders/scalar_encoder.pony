@@ -1,7 +1,9 @@
 // https://github.com/htm-community/htm/blob/master/encoders/scalerEncoder.go
 
 use "../../htm"
+use "../../htm/util"
 use "debug"
+use "itertools"
 
 // comment taken verbatim from the original
 /*
@@ -296,52 +298,66 @@ class ScalarEncoder
         end
     
     // Decode an encoded sequence. Returns range of values
-    fun decode(encoded: Array[Bool]): Array[ScalarRange] =>
+    fun decode(encoded: Array[Bool]): Array[ScalarRange] ? =>
         if not encoded.contains(true) then
             return []
         end
 
-        [ScalarRange(0,0)]
+	    var tmpOutput = encoded.slice(0, this.n)
 
-// 	tmpOutput := encoded[:se.N]
+        // First, assume the input pool is not sampled 100%, and fill in the
+        // "holes" in the encoded representation (which are likely to be present
+        // if this is a coincidence that was learned by the SP).
 
-// 	// First, assume the input pool is not sampled 100%, and fill in the
-// 	// "holes" in the encoded representation (which are likely to be present
-// 	// if this is a coincidence that was learned by the SP).
+        // 	// Search for portions of the output that have "holes"
+        let maxZerosInARow = this.half_width
+        var i : USize = 0
 
-// 	// Search for portions of the output that have "holes"
-// 	maxZerosInARow := se.halfWidth
+        while i < maxZerosInARow do
+            var searchSeq = Array[Bool].init(false, i+3)
+     		let subLen = searchSeq.size()
+    		searchSeq(0) ? = true
+    		searchSeq(subLen-1) ? = true
 
-// 	for i := 0; i < maxZerosInARow; i++ {
-// 		searchSeq := make([]bool, i+3)
-// 		subLen := len(searchSeq)
-// 		searchSeq[0] = true
-// 		searchSeq[subLen-1] = true
+    		if params.periodic then
+                var j : USize = 0
+        		while j < this.n do
+                    var outputIndices = Array[USize].init(0, subLen)
 
-// 		if se.Periodic {
-// 			for j := 0; j < se.N; j++ {
-// 				outputIndices := make([]int, subLen)
+                    var idx : USize = 0
+                    while idx < subLen do
+                        outputIndices (idx) ? = (j + idx) % this.n
+                        idx = idx + 1
+                    end
 
-// 				for idx := range outputIndices {
-// 					outputIndices[idx] = (j + idx) % se.N
-// 				}
+                    let subset = BoolArray.subset_slice(tmpOutput, outputIndices) ?
 
-// 				if utils.BoolEq(searchSeq, utils.SubsetSliceBool(tmpOutput, outputIndices)) {
-// 					utils.SetIdxBool(tmpOutput, outputIndices, true)
-// 				}
-// 			}
+                    if BoolArray.are_equal(
+                        searchSeq,
+                        subset
+                    ) then
+                        true
+                    end
 
-// 		} else {
+    // 				if utils.BoolEq(searchSeq, utils.SubsetSliceBool(tmpOutput, outputIndices)) {
+    // 					utils.SetIdxBool(tmpOutput, outputIndices, true)
+    // 				}
+                    j = j + 1
+    			end
 
-// 			for j := 0; j < se.N-subLen+1; j++ {
-// 				if utils.BoolEq(searchSeq, tmpOutput[j:j+subLen]) {
-// 					utils.FillSliceRangeBool(tmpOutput, true, j, subLen)
-// 				}
-// 			}
+    		else
+                true
 
-// 		}
+    // 			for j := 0; j < se.N-subLen+1; j++ {
+    // 				if utils.BoolEq(searchSeq, tmpOutput[j:j+subLen]) {
+    // 					utils.FillSliceRangeBool(tmpOutput, true, j, subLen)
+    // 				}
+    // 			}
 
-// 	}
+    		end
+
+            i = i + 1
+        end
 
 // 	if se.Verbosity >= 2 {
 // 		fmt.Println("raw output:", utils.Bool2Int(encoded[:se.N]))
@@ -460,3 +476,4 @@ class ScalarEncoder
 
 // 	return ranges
 // }
+        [ScalarRange(0,0)]
