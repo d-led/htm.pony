@@ -366,28 +366,30 @@ class ScalarEncoder
         // Find each run of 1's in sequence
 
         let nz = BoolArray.on_indices(tmpOutput)
-        // 	//key = start index, value = run length
-        // 	runs := make([]utils.TupleInt, 0, len(nz))
+        //key = start index, value = run length
+        var runs = Array[(USize,USize)](nz.size())
+        var runStart: (None | USize) = None // None to indicate -1 in the original
+        var runLen: USize = 0
+        var idx: USize = 0
+        let tmpOutputSize = tmpOutput.size()
 
-        // 	runStart := -1
-        // 	runLen := 0
-
-        // 	for idx, val := range tmpOutput {
-        // 		if val {
-        // 			//increment or new idx
-        // 			if runStart == -1 {
-        // 				runStart = idx
-        // 				runLen = 0
-        // 			}
-        // 			runLen++
-        // 		} else {
-        // 			if runStart != -1 {
-        // 				runs = append(runs, utils.TupleInt{runStart, runLen})
-        // 				runStart = -1
-        // 			}
-
-        // 		}
-        // 	}
+        while idx < tmpOutputSize do
+            var value = tmpOutput(idx) ?
+        		if value then
+                    if runStart is None then
+                        runStart = idx
+        				runLen = 0
+                    end 
+        			runLen = runLen + 1
+        		else
+                    true
+                    if not (runStart is None) then
+        				runs.push((runStart as USize, runLen))
+        				runStart = None
+        			end
+        		end
+            idx = idx + 1
+        end
 
         // 	if runStart != -1 {
         // 		runs = append(runs, utils.TupleInt{runStart, runLen})

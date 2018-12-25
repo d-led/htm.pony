@@ -10,6 +10,7 @@ class ArrayConversionsTest is TestList
     test(_BoolArraySlicesTest)
     test(_BoolArraySettingValuesTest)
     test(_BoolArrayQueriesTest)
+    test(_TupleCharacterizationTest)
 
 class iso _FromIntegerArrayConversionTest is UnitTest
   fun name(): String => "test utility to define bool vectors concisely"
@@ -95,3 +96,23 @@ class iso _BoolArrayQueriesTest is UnitTest
         BoolArray.on_indices([true;true]),
         [0;1]
     )
+
+
+class iso _TupleCharacterizationTest is UnitTest
+  fun name(): String => "cognitive helper for tuples and conversions"
+
+  fun apply(h: TestHelper) ? =>
+    let a = Array[Bool]
+    var v : (None | Bool) = None
+    v = true
+    a.push(v as Bool)
+    h.assert_array_eq[Bool](a, [true])
+
+    v = None
+    var failed = false
+    try
+        a.push(v as Bool)
+    else
+        failed = true
+    end
+    h.assert_true(failed)
