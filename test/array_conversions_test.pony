@@ -8,6 +8,7 @@ class ArrayConversionsTest is TestList
     test(_FromIntegerArrayConversionTest)
     test(_BoolArrayEqualityTest)
     test(_BoolArraySlicesTest)
+    test(_BoolArraySettingValuesTest)
 
 class iso _FromIntegerArrayConversionTest is UnitTest
   fun name(): String => "test utility to define bool vectors concisely"
@@ -45,4 +46,17 @@ class iso _BoolArraySlicesTest is UnitTest
     h.assert_array_eq[Bool](
         BoolArray.subset_slice([true;false;true;false], [0;2;3]) ?,
         [true;true;false]
+    )
+
+class iso _BoolArraySettingValuesTest is UnitTest
+  fun name(): String => "test setting values of certain indices in bool arrays"
+
+  fun apply(h: TestHelper) ? =>
+    var arr = Array[Bool].init(true, 4)
+    
+    BoolArray.set_value_at_indices(arr, [1;3], false) ?
+
+    h.assert_array_eq[Bool](
+        arr,
+        [true;false;true;false]
     )

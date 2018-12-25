@@ -38,3 +38,13 @@ primitive BoolArray
       end
       
       result
+
+    fun set_value_at_indices(values: Array[Bool] ref, indices: ReadSeq[USize], value: Bool) ? =>
+      let size = indices.size()
+
+      var i: USize = 0
+      while i < size do
+        values ( indices(i) ? ) ? = value
+        i = i + 1
+      end
+  

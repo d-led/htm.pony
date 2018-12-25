@@ -336,7 +336,7 @@ class ScalarEncoder
                         searchSeq,
                         subset
                     ) then
-                        true
+                        BoolArray.set_value_at_indices(tmpOutput, outputIndices, true) ?
                     end
 
     // 				if utils.BoolEq(searchSeq, utils.SubsetSliceBool(tmpOutput, outputIndices)) {
