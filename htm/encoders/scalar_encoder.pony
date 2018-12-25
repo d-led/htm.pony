@@ -227,9 +227,9 @@ class ScalarEncoder
         // if se.Verbosity >= 2 {
         //     fmt.Println("input:", input)
         //     fmt.Printf("half width:%v \n", se.Width)
-        //     fmt.Printf("range: %v - %v \n", se.MinVal, se.MaxVal)
-        //     fmt.Printf("n: %v width: %v resolution: %v \n", se.N, se.Width, se.Resolution)
-        //     fmt.Printf("radius: %v periodic: %v \n", se.Radius, se.Periodic)
+        //     fmt.Printf("range: %v - %v \n", params.min_val, se.MaxVal)
+        //     fmt.Printf("n: %v width: %v resolution: %v \n", se.N, se.Width, params.resolution)
+        //     fmt.Printf("radius: %v periodic: %v \n", se.Radius, params.periodic)
         //     fmt.Printf("output: %v \n", output)
         // }
 
@@ -412,68 +412,71 @@ class ScalarEncoder
         // For a group of width w or less, the "left" and "right" edge are both at
         // the center position of the group.
 
-        // 	ranges := make([]utils.TupleFloat, 0, len(runs)+2)
+        var	ranges = Array[ScalarRange](runs.size()+2)
+        let runsSize = runs.size()
+        var run: USize = 0
+        while run < runsSize do
+            let value = runs(run) ?
+            var left: USize = 0
+            var right: USize = 0
+    		let start = value._1
+    		let length = value._2
 
-        // 	for _, val := range runs {
-        // 		var left, right int
-        // 		start := val.A
-        // 		length := val.B
+    		if length <= params.width then
+    			right = start + (length/2)
+    			left = right
+            else
+    			left = start + this.half_width
+    			right = ((start + length) - 1) - this.half_width
+    		end
 
-        // 		if length <= se.Width {
-        // 			right = start + length/2
-        // 			left = right
-        // 		} else {
-        // 			left = start + se.halfWidth
-        // 			right = start + length - 1 - se.halfWidth
-        // 		}
+    		var inMin: F64 = 0
+            var inMax: F64 = 0
 
-        // 		var inMin, inMax float64
+    		// Convert to input space.
+    		if not params.periodic then
+    			inMin = ((left-this.padding).f64()*params.resolution) + params.min_val
+    			inMax = ((right-this.padding).f64()*params.resolution) + params.min_val
+    		else
+    			inMin = (((left-this.padding).f64()*this.range)/(this.n_internal.f64())) + params.min_val
+    			inMax = (((right-this.padding).f64()*this.range)/(this.n_internal.f64())) + params.min_val
+    		end
 
-        // 		// Convert to input space.
-        // 		if !se.Periodic {
-        // 			inMin = float64(left-se.padding)*se.Resolution + se.MinVal
-        // 			inMax = float64(right-se.padding)*se.Resolution + se.MinVal
-        // 		} else {
-        // 			inMin = float64(left-se.padding)*se.Range/float64(se.nInternal) + se.MinVal
-        // 			inMax = float64(right-se.padding)*se.Range/float64(se.nInternal) + se.MinVal
-        // 		}
+    		// Handle wrap-around if periodic
+    		if params.periodic then
+    			if inMin >= params.max_val then
+    				inMin = inMin - this.range
+    				inMax = inMax - this.range
+    			end
+    		end
 
-        // 		// Handle wrap-around if periodic
-        // 		if se.Periodic {
-        // 			if inMin >= se.MaxVal {
-        // 				inMin -= se.Range
-        // 				inMax -= se.Range
-        // 			}
-        // 		}
+    		// Clip low end
+    		if inMin < params.min_val then
+    			inMin = params.min_val
+    		end
+    		if inMax < params.min_val then
+    			inMax = params.min_val
+    		end
 
-        // 		// Clip low end
-        // 		if inMin < se.MinVal {
-        // 			inMin = se.MinVal
-        // 		}
-        // 		if inMax < se.MinVal {
-        // 			inMax = se.MinVal
-        // 		}
+    		// If we have a periodic encoder, and the max is past the edge, break into
+    		// 2 separate ranges
 
-        // 		// If we have a periodic encoder, and the max is past the edge, break into
-        // 		// 2 separate ranges
+    		if params.periodic and (inMax >= params.max_val) then
+    			ranges.push(ScalarRange(inMin, params.max_val))
+    			ranges.push(ScalarRange(params.min_val, inMax - this.range))
+    		else 
+    			//clip high end
+    			if inMax > params.max_val then
+    				inMax = params.max_val
+    			end
+    			if inMin > params.max_val then
+    				inMin = params.max_val
+    			end
+    			ranges.push(ScalarRange(inMin, inMax))
+    		end
+            run = run + 1
+        end
 
-        // 		if se.Periodic && inMax >= se.MaxVal {
-        // 			ranges = append(ranges, utils.TupleFloat{inMin, se.MaxVal})
-        // 			ranges = append(ranges, utils.TupleFloat{se.MinVal, inMax - se.Range})
-        // 		} else {
-        // 			//clip high end
-        // 			if inMax > se.MaxVal {
-        // 				inMax = se.MaxVal
-        // 			}
-        // 			if inMin > se.MaxVal {
-        // 				inMin = se.MaxVal
-        // 			}
-        // 			ranges = append(ranges, utils.TupleFloat{inMin, inMax})
-        // 		}
-        // 	}
+        //desc := se.generateRangeDescription(ranges)
 
-        // 	//desc := se.generateRangeDescription(ranges)
-
-        // 	return ranges
-        // }
-        [ScalarRange(0,0)]
+        ranges
