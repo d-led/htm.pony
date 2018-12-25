@@ -1,5 +1,6 @@
 use "ponytest"
 use "../htm/encoders"
+use "../htm/conversions"
 use "debug"
 
 // https://github.com/htm-community/htm/blob/master/encoders/scalerEncoder_test.go
@@ -23,6 +24,6 @@ class iso _TestSimpleEncoding is UnitTest
 
     let encoded = e.encode(1, false)?
     h.assert_array_eq[Bool](
-      [true; true; false; false; false; false; false; false; false; false; false; false; false; true],
+      BoolArray.from01([1;1;0;0;0;0;0;0;0;0;0;0;0;1]),
       encoded
     )
