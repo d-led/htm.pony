@@ -339,141 +339,139 @@ class ScalarEncoder
                         BoolArray.set_value_at_indices(tmpOutput, outputIndices, true) ?
                     end
 
-    // 				if utils.BoolEq(searchSeq, utils.SubsetSliceBool(tmpOutput, outputIndices)) {
-    // 					utils.SetIdxBool(tmpOutput, outputIndices, true)
-    // 				}
                     j = j + 1
     			end
 
     		else
-                true
-
-    // 			for j := 0; j < se.N-subLen+1; j++ {
-    // 				if utils.BoolEq(searchSeq, tmpOutput[j:j+subLen]) {
-    // 					utils.FillSliceRangeBool(tmpOutput, true, j, subLen)
-    // 				}
-    // 			}
-
+                var j: USize = 0
+                while j < ((this.n - subLen) + 1) do
+                    if BoolArray.are_equal(
+                        searchSeq,
+                        tmpOutput.slice(j, j + subLen)
+                    ) then
+					    BoolArray.set_value_in_range(tmpOutput, true, j, subLen) ?
+                    end
+                end
     		end
 
             i = i + 1
         end
 
-// 	if se.Verbosity >= 2 {
-// 		fmt.Println("raw output:", utils.Bool2Int(encoded[:se.N]))
-// 		fmt.Println("filtered output:", utils.Bool2Int(tmpOutput))
-// 	}
+        // 	if se.Verbosity >= 2 {
+        // 		fmt.Println("raw output:", utils.Bool2Int(encoded[:se.N]))
+        // 		fmt.Println("filtered output:", utils.Bool2Int(tmpOutput))
+        // 	}
 
-// 	// ------------------------------------------------------------------------
-// 	// Find each run of 1's in sequence
+        // ------------------------------------------------------------------------
+        // Find each run of 1's in sequence
 
-// 	nz := utils.OnIndices(tmpOutput)
-// 	//key = start index, value = run length
-// 	runs := make([]utils.TupleInt, 0, len(nz))
+        let nz = BoolArray.on_indices(tmpOutput)
+        // 	//key = start index, value = run length
+        // 	runs := make([]utils.TupleInt, 0, len(nz))
 
-// 	runStart := -1
-// 	runLen := 0
+        // 	runStart := -1
+        // 	runLen := 0
 
-// 	for idx, val := range tmpOutput {
-// 		if val {
-// 			//increment or new idx
-// 			if runStart == -1 {
-// 				runStart = idx
-// 				runLen = 0
-// 			}
-// 			runLen++
-// 		} else {
-// 			if runStart != -1 {
-// 				runs = append(runs, utils.TupleInt{runStart, runLen})
-// 				runStart = -1
-// 			}
+        // 	for idx, val := range tmpOutput {
+        // 		if val {
+        // 			//increment or new idx
+        // 			if runStart == -1 {
+        // 				runStart = idx
+        // 				runLen = 0
+        // 			}
+        // 			runLen++
+        // 		} else {
+        // 			if runStart != -1 {
+        // 				runs = append(runs, utils.TupleInt{runStart, runLen})
+        // 				runStart = -1
+        // 			}
 
-// 		}
-// 	}
+        // 		}
+        // 	}
 
-// 	if runStart != -1 {
-// 		runs = append(runs, utils.TupleInt{runStart, runLen})
-// 		runStart = -1
-// 	}
+        // 	if runStart != -1 {
+        // 		runs = append(runs, utils.TupleInt{runStart, runLen})
+        // 		runStart = -1
+        // 	}
 
-// 	// If we have a periodic encoder, merge the first and last run if they
-// 	// both go all the way to the edges
-// 	if se.Periodic && len(runs) > 1 {
-// 		if runs[0].A == 0 && runs[len(runs)-1].A+runs[len(runs)-1].B == se.N {
-// 			runs[len(runs)-1].B += runs[0].B
-// 			runs = runs[1:]
-// 		}
-// 	}
+        // 	// If we have a periodic encoder, merge the first and last run if they
+        // 	// both go all the way to the edges
+        // 	if se.Periodic && len(runs) > 1 {
+        // 		if runs[0].A == 0 && runs[len(runs)-1].A+runs[len(runs)-1].B == se.N {
+        // 			runs[len(runs)-1].B += runs[0].B
+        // 			runs = runs[1:]
+        // 		}
+        // 	}
 
-// 	// ------------------------------------------------------------------------
-// 	// Now, for each group of 1's, determine the "left" and "right" edges, where
-// 	// the "left" edge is inset by halfwidth and the "right" edge is inset by
-// 	// halfwidth.
-// 	// For a group of width w or less, the "left" and "right" edge are both at
-// 	// the center position of the group.
+        // 	// ------------------------------------------------------------------------
+        // 	// Now, for each group of 1's, determine the "left" and "right" edges, where
+        // 	// the "left" edge is inset by halfwidth and the "right" edge is inset by
+        // 	// halfwidth.
+        // 	// For a group of width w or less, the "left" and "right" edge are both at
+        // 	// the center position of the group.
 
-// 	ranges := make([]utils.TupleFloat, 0, len(runs)+2)
+        // 	ranges := make([]utils.TupleFloat, 0, len(runs)+2)
 
-// 	for _, val := range runs {
-// 		var left, right int
-// 		start := val.A
-// 		length := val.B
+        // 	for _, val := range runs {
+        // 		var left, right int
+        // 		start := val.A
+        // 		length := val.B
 
-// 		if length <= se.Width {
-// 			right = start + length/2
-// 			left = right
-// 		} else {
-// 			left = start + se.halfWidth
-// 			right = start + length - 1 - se.halfWidth
-// 		}
+        // 		if length <= se.Width {
+        // 			right = start + length/2
+        // 			left = right
+        // 		} else {
+        // 			left = start + se.halfWidth
+        // 			right = start + length - 1 - se.halfWidth
+        // 		}
 
-// 		var inMin, inMax float64
+        // 		var inMin, inMax float64
 
-// 		// Convert to input space.
-// 		if !se.Periodic {
-// 			inMin = float64(left-se.padding)*se.Resolution + se.MinVal
-// 			inMax = float64(right-se.padding)*se.Resolution + se.MinVal
-// 		} else {
-// 			inMin = float64(left-se.padding)*se.Range/float64(se.nInternal) + se.MinVal
-// 			inMax = float64(right-se.padding)*se.Range/float64(se.nInternal) + se.MinVal
-// 		}
+        // 		// Convert to input space.
+        // 		if !se.Periodic {
+        // 			inMin = float64(left-se.padding)*se.Resolution + se.MinVal
+        // 			inMax = float64(right-se.padding)*se.Resolution + se.MinVal
+        // 		} else {
+        // 			inMin = float64(left-se.padding)*se.Range/float64(se.nInternal) + se.MinVal
+        // 			inMax = float64(right-se.padding)*se.Range/float64(se.nInternal) + se.MinVal
+        // 		}
 
-// 		// Handle wrap-around if periodic
-// 		if se.Periodic {
-// 			if inMin >= se.MaxVal {
-// 				inMin -= se.Range
-// 				inMax -= se.Range
-// 			}
-// 		}
+        // 		// Handle wrap-around if periodic
+        // 		if se.Periodic {
+        // 			if inMin >= se.MaxVal {
+        // 				inMin -= se.Range
+        // 				inMax -= se.Range
+        // 			}
+        // 		}
 
-// 		// Clip low end
-// 		if inMin < se.MinVal {
-// 			inMin = se.MinVal
-// 		}
-// 		if inMax < se.MinVal {
-// 			inMax = se.MinVal
-// 		}
+        // 		// Clip low end
+        // 		if inMin < se.MinVal {
+        // 			inMin = se.MinVal
+        // 		}
+        // 		if inMax < se.MinVal {
+        // 			inMax = se.MinVal
+        // 		}
 
-// 		// If we have a periodic encoder, and the max is past the edge, break into
-// 		// 2 separate ranges
+        // 		// If we have a periodic encoder, and the max is past the edge, break into
+        // 		// 2 separate ranges
 
-// 		if se.Periodic && inMax >= se.MaxVal {
-// 			ranges = append(ranges, utils.TupleFloat{inMin, se.MaxVal})
-// 			ranges = append(ranges, utils.TupleFloat{se.MinVal, inMax - se.Range})
-// 		} else {
-// 			//clip high end
-// 			if inMax > se.MaxVal {
-// 				inMax = se.MaxVal
-// 			}
-// 			if inMin > se.MaxVal {
-// 				inMin = se.MaxVal
-// 			}
-// 			ranges = append(ranges, utils.TupleFloat{inMin, inMax})
-// 		}
-// 	}
+        // 		if se.Periodic && inMax >= se.MaxVal {
+        // 			ranges = append(ranges, utils.TupleFloat{inMin, se.MaxVal})
+        // 			ranges = append(ranges, utils.TupleFloat{se.MinVal, inMax - se.Range})
+        // 		} else {
+        // 			//clip high end
+        // 			if inMax > se.MaxVal {
+        // 				inMax = se.MaxVal
+        // 			}
+        // 			if inMin > se.MaxVal {
+        // 				inMin = se.MaxVal
+        // 			}
+        // 			ranges = append(ranges, utils.TupleFloat{inMin, inMax})
+        // 		}
+        // 	}
 
-// 	//desc := se.generateRangeDescription(ranges)
+        // 	//desc := se.generateRangeDescription(ranges)
 
-// 	return ranges
-// }
+        // 	return ranges
+        // }
         [ScalarRange(0,0)]

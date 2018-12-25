@@ -9,6 +9,7 @@ class ArrayConversionsTest is TestList
     test(_BoolArrayEqualityTest)
     test(_BoolArraySlicesTest)
     test(_BoolArraySettingValuesTest)
+    test(_BoolArrayQueriesTest)
 
 class iso _FromIntegerArrayConversionTest is UnitTest
   fun name(): String => "test utility to define bool vectors concisely"
@@ -53,10 +54,44 @@ class iso _BoolArraySettingValuesTest is UnitTest
 
   fun apply(h: TestHelper) ? =>
     var arr = Array[Bool].init(true, 4)
-    
     BoolArray.set_value_at_indices(arr, [1;3], false) ?
-
     h.assert_array_eq[Bool](
         arr,
         [true;false;true;false]
+    )
+
+    // continuing on the same array
+    BoolArray.set_value_in_range(arr, false, 1, 3) ?
+    h.assert_array_eq[Bool](
+        arr,
+        [true;false;false;false]
+    )
+    BoolArray.set_value_in_range(arr, true, 0, 3) ?
+    h.assert_array_eq[Bool](
+        arr,
+        [true;true;true;false]
+    )
+
+class iso _BoolArrayQueriesTest is UnitTest
+  fun name(): String => "test querying indices of values that are on"
+
+  fun apply(h: TestHelper) =>
+    h.assert_array_eq[USize](
+        BoolArray.on_indices([true;false;true;false]),
+        [0;2]
+    )
+
+    h.assert_array_eq[USize](
+        BoolArray.on_indices([]),
+        []
+    )
+
+    h.assert_array_eq[USize](
+        BoolArray.on_indices([false;false]),
+        []
+    )
+
+    h.assert_array_eq[USize](
+        BoolArray.on_indices([true;true]),
+        [0;1]
     )
