@@ -22,6 +22,10 @@
 - Long-lived branches are to be avoided. All progress should go into the master branch as soon as the tests are green
 - If there's significant traction, we'll switch to the [ZeroMQ](https://github.com/zeromq/czmq/blob/master/CONTRIBUTING.md) process [C4](https://rfc.zeromq.org/spec:22/C4/) and a protected master
 
+### Getting Started with Pony
+
+e.g. see https://github.com/ponylang/ponyc#windows-using-zip-via-bintray
+
 ### Current Maintainers
 
 - [Dmitry Ledentsov/d-led](https://github.com/d-led)
