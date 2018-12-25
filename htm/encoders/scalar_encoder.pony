@@ -391,26 +391,26 @@ class ScalarEncoder
             idx = idx + 1
         end
 
-        // 	if runStart != -1 {
-        // 		runs = append(runs, utils.TupleInt{runStart, runLen})
-        // 		runStart = -1
-        // 	}
+        if not (runStart is None) then
+        		runs.push((runStart as USize, runLen))
+        		runStart = None
+        end
 
-        // 	// If we have a periodic encoder, merge the first and last run if they
-        // 	// both go all the way to the edges
-        // 	if se.Periodic && len(runs) > 1 {
-        // 		if runs[0].A == 0 && runs[len(runs)-1].A+runs[len(runs)-1].B == se.N {
-        // 			runs[len(runs)-1].B += runs[0].B
-        // 			runs = runs[1:]
-        // 		}
-        // 	}
+        // If we have a periodic encoder, merge the first and last run if they
+        // both go all the way to the edges
+        if params.periodic and (runs.size() > 1) then
+            if (runs(0)?._1 == 0) and ((runs(runs.size()-1)?._1 + runs(runs.size()-1)?._2) == this.n) then
+                runs(runs.size()-1)? = (runs(runs.size()-1)?._1, runs(runs.size()-1)?._2 + runs(0)?._2)
+                runs = runs.slice(1)
+            end
+        end
 
-        // 	// ------------------------------------------------------------------------
-        // 	// Now, for each group of 1's, determine the "left" and "right" edges, where
-        // 	// the "left" edge is inset by halfwidth and the "right" edge is inset by
-        // 	// halfwidth.
-        // 	// For a group of width w or less, the "left" and "right" edge are both at
-        // 	// the center position of the group.
+        // ------------------------------------------------------------------------
+        // Now, for each group of 1's, determine the "left" and "right" edges, where
+        // the "left" edge is inset by halfwidth and the "right" edge is inset by
+        // halfwidth.
+        // For a group of width w or less, the "left" and "right" edge are both at
+        // the center position of the group.
 
         // 	ranges := make([]utils.TupleFloat, 0, len(runs)+2)
 
