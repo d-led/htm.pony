@@ -17,6 +17,29 @@ in the output. Instead, use a continuous transformation that scales
 the data (a piecewise transformation is fine).
 */
 
+class val ScalarRange
+    let left: F64
+    let right: F64
+
+    new val create(left': F64, right': F64) =>
+        left = left'
+        right = right'
+
+    fun box eq(that: box->ScalarRange) : Bool =>
+        (left == that.left) and (right == that.right)
+
+    fun box ne(that: box->ScalarRange) : Bool =>
+        not eq(that)
+
+    fun box string(): String iso^ => 
+        (
+            "["
+            + left.string()
+            + ", ".string()
+            + right.string()
+            + "]"
+        ).string()
+
 class ScalarEncoder
     let params: ScalarEncoderParams
 
@@ -271,3 +294,169 @@ class ScalarEncoder
             values(start+i) ? = value
             i = i + 1
         end
+    
+    // Decode an encoded sequence. Returns range of values
+    fun decode(encoded: Array[Bool]): Array[ScalarRange] =>
+        if not encoded.contains(true) then
+            return []
+        end
+
+        [ScalarRange(0,0)]
+
+// 	tmpOutput := encoded[:se.N]
+
+// 	// First, assume the input pool is not sampled 100%, and fill in the
+// 	// "holes" in the encoded representation (which are likely to be present
+// 	// if this is a coincidence that was learned by the SP).
+
+// 	// Search for portions of the output that have "holes"
+// 	maxZerosInARow := se.halfWidth
+
+// 	for i := 0; i < maxZerosInARow; i++ {
+// 		searchSeq := make([]bool, i+3)
+// 		subLen := len(searchSeq)
+// 		searchSeq[0] = true
+// 		searchSeq[subLen-1] = true
+
+// 		if se.Periodic {
+// 			for j := 0; j < se.N; j++ {
+// 				outputIndices := make([]int, subLen)
+
+// 				for idx := range outputIndices {
+// 					outputIndices[idx] = (j + idx) % se.N
+// 				}
+
+// 				if utils.BoolEq(searchSeq, utils.SubsetSliceBool(tmpOutput, outputIndices)) {
+// 					utils.SetIdxBool(tmpOutput, outputIndices, true)
+// 				}
+// 			}
+
+// 		} else {
+
+// 			for j := 0; j < se.N-subLen+1; j++ {
+// 				if utils.BoolEq(searchSeq, tmpOutput[j:j+subLen]) {
+// 					utils.FillSliceRangeBool(tmpOutput, true, j, subLen)
+// 				}
+// 			}
+
+// 		}
+
+// 	}
+
+// 	if se.Verbosity >= 2 {
+// 		fmt.Println("raw output:", utils.Bool2Int(encoded[:se.N]))
+// 		fmt.Println("filtered output:", utils.Bool2Int(tmpOutput))
+// 	}
+
+// 	// ------------------------------------------------------------------------
+// 	// Find each run of 1's in sequence
+
+// 	nz := utils.OnIndices(tmpOutput)
+// 	//key = start index, value = run length
+// 	runs := make([]utils.TupleInt, 0, len(nz))
+
+// 	runStart := -1
+// 	runLen := 0
+
+// 	for idx, val := range tmpOutput {
+// 		if val {
+// 			//increment or new idx
+// 			if runStart == -1 {
+// 				runStart = idx
+// 				runLen = 0
+// 			}
+// 			runLen++
+// 		} else {
+// 			if runStart != -1 {
+// 				runs = append(runs, utils.TupleInt{runStart, runLen})
+// 				runStart = -1
+// 			}
+
+// 		}
+// 	}
+
+// 	if runStart != -1 {
+// 		runs = append(runs, utils.TupleInt{runStart, runLen})
+// 		runStart = -1
+// 	}
+
+// 	// If we have a periodic encoder, merge the first and last run if they
+// 	// both go all the way to the edges
+// 	if se.Periodic && len(runs) > 1 {
+// 		if runs[0].A == 0 && runs[len(runs)-1].A+runs[len(runs)-1].B == se.N {
+// 			runs[len(runs)-1].B += runs[0].B
+// 			runs = runs[1:]
+// 		}
+// 	}
+
+// 	// ------------------------------------------------------------------------
+// 	// Now, for each group of 1's, determine the "left" and "right" edges, where
+// 	// the "left" edge is inset by halfwidth and the "right" edge is inset by
+// 	// halfwidth.
+// 	// For a group of width w or less, the "left" and "right" edge are both at
+// 	// the center position of the group.
+
+// 	ranges := make([]utils.TupleFloat, 0, len(runs)+2)
+
+// 	for _, val := range runs {
+// 		var left, right int
+// 		start := val.A
+// 		length := val.B
+
+// 		if length <= se.Width {
+// 			right = start + length/2
+// 			left = right
+// 		} else {
+// 			left = start + se.halfWidth
+// 			right = start + length - 1 - se.halfWidth
+// 		}
+
+// 		var inMin, inMax float64
+
+// 		// Convert to input space.
+// 		if !se.Periodic {
+// 			inMin = float64(left-se.padding)*se.Resolution + se.MinVal
+// 			inMax = float64(right-se.padding)*se.Resolution + se.MinVal
+// 		} else {
+// 			inMin = float64(left-se.padding)*se.Range/float64(se.nInternal) + se.MinVal
+// 			inMax = float64(right-se.padding)*se.Range/float64(se.nInternal) + se.MinVal
+// 		}
+
+// 		// Handle wrap-around if periodic
+// 		if se.Periodic {
+// 			if inMin >= se.MaxVal {
+// 				inMin -= se.Range
+// 				inMax -= se.Range
+// 			}
+// 		}
+
+// 		// Clip low end
+// 		if inMin < se.MinVal {
+// 			inMin = se.MinVal
+// 		}
+// 		if inMax < se.MinVal {
+// 			inMax = se.MinVal
+// 		}
+
+// 		// If we have a periodic encoder, and the max is past the edge, break into
+// 		// 2 separate ranges
+
+// 		if se.Periodic && inMax >= se.MaxVal {
+// 			ranges = append(ranges, utils.TupleFloat{inMin, se.MaxVal})
+// 			ranges = append(ranges, utils.TupleFloat{se.MinVal, inMax - se.Range})
+// 		} else {
+// 			//clip high end
+// 			if inMax > se.MaxVal {
+// 				inMax = se.MaxVal
+// 			}
+// 			if inMin > se.MaxVal {
+// 				inMin = se.MaxVal
+// 			}
+// 			ranges = append(ranges, utils.TupleFloat{inMin, inMax})
+// 		}
+// 	}
+
+// 	//desc := se.generateRangeDescription(ranges)
+
+// 	return ranges
+// }

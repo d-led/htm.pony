@@ -11,6 +11,8 @@ class ScalarEncoderTest is TestList
   fun tag tests(test: PonyTest) =>
     test(_TestSimpleEncoding)
     test(_TestWideEncoding)
+    test(_TestNarrowEncoding)
+    test(_TestSimpleDecoding)
 
 class iso _TestSimpleEncoding is UnitTest
   fun name(): String => "scalar encoding: basics"
@@ -75,3 +77,22 @@ class iso _TestNarrowEncoding is UnitTest
       encoded
     )
     h.assert_eq[USize](encoded.size(), 6)
+
+
+class iso _TestSimpleDecoding is UnitTest
+  fun name(): String => "decoding scalars"
+
+  fun apply(h: TestHelper) ? =>
+    let p = ScalarEncoderParams(3, 1, 8 where
+      radius' = 1.5,
+      periodic' = true
+    )
+    let e = ScalarEncoder(p) ?
+
+    // Test with a "hole"
+    var encoded = BoolArray.from01([1;0;0;0;0;0;0;0;0;0;0;0;1;0])
+    var decoded = e.decode(encoded)
+    // h.assert_array_eq[ScalarRange](
+    //   decoded,
+    //   [ScalarRange(7.5, 7.5)]
+    // )
