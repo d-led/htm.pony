@@ -2,3 +2,8 @@ test/test
 *.o
 microbenchmarks/microbenchmarks
 test/test.d*
+test/test.exe
+test/test.exp
+test/test.ilk
+test/test.lib
+test/test.pdb

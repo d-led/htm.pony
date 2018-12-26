@@ -33,7 +33,8 @@ e.g. see https://github.com/ponylang/ponyc#windows-using-zip-via-bintray
 ## Progress
 
 - Sparse Binary Matrix, Dense Binary Matrix: Go tests translated & running. Untested Go code left for later
-- Next: Scalar Encoder (#1), Date Encoder (#2), any other chunk with minimal dependencies
+- Initial implementation ready: Scalar Encoder (#1)
+- Next: Date Encoder (#2), any other chunk with minimal dependencies
 
 ## Developing
 
