@@ -6,14 +6,15 @@ class DateEncoder
     let params: DateEncoderParams
 	let season_encoder:      (ScalarEncoder | None)
 	let day_of_week_encoder: (ScalarEncoder | None)
-	// let holiday_encoder:     (ScalarEncoder | None)
-	// let weekend_encoder:     (ScalarEncoder | None)
+	let weekend_encoder:     (ScalarEncoder | None)
+    // let holiday_encoder:     (ScalarEncoder | None)
+
 	// let time_of_day_encoder: (ScalarEncoder | None)
 
 	let width:              USize
 	let season_offset:      USize
 	let day_of_week_offset: USize
-    // let weekend_offset:     USize
+    let weekend_offset:     USize
 	// let holiday_offset:     USize
 	// let time_of_day_offset: USize
 
@@ -68,6 +69,30 @@ class DateEncoder
         else
             day_of_week_offset = 0
             day_of_week_encoder = None
+        end
+
+        if params.weekend_width != 0 then
+            // Binary value. Not sure if this makes sense. Also is somewhat redundant
+            // with dayOfWeek
+            //Append radius if it was not provided
+
+            let sep = ScalarEncoderParams(
+                params.weekend_width,
+                0,
+                1
+            where
+                name' = "weekend",
+                radius' = params.weekend_radius,
+                periodic' = true
+            )
+
+            let weekend_encoder' = ScalarEncoder(sep) ?
+            weekend_encoder = weekend_encoder'
+            weekend_offset = width'
+            width' = width' + weekend_encoder'.n
+        else
+            weekend_offset = 0
+            weekend_encoder = None
         end
 
         // finally, set the total width
