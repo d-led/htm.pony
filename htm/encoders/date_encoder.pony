@@ -1,16 +1,17 @@
 use "time"
 
-/*
-	Date encoder encodes a datetime to a SDR. Params allow for tuning
-	for specific date attributes
-*/
 class DateEncoder
+    """
+    Date encoder encodes a datetime to a SDR. Params allow for tuning
+	for specific date attributes
+    """
+
     let params: DateEncoderParams
 	var season_encoder:      SomeScalarEncoder
-	let day_of_week_encoder: (ScalarEncoder | None)
-	let weekend_encoder:     (ScalarEncoder | None)
-    let holiday_encoder:     (ScalarEncoder | None)
-	let time_of_day_encoder: (ScalarEncoder | None)
+	let day_of_week_encoder: SomeScalarEncoder
+	let weekend_encoder:     SomeScalarEncoder
+    let holiday_encoder:     SomeScalarEncoder
+	let time_of_day_encoder: SomeScalarEncoder
 
 	let width:              USize
 	let season_offset:      USize
@@ -69,7 +70,7 @@ class DateEncoder
             width' = width' + day_of_week_encoder'.n
         else
             day_of_week_offset = 0
-            day_of_week_encoder = None
+            day_of_week_encoder = NoOpScalarEncoder
         end
 
         if params.weekend_width != 0 then
@@ -93,7 +94,7 @@ class DateEncoder
             width' = width' + weekend_encoder'.n
         else
             weekend_offset = 0
-            weekend_encoder = None
+            weekend_encoder = NoOpScalarEncoder
         end
 
         if params.holiday_width != 0 then
@@ -116,7 +117,7 @@ class DateEncoder
             width' = width' + holiday_encoder'.n
         else
             holiday_offset = 0
-            holiday_encoder = None
+            holiday_encoder = NoOpScalarEncoder
         end
 
         if params.time_of_day_width != 0 then
@@ -140,16 +141,18 @@ class DateEncoder
             width' = width' + time_of_day_encoder'.n
         else
             time_of_day_offset = 0
-            time_of_day_encoder = None
+            time_of_day_encoder = NoOpScalarEncoder
         end
 
         // finally, set the total width
         width = width'
 
-    /*
-        Returns encoded input
-    */
+
+
     fun encode(input: PosixDate, learn_unused: Bool = false) : Array[Bool] ? =>
+        """
+        Returns encoded input
+        """
         var output = Array[Bool].init(false, width)
 
         // Get a scalar value for each subfield and encode it with the
@@ -162,7 +165,7 @@ class DateEncoder
         output
 
     fun _get_season_scalar(date: PosixDate): F64 =>
-        // todo: refactor None vs. ScalarEncoder behavior into a class
+        // todo: refactor no-op vs. ScalarEncoder behavior into a class
         //       to avoid duplicating the conditional
         if season_encoder.noop() then
             return 0.0
@@ -170,3 +173,43 @@ class DateEncoder
 
         //make year 0 based
         (date.day_of_year - 1).f64()
+
+    fun _get_holiday_scalar(date: PosixDate): F64 ? =>
+        if holiday_encoder.noop() then
+            return 0.0
+        end
+
+        // A "continuous" binary value. = 1 on the holiday itself and smooth ramp
+        // 0->1 on the day before the holiday and 1->0 on the day after the holiday.
+        // Currently the only holiday we know about is December 25
+        // holidays is a list of holidays that occur on a fixed date every year
+        var v: F64 = 0.0
+        var i: USize = 0
+        let holiday_size = params.holidays.size()
+
+        while i < holiday_size do
+            let h = params.holidays(i)?
+            // hdate is midnight on the holiday
+            // let hDate := time.Date(date.Year(), time.Month(h.A), h.B, 0, 0, 0, 0, time.UTC)
+            // if date.After(hDate) {
+            //     diff := date.Sub(hDate)
+            //     if (diff/time.Hour)/24 == 0 {
+            //         val = 1
+            //         break
+            //     } else if (diff/time.Hour)/24 == 1 {
+            //         // ramp smoothly from 1 -> 0 on the next day
+            //         val = 1.0 - (float64(diff/time.Second) / (86400))
+            //         break
+            //     }
+            // } else {
+            //     diff := hDate.Sub(date)
+            //     if (diff/time.Hour)/24 == 1 {
+            //         // ramp smoothly from 0 -> 1 on the previous day
+            //         val = 1.0 - (float64(diff/time.Second) / 86400)
+            //     }
+
+            // }
+            i = i + 1
+        end
+
+        v

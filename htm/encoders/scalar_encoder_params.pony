@@ -4,7 +4,6 @@ primitive Resolution
 
 type ScalarOutputType is (N | Radius | Resolution)
 
-// entries are positions of non-zero values
 class val ScalarEncoderParams
     let width:      USize
     let min_val:     F64

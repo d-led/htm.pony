@@ -1,6 +1,10 @@
 use "itertools"
 
 primitive BoolArray
+  """
+  Utility for bool array conversions and queries
+  """
+
   fun from01(i: Array[U8]): Array[Bool] =>
     Iter[U8](i.values())
         .map[Bool]({(x) => x != 0})

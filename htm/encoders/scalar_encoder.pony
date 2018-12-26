@@ -5,21 +5,20 @@ use "../../htm/util"
 use "debug"
 use "itertools"
 
-// comment taken verbatim from the original
-/*
- A scalar encoder encodes a numeric (floating point) value into an array
-of bits. The output is 0's except for a contiguous block of 1's. The
-location of this contiguous block varies continuously with the input value.
-The encoding is linear. If you want a nonlinear encoding, just transform
-the scalar (e.g. by applying a logarithm function) before encoding.
-It is not recommended to bin the data as a pre-processing step, e.g.
-"1" = $0 - $.20, "2" = $.21-$0.80, "3" = $.81-$1.20, etc. as this
-removes a lot of information and prevents nearby values from overlapping
-in the output. Instead, use a continuous transformation that scales
-the data (a piecewise transformation is fine).
-*/
-
 class ScalarEncoder
+    """
+    // comment taken verbatim from the original
+    A scalar encoder encodes a numeric (floating point) value into an array
+    of bits. The output is 0's except for a contiguous block of 1's. The
+    location of this contiguous block varies continuously with the input value.
+    The encoding is linear. If you want a nonlinear encoding, just transform
+    the scalar (e.g. by applying a logarithm function) before encoding.
+    It is not recommended to bin the data as a pre-processing step, e.g.
+    "1" = $0 - $.20, "2" = $.21-$0.80, "3" = $.81-$1.20, etc. as this
+    removes a lot of information and prevents nearby values from overlapping
+    in the output. Instead, use a continuous transformation that scales
+    the data (a piecewise transformation is fine).
+    """
     let params: ScalarEncoderParams
 
     var padding: USize = 0
@@ -144,18 +143,24 @@ class ScalarEncoder
             // error // not an error in the original
         end
 
-    /*
-        Returns encoded input
-    */
+
+
+
     fun encode(input: F64, learn_unused: Bool) : Array[Bool] ? =>
+        """
+        Returns encoded input
+        """
         var output = Array[Bool].init(false, n)
         encode_at_pos(input, learn_unused, output, 0) ?
         output
 
-    /*
-        Puts encoded input inline into the output array
-    */
+
+
     fun encode_at_pos(input: F64, learn_unused: Bool, output: Array[Bool] ref, pos: USize) ? =>  
+        """
+        Puts encoded input inline into the output array
+        """
+
         // The bucket index is the index of the first bit to set in the output
         let bucketIdx = _get_first_on_bit(input)?
         
@@ -220,11 +225,14 @@ class ScalarEncoder
 
         // end
 
-    /*  Return the bit offset of the first bit to be set in the encoder output.
+
+
+    fun _get_first_on_bit(input: F64) : I64 ? =>
+        """
+        Return the bit offset of the first bit to be set in the encoder output.
         For periodic encoders, this can be a negative number when the encoded output
         wraps around.
-    */
-    fun _get_first_on_bit(input: F64) : I64 ? =>
+        """
         var clipped_input = input
         if input < params.min_val then
             //Don't clip periodic inputs. Out-of-range input is always an error
@@ -271,8 +279,11 @@ class ScalarEncoder
         // We use the first bit to be set in the encoded output as the bucket index
         centerbin - half_width.i64()
 
-    // Populates bool slice with specified value
+
     fun _fill_slice_range_bool(values: Array[Bool] ref, value: Bool, start: USize, length: USize) ? =>
+        """
+        Populates bool slice with specified value
+        """
         var i : USize = 0
 
         while i < length do
@@ -280,8 +291,12 @@ class ScalarEncoder
             i = i + 1
         end
     
-    // Decode an encoded sequence. Returns range of values
+
+
     fun decode(encoded: Array[Bool]): Array[ScalarRange] ? =>
+        """
+        Decode an encoded sequence. Returns ranges of values
+        """
         if not encoded.contains(true) then
             return []
         end
