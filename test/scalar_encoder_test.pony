@@ -96,3 +96,35 @@ class iso _TestSimpleDecoding is UnitTest
       decoded,
       [ScalarRange(7.5, 7.5)]
     )
+
+    // Test with something wider than w, and with a hole, and wrapped
+    encoded = BoolArray.from01([1;1;0;0;0;0;0;0;0;0;0;0;1;0])
+    decoded = e.decode(encoded) ?
+    h.assert_array_eq[ScalarRange](
+      decoded,
+      [ScalarRange(7.5, 8); ScalarRange(1, 1)]
+    )
+
+    // Test with something wider than w, no hole
+    encoded = BoolArray.from01([1;1;1;1;1;0;0;0;0;0;0;0;0;0])
+    decoded = e.decode(encoded) ?
+    h.assert_array_eq[ScalarRange](
+      decoded,
+      [ScalarRange(1.5, 2.5)]
+    )
+
+    // 1
+    encoded = BoolArray.from01([1;1;0;0;0;0;0;0;0;0;0;0;0;1])
+    decoded = e.decode(encoded) ?
+    h.assert_array_eq[ScalarRange](
+      decoded,
+      [ScalarRange(1, 1)]
+    )
+
+    // 2
+    encoded = BoolArray.from01([0;1;1;1;0;0;0;0;0;0;0;0;0;0])
+    decoded = e.decode(encoded) ?
+    h.assert_array_eq[ScalarRange](
+      decoded,
+      [ScalarRange(2, 2)]
+    )
