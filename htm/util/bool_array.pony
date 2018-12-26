@@ -61,4 +61,4 @@ primitive BoolArray
       .filter_map[USize]({
         (t: (USize, Bool)) : (USize | None) => if t._2 then t._1 end 
       })
-      .collect(Array[USize](values.size()))
+      .collect(Array[USize]())
