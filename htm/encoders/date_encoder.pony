@@ -1,10 +1,12 @@
+use "time"
+
 /*
 	Date encoder encodes a datetime to a SDR. Params allow for tuning
 	for specific date attributes
 */
 class DateEncoder
     let params: DateEncoderParams
-	let season_encoder:      (ScalarEncoder | None)
+	var season_encoder:      SomeScalarEncoder
 	let day_of_week_encoder: (ScalarEncoder | None)
 	let weekend_encoder:     (ScalarEncoder | None)
     let holiday_encoder:     (ScalarEncoder | None)
@@ -43,7 +45,7 @@ class DateEncoder
             width' = width' + season_encoder'.n
         else
             season_offset = 0
-            season_encoder = None
+            season_encoder = NoOpScalarEncoder
         end
 
 
@@ -143,3 +145,28 @@ class DateEncoder
 
         // finally, set the total width
         width = width'
+
+    /*
+        Returns encoded input
+    */
+    fun encode(input: PosixDate, learn_unused: Bool = false) : Array[Bool] ? =>
+        var output = Array[Bool].init(false, width)
+
+        // Get a scalar value for each subfield and encode it with the
+        // appropriate encoder
+        // note: a no-op encoder leaves bits as they were (false)
+        season_encoder.encode_at_pos(_get_season_scalar(input), learn_unused, output, season_offset) ?
+
+        //...
+
+        output
+
+    fun _get_season_scalar(date: PosixDate): F64 =>
+        // todo: refactor None vs. ScalarEncoder behavior into a class
+        //       to avoid duplicating the conditional
+        if season_encoder.noop() then
+            return 0.0
+        end
+
+        //make year 0 based
+        (date.day_of_year - 1).f64()

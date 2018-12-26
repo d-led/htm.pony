@@ -38,6 +38,8 @@ class ScalarEncoder
 	let n_internal: USize // represents the output area excluding the possible padding on each side
     let name: String
 
+    fun noop(): Bool => false
+
     new create(params': ScalarEncoderParams val) ? =>
         params = params'
 
@@ -147,7 +149,13 @@ class ScalarEncoder
     */
     fun encode(input: F64, learn_unused: Bool) : Array[Bool] ? =>
         var output = Array[Bool].init(false, n)
-        
+        encode_at_pos(input, learn_unused, output, 0) ?
+        output
+
+    /*
+        Puts encoded input inline into the output array
+    */
+    fun encode_at_pos(input: F64, learn_unused: Bool, output: Array[Bool] ref, pos: USize) ? =>  
         // The bucket index is the index of the first bit to set in the output
         let bucketIdx = _get_first_on_bit(input)?
         
@@ -211,8 +219,6 @@ class ScalarEncoder
         // }
 
         // end
-
-        output
 
     /*  Return the bit offset of the first bit to be set in the encoder output.
         For periodic encoders, this can be a negative number when the encoded output

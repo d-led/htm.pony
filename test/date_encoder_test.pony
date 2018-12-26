@@ -46,7 +46,8 @@ class iso _TestSimpleDateEncoding is UnitTest
     h.assert_eq[I32](55, d.min)
     h.assert_eq[I32](0, d.sec)
     h.assert_eq[I32](0, d.nsec)
-    // encoded = de.Encode(d)
+
+    let encoded = de.encode(d) ?
     // t.Log(utils.Bool2Int(encoded))
 
     // expected = append(seasonExpected, dayOfWeekExpected...)
