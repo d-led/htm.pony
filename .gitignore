@@ -7,3 +7,4 @@ test/test.exp
 test/test.ilk
 test/test.lib
 test/test.pdb
+test/test.obj
