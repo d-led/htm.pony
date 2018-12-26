@@ -2,12 +2,19 @@
     // See https://go.microsoft.com/fwlink/?LinkId=733558
     // for the documentation about the tasks.json format
     "version": "2.0.0",
-    // the tasks are currently for *X systems, but could be expanded to Windows
     "tasks": [
         {
             "label": "test (X)",
             "type": "shell",
-            "command": "ponyc -d && ./test",
+            "linux": {
+                "command": "ponyc -d && ./test",
+            },
+            "osx": {
+                "command": "ponyc -d && ./test",
+            },
+            "windows": {
+                "command": "..\\build_and_test.bat",
+            },
             "group": "test",
             "options": {
                 "cwd": "${workspaceFolder}/test"
