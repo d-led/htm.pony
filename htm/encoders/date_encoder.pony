@@ -7,7 +7,7 @@ class DateEncoder
 	let season_encoder:      (ScalarEncoder | None)
 	let day_of_week_encoder: (ScalarEncoder | None)
 	let weekend_encoder:     (ScalarEncoder | None)
-    // let holiday_encoder:     (ScalarEncoder | None)
+    let holiday_encoder:     (ScalarEncoder | None)
 
 	// let time_of_day_encoder: (ScalarEncoder | None)
 
@@ -15,7 +15,7 @@ class DateEncoder
 	let season_offset:      USize
 	let day_of_week_offset: USize
     let weekend_offset:     USize
-	// let holiday_offset:     USize
+	let holiday_offset:     USize
 	// let time_of_day_offset: USize
 
     new create(params': DateEncoderParams val) ? =>
@@ -93,6 +93,29 @@ class DateEncoder
         else
             weekend_offset = 0
             weekend_encoder = None
+        end
+
+        if params.holiday_width != 0 then
+            // A "continuous" binary value. = 1 on the holiday itself and smooth ramp
+            // 0->1 on the day before the holiday and 1->0 on the day after the holiday.
+
+            let sep = ScalarEncoderParams(
+                params.holiday_width,
+                0,
+                1
+            where
+                name' = "holiday",
+                radius' = params.holiday_radius,
+                periodic' = true
+            )
+
+            let holiday_encoder' = ScalarEncoder(sep) ?
+            holiday_encoder = holiday_encoder'
+            holiday_offset = width'
+            width' = width' + holiday_encoder'.n
+        else
+            holiday_offset = 0
+            holiday_encoder = None
         end
 
         // finally, set the total width
