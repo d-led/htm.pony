@@ -10,4 +10,4 @@ actor Main is TestList
     SparseBinaryMatrixTest.tests(test)
     ScalarEncoderTest.tests(test)
     ArrayConversionsTest.tests(test)
-
+    DateEncodingTest.tests(test)
