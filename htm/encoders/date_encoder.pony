@@ -5,15 +5,15 @@
 class DateEncoder
     let params: DateEncoderParams
 	let season_encoder:      (ScalarEncoder | None)
-	// let holiday_encoder:     ScalarEncoder
-	// let day_of_week_encoder: ScalarEncoder
-	// let weekend_encoder:     ScalarEncoder
-	// let time_of_day_encoder: ScalarEncoder
+	let day_of_week_encoder: (ScalarEncoder | None)
+	// let holiday_encoder:     (ScalarEncoder | None)
+	// let weekend_encoder:     (ScalarEncoder | None)
+	// let time_of_day_encoder: (ScalarEncoder | None)
 
 	let width:              USize
 	let season_offset:      USize
-	// let weekend_offset:     USize
-	// let day_of_week_offset: USize
+	let day_of_week_offset: USize
+    // let weekend_offset:     USize
 	// let holiday_offset:     USize
 	// let time_of_day_offset: USize
 
@@ -46,4 +46,29 @@ class DateEncoder
             season_encoder = None
         end
 
+
+        if params.day_of_week_width != 0 then
+            // Value is day of week (floating point)
+            // Radius is 1 day
+
+            let sep = ScalarEncoderParams(
+                params.day_of_week_width,
+                0,
+                7
+            where
+                name' = "day of week",
+                radius' = params.day_of_week_radius,
+                periodic' = true
+            )
+
+            let day_of_week_encoder' = ScalarEncoder(sep) ?
+            day_of_week_encoder = day_of_week_encoder'
+            day_of_week_offset = width'
+            width' = width' + day_of_week_encoder'.n
+        else
+            day_of_week_offset = 0
+            day_of_week_encoder = None
+        end
+
+        // finally, set the total width
         width = width'
