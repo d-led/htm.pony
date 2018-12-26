@@ -8,15 +8,14 @@ class DateEncoder
 	let day_of_week_encoder: (ScalarEncoder | None)
 	let weekend_encoder:     (ScalarEncoder | None)
     let holiday_encoder:     (ScalarEncoder | None)
-
-	// let time_of_day_encoder: (ScalarEncoder | None)
+	let time_of_day_encoder: (ScalarEncoder | None)
 
 	let width:              USize
 	let season_offset:      USize
 	let day_of_week_offset: USize
     let weekend_offset:     USize
 	let holiday_offset:     USize
-	// let time_of_day_offset: USize
+	let time_of_day_offset: USize
 
     new create(params': DateEncoderParams val) ? =>
         params = params'
@@ -83,7 +82,7 @@ class DateEncoder
             where
                 name' = "weekend",
                 radius' = params.weekend_radius,
-                periodic' = true
+                periodic' = false
             )
 
             let weekend_encoder' = ScalarEncoder(sep) ?
@@ -106,7 +105,7 @@ class DateEncoder
             where
                 name' = "holiday",
                 radius' = params.holiday_radius,
-                periodic' = true
+                periodic' = false
             )
 
             let holiday_encoder' = ScalarEncoder(sep) ?
@@ -116,6 +115,30 @@ class DateEncoder
         else
             holiday_offset = 0
             holiday_encoder = None
+        end
+
+        if params.time_of_day_width != 0 then
+            // Value is time of day in hours
+            // Radius = 4 hours, e.g. morning, afternoon, evening, early night,
+            // late night, etc.
+
+            let sep = ScalarEncoderParams(
+                params.time_of_day_width,
+                0,
+                24
+            where
+                name' = "time of day",
+                radius' = params.time_of_day_radius,
+                periodic' = true
+            )
+
+            let time_of_day_encoder' = ScalarEncoder(sep) ?
+            time_of_day_encoder = time_of_day_encoder'
+            time_of_day_offset = width'
+            width' = width' + time_of_day_encoder'.n
+        else
+            time_of_day_offset = 0
+            time_of_day_encoder = None
         end
 
         // finally, set the total width
