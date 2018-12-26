@@ -14,5 +14,12 @@ class DateEncodingTest is TestList
 class iso _TestSimpleDateEncoding is UnitTest
   fun name(): String => "Simple date encoder basics"
 
-  fun apply(h: TestHelper) =>
-    true
+  fun apply(h: TestHelper) ? =>
+    let p = DateEncoderParams(where
+      season_width' = 3,
+      day_of_week_width' = 1,
+      weekend_width' = 3,
+      time_of_day_width' = 5
+    )
+    let de = DateEncoder(p) ?
+  
