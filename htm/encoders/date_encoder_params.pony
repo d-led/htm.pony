@@ -1,31 +1,31 @@
-type HolidayMonthDay is (I8,I8)
+type HolidayMonthDay is (U8,U8)
 
 class val DateEncoderParams
-	let holiday_width:    I8 // A "continuous" binary value. = 1 on the holiday itself and smooth ramp
+	let holiday_width:    USize // A "continuous" binary value. = 1 on the holiday itself and smooth ramp
                              // 0->1 on the day before the holiday and 1->0 on the day after the holiday.
 	let holiday_radius:   F64
-	let season_width:     I8
+	let season_width:     USize
 	let season_radius:    F64
-	let day_of_week_width:  I8
+	let day_of_week_width:  USize
 	let day_of_week_radius: F64
-	let weekend_width:    I8
+	let weekend_width:    USize
 	let weekend_radius:   F64
-	let time_of_day_width:  I8
+	let time_of_day_width:  USize
 	let time_of_day_radius: F64
 	let name: String
 	//list of holidays stored as {mm,dd}
 	let holidays: Array[HolidayMonthDay] val
 
     new val create(
-        holiday_width':    I8 = 0,
+        holiday_width':    USize = 0,
         holiday_radius':   F64 = 1,
-        season_width':     I8 = 3,
+        season_width':     USize = 3,
         season_radius':    F64 = 91.5, //days
-        day_of_week_width':  I8 = 1,
+        day_of_week_width':  USize = 1,
         day_of_week_radius': F64 = 1,
-        weekend_width':    I8 = 3,
+        weekend_width':    USize = 3,
         weekend_radius':   F64 = 1,
-        time_of_day_width':  I8 = 5,
+        time_of_day_width':  USize = 5,
         time_of_day_radius': F64 = 4,
         name': String = "DateEncoder: unknown",
         holidays': Array[HolidayMonthDay] val = []
