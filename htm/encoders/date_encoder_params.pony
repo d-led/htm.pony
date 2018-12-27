@@ -1,4 +1,4 @@
-type HolidayMonthDay is (U8,U8)
+type HolidayMonthDay is (I32,I32)
 
 class val DateEncoderParams
 	let holiday_width:    USize // A "continuous" binary value. = 1 on the holiday itself and smooth ramp

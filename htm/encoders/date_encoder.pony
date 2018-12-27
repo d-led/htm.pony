@@ -1,5 +1,7 @@
 use "time"
 
+use "../../deps/sagittarius/sagittarius"
+
 class DateEncoder
     """
     Date encoder encodes a datetime to a SDR. Params allow for tuning
@@ -190,7 +192,7 @@ class DateEncoder
         while i < holiday_size do
             let h = params.holidays(i)?
             // hdate is midnight on the holiday
-            // let hDate := time.Date(date.Year(), time.Month(h.A), h.B, 0, 0, 0, 0, time.UTC)
+            let hDate = LocalDate(date.year, h._1, h._2)
             // if date.After(hDate) {
             //     diff := date.Sub(hDate)
             //     if (diff/time.Hour)/24 == 0 {

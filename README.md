@@ -42,6 +42,10 @@
 - [Install Ponyc](https://github.com/ponylang/ponyc/blob/master/README.md#installation)
 - Compilation: `ponyc` from the test folder produces the test executable
 
+## Dependencies
+
+- date/time construction: [slayful/sagittarius](https://github.com/slayful/sagittarius) (license yet unspecified)
+
 ## License
 
 - See [LICENSE](LICENSE)
