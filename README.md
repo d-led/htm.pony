@@ -12,6 +12,7 @@
 - Once an opportunity arises to parallelize, start experimenting with actors & benchmark
 - When the Temporal Pooler is ported, align the implementation with the latest NuPIC/htm.java details
 - No attempt at proactive refactoring is made at the moment. When a rough [working](https://twitter.com/kentbeck/status/459707016387108864) version is made, it might make sense to reimplement whole classes/actors
+- Error handling is ad hoc currently, and will need to be designed once there is a high level executable that uses the library. Trade-offs: [errors, logging & partial functions](https://tutorial.ponylang.io/expressions/exceptions.html) vs explicit [union return types](https://tutorial.ponylang.io/types/type-expressions.html)
 - continue
 
 ## Contributing
