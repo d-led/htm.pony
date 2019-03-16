@@ -55,7 +55,7 @@ class iso _BoolArraySettingValuesTest is UnitTest
 
   fun apply(h: TestHelper) ? =>
     var arr = Array[Bool].init(true, 4)
-    BoolArray.set_value_at_indices(arr, [1;3], false) ?
+    BoolArray.set_value_at_indices(arr, [1;3], false) as None
     h.assert_array_eq[Bool](
         arr,
         [true;false;true;false]

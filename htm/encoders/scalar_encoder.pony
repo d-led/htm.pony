@@ -338,7 +338,9 @@ class ScalarEncoder
                         searchSeq,
                         subset as Array[Bool]
                     ) then
-                        BoolArray.set_value_at_indices(tmpOutput, outputIndices, true) ?
+                        if BoolArray.set_value_at_indices(tmpOutput, outputIndices, true) is BadInput then
+                            error
+                        end
                     end
 
                     j = j + 1

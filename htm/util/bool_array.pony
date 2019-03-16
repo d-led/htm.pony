@@ -50,13 +50,19 @@ primitive BoolArray
     end
 
 
-  fun set_value_at_indices(values: Array[Bool] ref, indices: ReadSeq[USize], value: Bool) ? =>
-    let size = indices.size()
+  fun set_value_at_indices(values: Array[Bool] ref, indices: ReadSeq[USize], value: Bool): (None | BadInput) =>
+    try
+      let size = indices.size()
 
-    var i: USize = 0
-    while i < size do
-      values ( indices(i) ? ) ? = value
-      i = i + 1
+      var i: USize = 0
+      while i < size do
+        values ( indices(i) ? ) ? = value
+        i = i + 1
+      end
+
+      None
+    else
+      BadInput
     end
 
   fun set_value_in_range(values: Array[Bool] ref, value: Bool, start: USize, length: USize) ? =>
