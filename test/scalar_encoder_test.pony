@@ -24,19 +24,19 @@ class iso _TestSimpleEncoding is UnitTest
     )
     let e = ScalarEncoder(p) ?
 
-    var encoded = e.encode(1, false)?
+    var encoded = e.encode(1, false) as Array[Bool]
     h.assert_array_eq[Bool](
       BoolArray.from01([1;1;0;0;0;0;0;0;0;0;0;0;0;1]),
       encoded
     )
 
-    encoded = e.encode(2, false)?
+    encoded = e.encode(2, false) as Array[Bool]
     h.assert_array_eq[Bool](
       BoolArray.from01([0;1;1;1;0;0;0;0;0;0;0;0;0;0]),
       encoded
     )
 
-    encoded = e.encode(3, false)?
+    encoded = e.encode(3, false) as Array[Bool]
     h.assert_array_eq[Bool](
       BoolArray.from01([0;0;0;1;1;1;0;0;0;0;0;0;0;0]),
       encoded
@@ -52,7 +52,7 @@ class iso _TestWideEncoding is UnitTest
     )
     let e = ScalarEncoder(p) ?
 
-    var encoded = e.encode(14.916666666666666, false)?
+    var encoded = e.encode(14.916666666666666, false) as Array[Bool]
     h.assert_array_eq[Bool](
       BoolArray.from01([0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;1;1;1;1;1;0;0;0;0;0;0;0;0;0]),
       encoded
@@ -71,7 +71,7 @@ class iso _TestNarrowEncoding is UnitTest
     )
     let e = ScalarEncoder(p) ?
 
-    var encoded = e.encode(0, false)?
+    var encoded = e.encode(0, false) as Array[Bool]
     h.assert_array_eq[Bool](
       BoolArray.from01([1;1;1;0;0;0]),
       encoded

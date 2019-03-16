@@ -151,7 +151,7 @@ class DateEncoder
 
 
 
-    fun encode(input: PosixDate, learn_unused: Bool = false) : Array[Bool] ? =>
+    fun encode(input: PosixDate, learn_unused: Bool = false) : (Array[Bool] | EncodingFailed) =>
         """
         Returns encoded input
         """
@@ -160,11 +160,11 @@ class DateEncoder
         // Get a scalar value for each subfield and encode it with the
         // appropriate encoder
         // note: a no-op encoder leaves bits as they were (false)
-        season_encoder.encode_at_pos(_get_season_scalar(input), learn_unused, output, season_offset) ?
-
-        //...
-
-        output
+        match season_encoder.encode_at_pos(_get_season_scalar(input), learn_unused, output, season_offset)
+        | EncodingFailed => EncodingFailed
+        else
+            output
+        end
 
     fun _get_season_scalar(date: PosixDate): F64 =>
         // todo: refactor no-op vs. ScalarEncoder behavior into a class

@@ -47,7 +47,7 @@ class iso _TestSimpleDateEncoding is UnitTest
     h.assert_eq[I32](0, d.sec)
     h.assert_eq[I32](0, d.nsec)
 
-    let encoded = de.encode(d) ?
+    let encoded = de.encode(d) as Array[Bool]
 
     h.log("t1288882500 encoded: " + (";".join(encoded.values())))
     // t.Log(utils.Bool2Int(encoded))

@@ -146,85 +146,92 @@ class ScalarEncoder
 
 
 
-    fun encode(input: F64, learn_unused: Bool) : Array[Bool] ? =>
+    fun encode(input: F64, learn_unused: Bool) : (Array[Bool] | EncodingFailed) =>
         """
         Returns encoded input
         """
         var output = Array[Bool].init(false, n)
-        encode_at_pos(input, learn_unused, output, 0) ?
-        output
+        match encode_at_pos(input, learn_unused, output, 0)
+        | EncodingFailed => EncodingFailed
+        else
+            output
+        end
 
 
 
-    fun encode_at_pos(input: F64, learn_unused: Bool, output: Array[Bool] ref, pos: USize) ? =>  
+    fun encode_at_pos(input: F64, learn_unused: Bool, output: Array[Bool] ref, pos: USize): (None | EncodingFailed) =>  
         """
         Puts encoded input inline into the output array
         """
 
-        // The bucket index is the index of the first bit to set in the output
-        let bucketIdx = _get_first_on_bit(input)?
-        
-        var minbin = bucketIdx
-        var maxbin = minbin + (2 * half_width.i64())
-        var bottombins: I64 = 0
-        var topbins: I64 = 0
+        try
+            // The bucket index is the index of the first bit to set in the output
+            let bucketIdx = _get_first_on_bit(input)?
+            
+            var minbin = bucketIdx
+            var maxbin = minbin + (2 * half_width.i64())
+            var bottombins: I64 = 0
+            var topbins: I64 = 0
 
-        if params.periodic then
+            if params.periodic then
 
-            // Handle the edges by computing wrap-around
-            if maxbin >= n.i64() then
-                bottombins = (maxbin - n.i64()) + 1
-                try 
-                    _fill_slice_range_bool(output , true, 0, bottombins.usize())?
-                else
-                    Debug.err("ScalarEncoder.encode[1] failed")
-                    error
+                // Handle the edges by computing wrap-around
+                if maxbin >= n.i64() then
+                    bottombins = (maxbin - n.i64()) + 1
+                    try 
+                        _fill_slice_range_bool(output , true, 0, bottombins.usize())?
+                    else
+                        Debug.err("ScalarEncoder.encode[1] failed")
+                        error
+                    end
+                    maxbin = n.i64() - 1
                 end
-                maxbin = n.i64() - 1
+            
+                if minbin < 0 then
+                    topbins = -minbin
+                    try 
+                        _fill_slice_range_bool(output, true, n-topbins.usize(), (n - (n - topbins.usize())).usize())?
+                    else
+                        Debug.err("ScalarEncoder.encode[2] failed")
+                        error
+                    end                
+                    minbin = 0
+                end
             end
-           
+
             if minbin < 0 then
-                topbins = -minbin
-                try 
-                    _fill_slice_range_bool(output, true, n-topbins.usize(), (n - (n - topbins.usize())).usize())?
-                else
-                    Debug.err("ScalarEncoder.encode[2] failed")
-                    error
-                end                
-                minbin = 0
+                Debug.err("ScalarEncoder.encode: invalid minbin: " + minbin.string())
+                error
             end
-        end
 
-        if minbin < 0 then
-            Debug.err("ScalarEncoder.encode: invalid minbin: " + minbin.string())
-            error
-        end
-
-        if maxbin >= n.i64() then
-            Debug.err("ScalarEncoder.encode: invalid maxbin: " + maxbin.string())
-            error
-        end
+            if maxbin >= n.i64() then
+                Debug.err("ScalarEncoder.encode: invalid maxbin: " + maxbin.string())
+                error
+            end
 
 
-        // set the output (except for periodic wraparound)
-        try 
-            _fill_slice_range_bool(output, true, minbin.usize(), ((maxbin+1)-minbin).usize())?
+            // set the output (except for periodic wraparound)
+            try 
+                _fill_slice_range_bool(output, true, minbin.usize(), ((maxbin+1)-minbin).usize())?
+            else
+                Debug.err("ScalarEncoder.encode[3] failed")
+                error
+            end         
+
+            // if se.Verbosity >= 2 {
+            //     fmt.Println("input:", input)
+            //     fmt.Printf("half width:%v \n", se.Width)
+            //     fmt.Printf("range: %v - %v \n", params.min_val, se.MaxVal)
+            //     fmt.Printf("n: %v width: %v resolution: %v \n", se.N, se.Width, params.resolution)
+            //     fmt.Printf("radius: %v periodic: %v \n", se.Radius, params.periodic)
+            //     fmt.Printf("output: %v \n", output)
+            // }
+
+            // end
+            None
         else
-            Debug.err("ScalarEncoder.encode[3] failed")
-            error
-        end         
-
-        // if se.Verbosity >= 2 {
-        //     fmt.Println("input:", input)
-        //     fmt.Printf("half width:%v \n", se.Width)
-        //     fmt.Printf("range: %v - %v \n", params.min_val, se.MaxVal)
-        //     fmt.Printf("n: %v width: %v resolution: %v \n", se.N, se.Width, params.resolution)
-        //     fmt.Printf("radius: %v periodic: %v \n", se.Radius, params.periodic)
-        //     fmt.Printf("output: %v \n", output)
-        // }
-
-        // end
-
+            EncodingFailed
+        end
 
 
     fun _get_first_on_bit(input: F64) : I64 ? =>
