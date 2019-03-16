@@ -62,12 +62,12 @@ class iso _BoolArraySettingValuesTest is UnitTest
     )
 
     // continuing on the same array
-    BoolArray.set_value_in_range(arr, false, 1, 3) ?
+    BoolArray.set_value_in_range(arr, false, 1, 3) as None
     h.assert_array_eq[Bool](
         arr,
         [true;false;false;false]
     )
-    BoolArray.set_value_in_range(arr, true, 0, 3) ?
+    BoolArray.set_value_in_range(arr, true, 0, 3) as None
     h.assert_array_eq[Bool](
         arr,
         [true;true;true;false]

@@ -65,11 +65,16 @@ primitive BoolArray
       BadInput
     end
 
-  fun set_value_in_range(values: Array[Bool] ref, value: Bool, start: USize, length: USize) ? =>
-    var i: USize = 0
-    while i < length do
-      values ( start + i ) ? = value
-      i = i + 1
+  fun set_value_in_range(values: Array[Bool] ref, value: Bool, start: USize, length: USize): (None | BadInput) =>
+    try
+      var i: USize = 0
+      while i < length do
+        values ( start + i ) ? = value
+        i = i + 1
+      end
+      None
+    else
+      BadInput
     end
 
   fun on_indices(values: ReadSeq[Bool]) : Array[USize] =>

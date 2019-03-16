@@ -353,7 +353,9 @@ class ScalarEncoder
                         searchSeq,
                         tmpOutput.slice(j, j + subLen)
                     ) then
-					    BoolArray.set_value_in_range(tmpOutput, true, j, subLen) ?
+					    if BoolArray.set_value_in_range(tmpOutput, true, j, subLen) is BadInput then
+                            error
+                        end
                     end
                 end
     		end
