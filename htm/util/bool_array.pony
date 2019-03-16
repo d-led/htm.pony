@@ -1,5 +1,7 @@
 use "itertools"
 
+primitive BadInput
+
 primitive BoolArray
   """
   Utility for bool array conversions and queries
@@ -31,17 +33,22 @@ primitive BoolArray
     // if all the checks succeed
     true
 
-  fun subset_slice(values: ReadSeq[Bool], indices: ReadSeq[USize]) : Array[Bool] ? =>
+  fun subset_slice(values: ReadSeq[Bool], indices: ReadSeq[USize]) : (Array[Bool] | BadInput) =>
     let size = indices.size()
     var result = Array[Bool].init(false, size)
 
-    var i: USize = 0
-    while i < size do
-      result (i) ? = values(indices(i) ?) ?
-      i = i + 1
+    try 
+      var i: USize = 0
+      while i < size do
+        result (i) ? = values(indices(i) ?) ?
+        i = i + 1
+      end
+      
+      result
+    else
+      BadInput
     end
-    
-    result
+
 
   fun set_value_at_indices(values: Array[Bool] ref, indices: ReadSeq[USize], value: Bool) ? =>
     let size = indices.size()

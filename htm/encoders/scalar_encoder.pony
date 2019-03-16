@@ -328,11 +328,15 @@ class ScalarEncoder
                         idx = idx + 1
                     end
 
-                    let subset = BoolArray.subset_slice(tmpOutput, outputIndices) ?
+                    let subset = BoolArray.subset_slice(tmpOutput, outputIndices)
+
+                    if subset is BadInput then
+                        error
+                    end
 
                     if BoolArray.are_equal(
                         searchSeq,
-                        subset
+                        subset as Array[Bool]
                     ) then
                         BoolArray.set_value_at_indices(tmpOutput, outputIndices, true) ?
                     end

@@ -46,7 +46,7 @@ class iso _BoolArraySlicesTest is UnitTest
 
   fun apply(h: TestHelper) ? =>
     h.assert_array_eq[Bool](
-        BoolArray.subset_slice([true;false;true;false], [0;2;3]) ?,
+        BoolArray.subset_slice([true;false;true;false], [0;2;3]) as Array[Bool],
         [true;true;false]
     )
 
