@@ -3,7 +3,7 @@
 cd %~dp0\test
 
 rem compile
-ponyc
+stable env ponyc
 if %errorlevel% neq 0 exit /b %errorlevel%
 
 rem test
