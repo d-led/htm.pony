@@ -7,10 +7,10 @@
             "label": "test (X)",
             "type": "shell",
             "linux": {
-                "command": "ponyc -d && ./test",
+                "command": "stable env ponyc -d && ./test",
             },
             "osx": {
-                "command": "ponyc -d && ./test",
+                "command": "stable env ponyc -d && ./test",
             },
             "windows": {
                 "command": "..\\build_and_test.bat",
@@ -23,7 +23,7 @@
         {
             "label": "benchmark (X)",
             "type": "shell",
-            "command": "ponyc && ./microbenchmarks",
+            "command": "stable env ponyc && ./microbenchmarks",
             "group": "test",
             "options": {
                 "cwd": "${workspaceFolder}/microbenchmarks"
