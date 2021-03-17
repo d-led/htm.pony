@@ -7,27 +7,31 @@
             "label": "test (X)",
             "type": "shell",
             "linux": {
-                "command": "stable env ponyc -d && ./test",
+                "command": "corral run -- ponyc --debug && ./test"
             },
             "osx": {
-                "command": "stable env ponyc -d && ./test",
+                "command": "corral run -- ponyc --debug && ./test"
             },
             "windows": {
-                "command": "..\\build_and_test.bat",
+                "command": "..\\build_and_test.bat"
             },
-            "group": "test",
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
             "options": {
                 "cwd": "${workspaceFolder}/test"
             },
+            "problemMatcher": []
         },
         {
             "label": "benchmark (X)",
             "type": "shell",
-            "command": "stable env ponyc && ./microbenchmarks",
+            "command": "corral run -- ponyc && ./microbenchmarks",
             "group": "test",
             "options": {
                 "cwd": "${workspaceFolder}/microbenchmarks"
-            },
+            }
         }
     ]
 }

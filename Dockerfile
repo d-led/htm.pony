@@ -2,6 +2,6 @@ FROM ponylang/ponyc:release
 
 COPY . /src/main/
 WORKDIR /src/main/test
-RUN stable env ponyc
+RUN corral run -- ponyc --debug
 RUN ./test
 CMD ./test
