@@ -1,4 +1,4 @@
-use "ponytest"
+use "pony_test"
 use "../htm"
 
 // https://github.com/htm-community/htm/blob/master/denseBinaryMatrix_test.go

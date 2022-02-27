@@ -1,4 +1,4 @@
-use "ponytest"
+use "pony_test"
 use "../htm/util"
 
 class ArrayConversionsTest is TestList

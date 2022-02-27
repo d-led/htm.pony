@@ -1,4 +1,4 @@
-use "ponytest"
+use "pony_test"
 use "../htm/encoders"
 use "../htm/util"
 use "debug"
