@@ -138,6 +138,28 @@ a different one   16        22        23       9
 The pictures are built in code rather than read from a file, because reading a
 file needs a decoder and Pony has none yet.
 
+## Anomaly detection
+
+`examples/anomaly-stream/main.pony` streams three repeating inputs and then one
+that breaks the pattern, printing the anomaly score for each step.
+
+```
+a  ####################  1
+b  ####################  1
+c  ####################  1
+a  ####################  1
+b  ....................  0
+...
+a  ....................  0
+b  ....................  0
+c  ....................  0
+
+d  ####################  1
+```
+
+The first four steps score one because nothing has been learned yet.
+[Streaming anomaly detection](anomaly-detection.md) explains the reading.
+
 ## Prediction
 
 `examples/temporal-memory/main.pony` teaches a temporal memory that one column

@@ -51,6 +51,13 @@ column alone and reads what the memory expects next. Then shows the second,
 which no longer bursts because it was predicted. Demonstrates `TemporalMemory`,
 `TemporalMemoryParams` and `TemporalOutput`.
 
+## [anomaly-stream](anomaly-stream/)
+
+Streams three repeating inputs followed by one that breaks the pattern, printing
+the anomaly score and a bar for each step. Shows the score falling to zero as the
+pattern is learned and jumping when it is broken. Demonstrates
+`StreamingAnomalyDetector` and `TemporalOutput.anomaly()`.
+
 ## Running them
 
 Build and run one from its own directory:

@@ -23,13 +23,35 @@ class val TemporalOutput
     predictive_cells = predictive_cells'
     bursting_columns = bursting_columns'
 
+  fun active_columns(params: TemporalMemoryParams val): Array[USize] val =>
+    """
+    The distinct columns the active cells belong to.
+    """
+    _columns_of(active_cells, params)
+
   fun predicted_columns(params: TemporalMemoryParams val): Array[USize] val =>
     """
     The distinct columns the prediction points at.
     """
+    _columns_of(predictive_cells, params)
+
+  fun anomaly(params: TemporalMemoryParams val): F64 =>
+    """
+    The share of the active columns the memory did not predict.
+
+    This is the streaming anomaly reading: a column that bursts is a prediction
+    that failed, so zero means everything that happened was expected and one
+    means nothing was. It is a property of this step alone; a run of them is
+    what tells you whether something is wrong.
+    """
+    let active = active_columns(params)
+    if active.size() == 0 then return 0.0 end
+    bursting_columns.size().f64() / active.size().f64()
+
+  fun _columns_of(cells: ReadSeq[USize], params: TemporalMemoryParams val): Array[USize] val =>
     let columns: Array[USize] iso = recover iso Array[USize] end
     let seen = Set[USize]
-    for cell in predictive_cells.values() do
+    for cell in cells.values() do
       let column = params.column_of(cell)
       if not seen.contains(column) then
         seen.set(column)

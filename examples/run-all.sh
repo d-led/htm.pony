@@ -5,7 +5,7 @@ set -e
 
 root=$(cd "$(dirname "$0")" && pwd)
 
-for example in first-representation in-process-pooler actor-pooler scalar-encoder image-similarity temporal-memory; do
+for example in first-representation in-process-pooler actor-pooler scalar-encoder image-similarity temporal-memory anomaly-stream; do
     echo "=== $example ==="
     cd "$root/$example"
     corral run -- ponyc --debug -o . .

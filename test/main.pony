@@ -22,3 +22,4 @@ actor Main is TestList
     PoolerTest.tests(test)
     ImageEncoderTest.tests(test)
     TemporalMemoryTest.tests(test)
+    AnomalyTest.tests(test)
