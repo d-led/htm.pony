@@ -63,9 +63,9 @@ representation:    3, 5, 7, 8, 13, 17, 19, 28, 42, 45, 55, 56
 a second pooler with the same seed gives the same representation
 ```
 
-The table is worth reading downwards. A column in the middle of the grid (31)
-reaches 33 inputs and connects to 17 of them; a column at an end (0, 63) reaches
-17 and connects to 9, because its field is clipped by the edge of the input.
+Read the table downwards. A column in the middle of the grid (31) reaches 33
+inputs and connects to 17 of them; a column at an end (0, 63) reaches 17 and
+connects to 9, because its field is clipped by the edge of the input.
 
 Six active input bits produce twelve active columns. The columns are not the
 input positions: column 3 is active because the column wired around input 3

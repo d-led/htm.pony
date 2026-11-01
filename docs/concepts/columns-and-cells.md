@@ -52,7 +52,7 @@ where that happened". The temporal memory needs the second.
 The word appears in HTM writing for the column-as-a-group-of-cells: same thing as
 a column, seen from the cell side.
 
-It is worth knowing that the implementations do not use it as a type:
+The implementations do not use it as a type:
 
 - `htm.java` has no occurrence of `minicolumn` anywhere in its sources;
 - `htm.core` mentions it in one message in `SPRegion.cpp`, and not at all in
