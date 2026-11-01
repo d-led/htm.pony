@@ -1,6 +1,6 @@
 # HTM.Pony
 
-[![Build Status](https://travis-ci.org/d-led/htm.pony.svg?branch=master)](https://travis-ci.org/d-led/htm.pony)
+[![CI](https://github.com/d-led/htm.pony/actions/workflows/ci.yml/badge.svg?branch=master)](https://github.com/d-led/htm.pony/actions/workflows/ci.yml)
 
 - Status: a small experiment, work in progress
 - based off the [Go implementation: https://github.com/htm-community/htm](https://github.com/htm-community/htm) (MIT License)

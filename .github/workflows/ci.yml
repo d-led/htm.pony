@@ -1,0 +1,24 @@
+name: CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+
+jobs:
+  test:
+    name: Build and test
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v7
+
+      # The same image the Dockerfile pins, so CI and a local `docker build`
+      # cannot drift apart.
+      - name: Compile and run the test suite
+        run: |
+          docker run --rm \
+            --volume "$PWD:/src/main" \
+            --workdir /src/main/test \
+            ponylang/ponyc:release \
+            sh -c 'corral run -- ponyc --debug && ./test'
