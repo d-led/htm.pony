@@ -21,21 +21,34 @@ class TemporalColumn
   and on nothing that belongs to another column. That is what lets the same
   computation run over an array of these objects in one process, or over a
   shard of actors holding slices of that array, and give the same answer.
+
+  Nothing here can fail: a column's cells are its own, and its segments are
+  indexed by them. An actor cannot report an error anyway, so the choice is
+  between operations that always answer and a branch that pretends.
   """
   let index: USize
   let _params: TemporalMemoryParams val
   let _segments: Array[Array[TemporalSegment]]
+  let _first_cell: Array[TemporalSegment]
 
   new create(index': USize, params: TemporalMemoryParams val) =>
     index = index'
     _params = params
 
+    let first = Array[TemporalSegment]
     let per_cell = Array[Array[TemporalSegment]](params.cells_per_column)
+
     var offset: USize = 0
     while offset < params.cells_per_column do
-      per_cell.push(Array[TemporalSegment])
+      if offset == 0 then
+        per_cell.push(first)
+      else
+        per_cell.push(Array[TemporalSegment])
+      end
       offset = offset + 1
     end
+
+    _first_cell = first
     _segments = per_cell
 
   fun cells(): Array[USize] =>
@@ -45,7 +58,7 @@ class TemporalColumn
     let result = Array[USize](_params.cells_per_column)
     var offset: USize = 0
     while offset < _params.cells_per_column do
-      result.push((index * _params.cells_per_column) + offset)
+      result.push(_cell_at(offset))
       offset = offset + 1
     end
     result
@@ -57,12 +70,8 @@ class TemporalColumn
     """
     let result: Array[USize] iso = recover iso Array[USize] end
     for (offset, segments) in _segments.pairs() do
-      for segment in segments.values() do
-        if segment.matching(state, _params.connected_threshold) >= _params.activation_threshold
-        then
-          result.push(_cell_at(offset))
-          break
-        end
+      if _enough(segments, state) then
+        result.push(_cell_at(offset))
       end
     end
     consume result
@@ -72,7 +81,7 @@ class TemporalColumn
     previous_cells: ReadSeq[USize],
     active: Bool,
     learn: Bool,
-    when: U64): ColumnStep ?
+    when: U64): ColumnStep
   =>
     """
     Decide this column's cells for the step, and learn from the decision.
@@ -90,11 +99,7 @@ class TemporalColumn
 
       if predicted.size() > 0 then
         activated = predicted
-        if learn then
-          for cell in predicted.values() do
-            _reinforce_cell(cell, previous, previous_cells, when)?
-          end
-        end
+        if learn then _reinforce_predicting(previous, previous_cells, when) end
       else
         burst = true
         let everywhere: Array[USize] iso = recover iso Array[USize] end
@@ -102,13 +107,25 @@ class TemporalColumn
           everywhere.push(cell)
         end
         activated = consume everywhere
-        if learn then _learn_burst(previous, previous_cells, when)? end
+        if learn then _learn_burst(previous, previous_cells, when) end
       end
     end
 
     if learn then _punish(predicting, activated, previous) end
 
     ColumnStep(activated, burst)
+
+  fun _enough(segments: ReadSeq[TemporalSegment], state: ReadSeq[Bool]): Bool =>
+    """
+    Whether any of these segments matches the state well enough to predict.
+    """
+    for segment in segments.values() do
+      if _reaches(segment, state) then return true end
+    end
+    false
+
+  fun _reaches(segment: TemporalSegment box, state: ReadSeq[Bool]): Bool =>
+    segment.matching(state, _params.connected_threshold) >= _params.activation_threshold
 
   fun ref _matching(state: ReadSeq[Bool]): Array[TemporalSegment] =>
     """
@@ -117,8 +134,7 @@ class TemporalColumn
     let result = Array[TemporalSegment]
     for segments in _segments.values() do
       for segment in segments.values() do
-        if segment.matching(state, _params.connected_threshold) >= _params.activation_threshold
-        then
+        if _reaches(segment, state) then
           result.push(segment)
         end
       end
@@ -140,16 +156,21 @@ class TemporalColumn
       end
     end
 
-  fun ref _reinforce_cell(
-    cell: USize,
+  fun ref _reinforce_predicting(
     previous: ReadSeq[Bool],
     previous_cells: ReadSeq[USize],
-    when: U64) ?
+    when: U64)
   =>
-    for segment in _segments(_offset_of(cell))?.values() do
-      if segment.matching(previous, _params.connected_threshold) >= _params.activation_threshold
-      then
-        _reinforce(segment, previous, previous_cells, when)
+    """
+    A cell that was predicted and did activate keeps what it predicted with.
+    """
+    for segments in _segments.values() do
+      if _enough(segments, previous) then
+        for segment in segments.values() do
+          if _reaches(segment, previous) then
+            _reinforce(segment, previous, previous_cells, when)
+          end
+        end
       end
     end
 
@@ -169,7 +190,7 @@ class TemporalColumn
   fun ref _learn_burst(
     previous: ReadSeq[Bool],
     previous_cells: ReadSeq[USize],
-    when: U64) ?
+    when: U64)
   =>
     """
     A column nothing predicted learns the situation that preceded it: on the
@@ -178,13 +199,12 @@ class TemporalColumn
     match _best_segment(previous)
     | let segment: TemporalSegment => _reinforce(segment, previous, previous_cells, when)
     | None =>
-      let segments = _segments(0)?
-      if segments.size() < _params.max_segments_per_cell then
-        let segment = TemporalSegment(cells()(0)?)
+      if _first_cell.size() < _params.max_segments_per_cell then
+        let segment = TemporalSegment(_cell_at(0))
         segment.connect_to(
           previous_cells, _params.initial_permanence, _params.max_synapses)
         segment.last_used = when
-        segments.push(segment)
+        _first_cell.push(segment)
       end
     end
 
@@ -206,9 +226,6 @@ class TemporalColumn
 
   fun _cell_at(offset: USize): USize =>
     (index * _params.cells_per_column) + offset
-
-  fun _offset_of(cell: USize): USize =>
-    cell - (index * _params.cells_per_column)
 
   fun _holds(activated: ReadSeq[USize], cell: USize): Bool =>
     for one in activated.values() do

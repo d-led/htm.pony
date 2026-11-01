@@ -21,5 +21,6 @@ examples/scalar-encoder/scalar-encoder
 examples/first-representation/first-representation
 examples/image-similarity/image-similarity
 examples/temporal-memory/temporal-memory
+examples/temporal-memory-on-actors/temporal-memory-on-actors
 examples/anomaly-stream/anomaly-stream
 examples/anomaly-likelihood/anomaly-likelihood

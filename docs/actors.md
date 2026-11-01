@@ -162,6 +162,38 @@ deciding, so arrival order cannot change the representation.
 `tallied` reports the winners to `represented` in whatever order inhibition
 produced them, which is ascending column order in both modes.
 
+## The temporal memory, on actors
+
+The sequence side runs as actors too, and its shape is different enough to be
+worth stating. `TemporalMemory` holds one `TemporalColumn` per
+column, and a column needs the previous step, its own segments and whether
+it is active - nothing that belongs to another column. That is what makes the
+split honest rather than a copy: the shards own the state.
+
+```pony
+let region = TemporalRegion(
+  params, TemporalShards.build(params, 16))   // bands of sixteen columns
+region.compute(active_columns, true, an_observer)
+```
+
+A step is **two passes**, not one:
+
+1. `activate` - each shard decides the cells its columns activate, learns from
+the decision, and reports which cells fired and which of its columns burst.
+2. `predict` - now that every column has answered, the region has the new
+state; each shard says which of its cells that state makes it expect.
+
+The second pass cannot be folded into the first. A prediction is about a state
+that includes what every other column did, and no shard knows that on its own.
+The region answers an asker only when both passes are back, so a caller never
+sees half a step.
+
+Two behaviours differ from the in-process memory, both because an actor cannot
+refuse a message. A column the memory was not built for is ignored rather than
+refused, and a region with no shards answers every step with nothing active. The
+example prints both paths side by side and compares them step by step; they
+agree, which is the only reason to believe the split.
+
 ## What is missing
 
 - No retry when a shard does not answer, and no way to tell a slow shard from a
@@ -170,3 +202,5 @@ produced them, which is ascending column order in both modes.
 - No supervision: an actor that crashes is gone, and the pooler waits.
 - One pooler is one coordinator. Two poolers over the same shards would each
   start their own rounds.
+- The temporal region inherits the same gaps: no deadline, no retry, no
+  supervision, and one region per set of shards.

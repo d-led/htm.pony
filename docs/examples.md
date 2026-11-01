@@ -1,6 +1,6 @@
 # Examples
 
-Nine programs live under `examples/`, each its own package with its own
+Ten programs live under `examples/`, each its own package with its own
 `main.pony`. They print what they do and exit non-zero when a claim in them
 fails.
 
@@ -168,6 +168,36 @@ between actor messages:
 let wired = Wiring.synapses(config, inputs, random, column)?
 views.push(ColumnView(column, _frozen_synapses(wired)))
 ```
+
+## The temporal memory on actors
+
+`examples/temporal-memory-on-actors/main.pony` runs a sequence of two columns
+through the in-process memory, then through a region of two shards, and compares
+every step.
+
+```
+  active 0 1 2 3        expects -              bursts 0
+  active 4 5 6 7        expects -              bursts 1
+  active 0 1 2 3        expects 4              bursts 0
+  active 4              expects 0              bursts -
+  active 0              expects 4              bursts -
+  active 4              expects 0              bursts -
+
+the same sequence on two shards of two columns
+  step 0 agrees
+  ...
+every step on actors matches the one in process
+```
+
+The first two steps burst: nothing has been learned yet, so every cell in the
+column fires. By the third step column 0 expects column 1, and after that the
+memory alternates between them, activating one cell of a column instead of all
+four.
+
+A step is two passes over the shards - activate, then predict - because a
+prediction is about a state that includes what every column did. [Actors
+explains](actors.md#the-temporal-memory-on-actors) why the second pass cannot
+be folded into the first.
 
 ## Picture similarity
 

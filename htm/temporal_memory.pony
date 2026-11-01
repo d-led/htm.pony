@@ -17,10 +17,10 @@ class TemporalMemory
   Learning is on the segments, not on the columns: a segment that predicted
   correctly has its synapses moved towards the cells that were actually there.
 
-  The state is held one [temporal column](temporal_column.pony) at a time, which
-  is what makes the same computation available as actors: a column needs the
-  previous step and its own segments, and nothing else. This class is the
-  in-process driver over those columns.
+  The state is held one `TemporalColumn` at a time, which is what makes the
+  same computation available as actors: a column needs the previous step and its
+  own segments, and nothing else. This class is the in-process driver over those
+  columns.
   """
   let params: TemporalMemoryParams val
   let _columns: Array[TemporalColumn]
@@ -65,7 +65,7 @@ class TemporalMemory
 
     for column in _columns.values() do
       let answer = column.activate(
-        previous, previous_cells, incoming.contains(column.index), learn, _step)?
+        previous, previous_cells, incoming.contains(column.index), learn, _step)
 
       for cell in answer.cells.values() do
         try active(cell)? = true end

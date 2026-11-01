@@ -27,7 +27,7 @@ columns are wired from a seed and keep those permanences forever.
 | A picture file decoder (PNG, JPEG, BMP, GIF) | Implemented, tested |
 | Permanence learning, duty cycles, boosting | Implemented, tested, in process |
 | Temporal memory: cells, segments, prediction, bursts | Implemented, tested, in process |
-| Temporal memory on actors | Not written |
+| Temporal memory on actors | Implemented, tested |
 | SDR classifier, categories | Implemented, tested |
 | Prediction classifier: the label of the next step | Implemented, tested |
 | Streaming anomaly score, and its likelihood | Implemented, tested |
