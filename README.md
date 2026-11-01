@@ -2,18 +2,31 @@
 
 [![CI](https://github.com/d-led/htm.pony/actions/workflows/ci.yml/badge.svg?branch=master)](https://github.com/d-led/htm.pony/actions/workflows/ci.yml)
 
-- Status: a small experiment, work in progress
+- Status: the spatial pooler works; the temporal memory is not written yet
 - based off the [Go implementation: https://github.com/htm-community/htm](https://github.com/htm-community/htm) (MIT License)
 - no direct dependency on other implementations
 
+## What works
+
+The spatial pooler runs end to end: columns are wired to receptive fields, overlap
+counts the active inputs a column is connected to, and inhibition chooses which
+columns represent the input. Global and local inhibition are both implemented, and
+wiring takes a seed, so a seed and an input always give the same representation.
+
+The same computation also runs on messages. Column shards push their votes into a
+ballot box, which closes a round when every vote has arrived, when a quorum has
+arrived, or when a deadline expires. A pooler coordinator inhibits the tally and
+pushes the representation back to whoever asked.
+
+Not implemented yet: permanence learning, duty cycles and boosting; the temporal
+memory; the CLA temporal pooler.
+
 ## Rough Plan
 
-- Start with porting the [Go version](https://github.com/htm-community/htm) to Pony using classes at first
-- Once an opportunity arises to parallelize, start experimenting with actors & benchmark
+- Port the [Go version](https://github.com/htm-community/htm) to Pony
+- Parallelize where the computation allows it, with actors carrying the work
 - When the Temporal Pooler is ported, align the implementation with the latest NuPIC/htm.java details
-- No attempt at proactive refactoring is made at the moment. When a rough [working](https://twitter.com/kentbeck/status/459707016387108864) version is made, it might make sense to reimplement whole classes/actors
 - Error handling is ad hoc currently, and will need to be designed once there is a high level executable that uses the library. Trade-offs: [errors, logging & partial functions](https://tutorial.ponylang.io/expressions/exceptions.html) vs explicit [union return types](https://tutorial.ponylang.io/types/type-expressions.html)
-- continue
 
 ## Contributing
 

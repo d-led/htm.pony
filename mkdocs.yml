@@ -1,0 +1,9 @@
+site_name: HTM.Pony
+site_description: Hierarchical Temporal Memory in Pony
+site_url: https://d-led.github.io/htm.pony/
+repo_url: https://github.com/d-led/htm.pony
+theme:
+  name: material
+nav:
+  - Home: index.md
+  - Spatial pooler: spatial-pooler.md
