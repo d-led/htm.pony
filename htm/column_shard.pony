@@ -20,6 +20,12 @@ actor ColumnShard
   column; a shard costs that once for the whole band and reports its votes in a
   single message. The quorum still counts votes, so grouping columns does not
   change what the ballot box does.
+
+  It is inference-only, and not by preference: it is handed frozen synapses
+  (`ColumnView`), so there is nothing here it could change. Handing it the
+  columns themselves - the way `TemporalColumnShard` is handed its own - is what
+  would make learning available on actors. `ColumnLearning` already holds the
+  arithmetic for it; what is missing is the ownership.
   """
   let _columns: Array[ColumnView] val
   let _threshold: F64
