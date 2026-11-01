@@ -31,7 +31,8 @@ columns are wired from a seed and keep those permanences forever.
 | SDR classifier, categories | Implemented, tested |
 | Prediction classifier: the label of the next step | Implemented, tested |
 | Streaming anomaly score, and its likelihood | Implemented, tested |
-| Category, RDSE and graph encoders | Not written |
+| Category encoder | Implemented, tested |
+| RDSE and graph encoders | Not written |
 
 The [module reference](reference/modules.md) lists every file, type and public
 function, including the parts that do nothing yet. Two concept pages describe what

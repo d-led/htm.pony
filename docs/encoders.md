@@ -151,11 +151,37 @@ so the date encoder can call it blindly.
 
 Calling `encode` on it is a programming error, and the log line says so.
 
+## Category encoder
+
+`CategoryEncoder` is for labels that have no order between them. Each category
+owns three consecutive positions of the output by default, and no two
+categories share one:
+
+```pony
+let encoder = CategoryEncoder(recover val ["north"; "south"; "east"; "west"] end)?
+let encoded = encoder.encode("east")   // bits 6, 7 and 8 of twelve
+```
+
+The output is `bits * categories` wide, so a population that grows with the
+number of labels is the price of not knowing them in advance. Unlike the
+[scalar encoder](#scalar-encoder), neighbouring categories do not slide into
+each other: there is nothing between two categories for a slide to happen in,
+and two different categories must have nothing in common.
+
+An unknown category is `EncodingFailed`.
+
+nupic's category encoder keeps its first block for `<UNKNOWN>` and encodes
+anything it has not seen there. This one refuses instead - a stream where
+unseen labels quietly become a real block is a stream whose labels stopped
+being checked - and that is the only difference from the reference.
+
+`decode` reads a category back by finding the busiest block, which is what
+still works after a pooler has been at the representation.
+
 ## Not implemented
 
 | Encoder | Would need |
 | --- | --- |
-| Category | one random bit set per category, kept stable across runs |
 | RDSE | a random distributed encoding for a range, as in `htm.core` |
 | Graph | a decision first: no implementation in the reference repositories defines one |
 

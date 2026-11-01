@@ -29,3 +29,4 @@ actor Main is TestList
     SpatialPoolerLearningTest.tests(test)
     AnomalyLikelihoodTest.tests(test)
     TemporalRegionTest.tests(test)
+    CategoryEncoderTest.tests(test)
