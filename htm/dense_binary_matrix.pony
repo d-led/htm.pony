@@ -137,27 +137,28 @@ class DenseBinaryMatrix
 
     // looks like a matrix product with a vector + sum of the true entries
     // needs a better name, perhaps
-    fun row_and_sum(row_to_sum: Array[Bool]) : Array[USize] =>
-        var result = Array[USize].init(0, height)
+    fun row_and_sum(row_to_sum: ReadSeq[Bool]) : Array[USize] ? =>
+        """
+        For every row, how many of its true entries are also true in the input.
+        The input has to describe the whole width; anything shorter would leave
+        part of the matrix unread, so it is an error rather than a quiet zero.
+        """
+        if row_to_sum.size() != width then error end
 
-        if row_to_sum.size() > (width - 1) then
-            return result            
-        end
+        let result = Array[USize].init(0, height)
 
-        try
-            var i: USize = 0
-            let size = entries.size()
+        var i: USize = 0
+        let size = entries.size()
 
-            while i < size do
-                if entries(i) ? then
-                    (var row, var col) = _split_index(i)
-                    if row_to_sum(col)? then
-                        result(row)? = result(row)? + 1
-                    end
+        while i < size do
+            if entries(i) ? then
+                (let row, let col) = _split_index(i)
+                if row_to_sum(col)? then
+                    result(row)? = result(row)? + 1
                 end
-                
-                i = i + 1
             end
+
+            i = i + 1
         end
 
         result

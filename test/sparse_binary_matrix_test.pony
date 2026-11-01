@@ -12,6 +12,7 @@ class SparseBinaryMatrixTest is TestList
     test(_SparseRowReplaceByIndices)
     test(_SparseGetRowIndices)
     test(_SparseGetRowAndSum)
+    test(_SparseRowAndSumNeedsWholeWidth)
     test(_SparseNewFromDense)
 
 class iso _SparseGetSet is UnitTest
@@ -120,19 +121,29 @@ class iso _SparseGetRowIndices is UnitTest
 class iso _SparseGetRowAndSum is UnitTest
   fun name(): String => "getting specific sums of row values"
 
-  fun apply(h: TestHelper) =>
+  fun apply(h: TestHelper) ? =>
     let sm = SparseBinaryMatrix(10, 10)
 
-    sm.set_row_from_dense(0, [true; false; true; true; false])
-    sm.set_row_from_dense(1, [false; false; false; true; false])
-    sm.set_row_from_dense(2, [false; false; false; false; false])
-    sm.set_row_from_dense(3, [true; true; true; true; true])
+    let input = [true; false; true; true; false; false; false; false; false; false]
 
-    let rows_to_sum = [true; false; true; true; false]
-    let result = sm.row_and_sum(rows_to_sum)
+    sm.set_row_from_dense(0, [true; false; true; true; false; false; false; false; false; false])
+    sm.set_row_from_dense(1, [false; false; false; true; false; false; false; false; false; false])
+    sm.set_row_from_dense(2, [false; false; false; false; false; false; false; false; false; false])
+    sm.set_row_from_dense(3, [true; true; true; true; true; false; false; false; false; false])
+
+    let result = sm.row_and_sum(input)?
 
     // result array has the dimension of the matrix height
     h.assert_array_eq[USize]([3; 1; 0; 3; /* 0s after last true input*/ 0;0;0;0;0;0], result)
+
+class iso _SparseRowAndSumNeedsWholeWidth is UnitTest
+  fun name(): String => "a row sum needs an input as wide as the matrix"
+
+  fun apply(h: TestHelper) =>
+    let sm = SparseBinaryMatrix(10, 10)
+
+    // a short input would leave part of the matrix unread
+    h.assert_error({() ? => sm.row_and_sum([true; false])? })
 
 class _SparseNewFromDense is UnitTest
   fun name(): String => "construction from a dense 2d array"

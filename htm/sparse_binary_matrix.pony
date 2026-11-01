@@ -163,26 +163,26 @@ class SparseBinaryMatrix
             SetFailed
         end
 
-    fun row_and_sum(row_to_sum: Array[Bool]) : Array[USize] =>
-        var result = Array[USize].init(0, height)
+    fun row_and_sum(row_to_sum: ReadSeq[Bool]) : Array[USize] ? =>
+        """
+        For every row, how many of its stored entries are also true in the input.
+        The input has to describe the whole width; anything shorter would leave
+        part of the matrix unread, so it is an error rather than a quiet zero.
+        """
+        if row_to_sum.size() != width then error end
 
-        if row_to_sum.size() > (width - 1) then
-            Debug.err("SparseBinaryMatrix.row_and_sum: width mismatch: row_to_sum/width: " + row_to_sum.size().string() + "/" + width.string())
-            return result            
-        end
+        let result = Array[USize].init(0, height)
 
-        try
-            var i: USize = 0
-            let size = entries.size()
+        var i: USize = 0
+        let size = entries.size()
 
-            while i < size do
-                let entry = entries(i)?
-                if row_to_sum(entry.col) ? then
-                    result(entry.row)? = result(entry.row)? + 1
-                end
-                
-                i = i + 1
+        while i < size do
+            let entry = entries(i)?
+            if row_to_sum(entry.col)? then
+                result(entry.row)? = result(entry.row)? + 1
             end
+
+            i = i + 1
         end
 
         result
