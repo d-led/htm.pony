@@ -26,3 +26,4 @@ actor Main is TestList
     SDRClassifierTest.tests(test)
     PredictionClassifierTest.tests(test)
     StbDecoderTest.tests(test)
+    SpatialPoolerLearningTest.tests(test)

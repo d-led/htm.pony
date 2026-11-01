@@ -8,6 +8,11 @@ class val SpatialPoolerConfig
 
   Densities are fractions, not counts: the pooler asks "how much of an area may
   be active" so that the same setting keeps its meaning when the radius grows.
+
+  The learning settings are the ones the Go reference uses. A permanence moves by
+  `permanence_increment` when its input is on and by `permanence_decrement` when
+  it is off, which is deliberately lopsided: a column forgets slowly and learns
+  quickly.
   """
   let column_dimensions: Array[USize] val
   let input_dimensions: Array[USize] val
@@ -19,6 +24,12 @@ class val SpatialPoolerConfig
   let connection_threshold: F64
   let permanence_increment: F64
   let inhibition_radius: USize
+  let permanence_decrement: F64
+  let stimulus_threshold: USize
+  let duty_cycle_period: USize
+  let max_boost: F64
+  let min_overlap_duty_cycle: F64
+  let min_active_duty_cycle: F64
 
   new val create(
     column_dimensions': Array[USize] val,
@@ -30,7 +41,13 @@ class val SpatialPoolerConfig
     potential_pct': F64 = 0.5,
     connection_threshold': F64 = 0.1,
     permanence_increment': F64 = 0.1,
-    inhibition_radius': USize = 1)
+    inhibition_radius': USize = 1,
+    permanence_decrement': F64 = 0.01,
+    stimulus_threshold': USize = 0,
+    duty_cycle_period': USize = 1000,
+    max_boost': F64 = 10.0,
+    min_overlap_duty_cycle': F64 = 0.001,
+    min_active_duty_cycle': F64 = 0.001)
   =>
     column_dimensions = column_dimensions'
     input_dimensions = input_dimensions'
@@ -42,6 +59,25 @@ class val SpatialPoolerConfig
     connection_threshold = connection_threshold'
     permanence_increment = permanence_increment'
     inhibition_radius = inhibition_radius'
+    permanence_decrement = permanence_decrement'
+    stimulus_threshold = stimulus_threshold'
+    duty_cycle_period = duty_cycle_period'
+    max_boost = max_boost'
+    min_overlap_duty_cycle = min_overlap_duty_cycle'
+    min_active_duty_cycle = min_active_duty_cycle'
+
+  fun trim_threshold(): F64 =>
+    """
+    The permanence below which a synapse is no longer worth keeping: half a step
+    of learning, so one round of weakening can drop it.
+    """
+    permanence_increment / 2.0
+
+  fun raise_stride(): F64 =>
+    """
+    How much a column raises its permanences when it is too weak to be heard.
+    """
+    connection_threshold / 10.0
 
   fun num_columns(): USize => Dimensions.product(column_dimensions)
 

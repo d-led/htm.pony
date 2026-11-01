@@ -1,6 +1,6 @@
 # Examples
 
-Four programs live under `examples/`, each its own package with its own
+Eight programs live under `examples/`, each its own package with its own
 `main.pony`. They print what they do and exit non-zero when a claim in them
 fails.
 
@@ -81,6 +81,54 @@ let representation = pooler.compute(input)?
 
 `compute` raises when the input is not as wide as `config.num_inputs()`. An
 input that no column matches is not an error; it gives an empty representation.
+
+`compute(input, true)` learns from the round. The next example shows what that
+does.
+
+## What learning changes
+
+`examples/pooler-learning/main.pony` builds two poolers from the same seed, one
+that learns and one that only watches, and feeds both the same pattern for sixty
+rounds.
+
+```
+the pattern is represented by columns 0, 4, 10, 20, 34, 44, 54
+
+column 0 before learning:
+  input 3  on   permanence 0.12
+  input 12 off  permanence 0.12
+  input 14 on   permanence 0.12
+  input 8  off  permanence 0.06
+  input 9  on   permanence 0.12
+  input 1  off  permanence 0.11
+
+column 0 after learning:
+  input 3  on   permanence 1
+  input 14 on   permanence 1
+  input 9  on   permanence 1
+3 of 9 connections grew towards the input
+
+8 columns are being helped towards winning
+  column 1   boost 10
+  column 8   boost 10
+  ...
+
+the pooler that only watched is unchanged: inferences do not learn
+```
+
+Read the two column listings together. Before learning, column 0 believes in
+three inputs that were on and three that were off, all at about the connection
+threshold. After sixty rounds, the three that were on are at a permanence of one
+and the three that were off have been let go of: their permanences fell below
+half a learning step and were trimmed to nothing. The column has decided what it
+is looking for.
+
+Eight of the sixty-four columns are at the maximum boost, which means they never
+won and are being pushed harder so that they can. That is the mechanism that
+stops the population collapsing onto whichever columns happened to win first.
+
+The pooler that only watched is bit for bit unchanged, which is the property the
+last section checks: an inference does not learn.
 
 ## The same computation on actors
 

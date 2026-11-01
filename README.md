@@ -55,6 +55,9 @@ memory; the CLA temporal pooler.
   not written
 - Grid topology, column wiring, overlap, global and local inhibition
 - Spatial pooler, in process and on actors
+- Permanence learning in process: winners move towards what they won with,
+  starving columns are raised and boosted, activity is remembered; not yet on
+  actors
 - Picture encoder: difference hash over a grayscale image, turned into
   overlapping representations, and reading PNG, JPEG, BMP and GIF through
   stb_image, so nothing has to be decoded by hand
@@ -65,7 +68,7 @@ memory; the CLA temporal pooler.
 - Streaming anomaly detection: the share of active columns that had to burst
 - Runnable examples under `examples/`, described in the
   [documentation](https://d-led.github.io/htm.pony/examples/)
-- Not started: permanence learning, duty cycles, boosting, the temporal memory on
+- Not started: duty cycles and boosting on actors, the temporal memory on
   actors, the category and RDSE encoders, the benchmarks, smoothing the anomaly
   score into a likelihood
 

@@ -25,7 +25,7 @@ columns are wired from a seed and keep those permanences forever.
 | Actor layer: shards, ballot box, pooler | Implemented, tested |
 | Image fingerprint and encoder, from pixels | Implemented, tested |
 | A picture file decoder (PNG, JPEG, BMP, GIF) | Implemented, tested |
-| Permanence learning, duty cycles, boosting | Not written |
+| Permanence learning, duty cycles, boosting | Implemented, tested, in process |
 | Temporal memory: cells, segments, prediction, bursts | Implemented, tested, in process |
 | Temporal memory on actors | Not written |
 | SDR classifier, categories | Implemented, tested |

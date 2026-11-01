@@ -35,3 +35,15 @@ primitive Synapses
       if synapse.input >= width then return false end
     end
     true
+
+  fun connected(synapses: ReadSeq[Synapse], threshold: F64): USize =>
+    """
+    How many of a column's synapses are strong enough to count.
+    """
+    var count: USize = 0
+    for synapse in synapses.values() do
+      if synapse.connected(threshold) then
+        count = count + 1
+      end
+    end
+    count

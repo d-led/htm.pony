@@ -5,8 +5,9 @@ usually comes next". It takes the active columns of one step, compares them with
 what it remembers about the step before, and says which cells it expects to be
 active at the next one.
 
-It is implemented and tested in process. It does not run as actors yet, and the
-spatial pooler still does not learn, so the columns it is given never change.
+It is implemented and tested in process. It does not run as actors yet, and it
+is given the columns of a [spatial pooler](../spatial-pooler.md#learning) that
+learns its permanences in process rather than on actors.
 
 ## Why it needs cells
 
@@ -81,4 +82,6 @@ Zero means everything that happened was expected. One means nothing was.
 - **Segment reuse over long runs.** A column that keeps bursting and never
   matches grows a new segment until it hits `max_segments_per_cell`, and then
   stops learning.
-- **The spatial pooler's own learning.** Permanences there still never change.
+- **A measured improvement from learning.** The spatial pooler now moves its
+  permanences, but nothing here shows that a pooler trained alongside the memory
+  represents a sequence better than a wired one. That benchmark does not exist.

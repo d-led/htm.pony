@@ -1,8 +1,9 @@
 # Spatial pooler
 
 The spatial pooler turns an input into a sparse representation: the columns that
-recognise it. It does not learn yet. What it does is wire columns to the input,
-count what they recognise, and hold a competition.
+recognise it. It wires columns to the input, counts what they recognise, holds a
+competition, and - when told to learn - moves its permanences in reaction to who
+won.
 
 Four stages:
 
@@ -11,6 +12,10 @@ Four stages:
 2. **Overlap**: count the active inputs a column's connected synapses see.
 3. **Inhibit**: keep the columns that stand out and silence the rest.
 4. **Answer**: the survivors are the representation.
+
+A round that learns adds a fifth: the winners move their permanences, the
+starving columns are raised and boosted, and activity is remembered. See
+[learning](#learning).
 
 ## Configuration
 
@@ -27,8 +32,14 @@ except the two shapes has a default.
 | `potential_radius` | `16` | how far from its centre a column may reach in the input |
 | `potential_pct` | `0.5` | the share of the reachable inputs a column actually connects to |
 | `connection_threshold` | `0.1` | the permanence at which a synapse counts as connected |
-| `permanence_increment` | `0.1` | how far the initial permanences spread above the threshold |
+| `permanence_increment` | `0.1` | how far a permanence grows in a round where its input is on, and how far the seed spreads above the threshold |
 | `inhibition_radius` | `1` | how far inhibition looks, in columns |
+| `permanence_decrement` | `0.01` | how far a permanence shrinks in a round where its input is off |
+| `stimulus_threshold` | `0` | the connections a column needs before its claim counts at all |
+| `duty_cycle_period` | `1000` | the rounds the moving averages of activity are kept over |
+| `max_boost` | `10.0` | the most a column that never wins is multiplied by |
+| `min_overlap_duty_cycle` | `0.001` | the share of the busiest overlap rate below which a column is raised |
+| `min_active_duty_cycle` | `0.001` | the share of the busiest win rate below which a column is boosted |
 
 ```pony
 let config = SpatialPoolerConfig([8; 8], [64], false, 2.0)
@@ -211,16 +222,90 @@ grouped into shards and a coordinator collecting their votes. That path computes
 the same representation and its example checks it against the in-process one.
 [Actors](actors.md) describes it.
 
+A shard holds a frozen copy of its columns' synapses, which is what an
+inference round needs. Learning is not available on that path: inhibition
+decides the winner only after every overlap is known, and learning is the
+winners' reaction to that verdict, so there is exactly one place that can make
+the decision, and it is not any of the shards.
+
+## Learning
+
+A round that learns moves the pooler forward before the next round:
+
+```pony
+pooler.compute(input, true)?     // learn
+pooler.compute(input, false)?    // look, change nothing
+```
+
+Four things happen, in the order the Go reference does them.
+
+**The winners move.** Each winning column strengthens the synapses whose input
+was on, by `permanence_increment`, and weakens every other one by
+`permanence_decrement`. The two are deliberately lopsided - a tenth against a
+hundredth by default - so a column learns quickly and forgets slowly. A
+permanence is a belief between nought and one and never leaves that range. Once
+weakened below half a learning step, a connection is let go of: its permanence
+becomes zero, and it stops contributing to the overlap without the column
+forgetting where it used to look.
+
+**What stays silent is raised.** A column whose overlap is far below what its
+neighbourhood manages has its whole receptive field raised by a tenth of the
+connection threshold. Without that, a column that never wins can only weaken,
+and a column that never wins can never learn.
+
+**Activity is remembered.** Two moving averages per column, over
+`duty_cycle_period` rounds: how often it overlapped at all, and how often it won.
+
+**Columns that keep losing are boosted.** A column whose activity is below a
+fraction (`min_active_duty_cycle`) of the busiest column is boosted up to
+`max_boost`, and the boost multiplies its overlap before inhibition. One means
+nothing is being done; ten means the column is helped strongly. This is what
+keeps a population from collapsing onto the few columns that happened to win
+first.
+
+```pony
+pooler.boost_factor(column)?    // 1.0: being heard. above 1.0: being helped
+```
+
+Two consequences are worth knowing before trusting this.
+
+A boost is a multiplier on an overlap count, so a column with a weak claim times
+ten can beat a column with a strong claim. Feed the same input for long enough
+and the representation will start to move: the columns that never won are
+helped until they do. That is what the reference does, and it is why the pooler
+wants a stream that varies rather than one repeated pattern.
+
+Learning also does not make a trained pooler measurably better at recognising a
+*damaged* version of a learned pattern than an untrained one, at least not at
+the population sizes exercised here. What it demonstrably does - and what the
+tests check - is move permanences towards what a column won with, raise the
+columns that are starving, and remember who wins.
+
+### What is not ported
+
+Two pieces of the reference are deliberately absent.
+
+`updateInhibitionRadius` re-derives the inhibition radius every fiftieth round
+from the average span each column connects over. Here the radius is what the
+configuration says, because it is also the radius `local` inhibition searches a
+real neighbourhood with; deriving it would silently change which columns compete
+with which. The radius therefore stays put.
+
+`stripNeverLearned` removes columns that have never won from an inference
+answer. It is not ported because it makes a freshly built pooler answer
+*nothing* - nothing has been learned yet - which would break the
+[inference-only path](examples.md#the-spatial-pooler-in-one-process) that this
+port ships. What it protects against is a column that never won winning by
+accident; the boost mechanism is the gentler half of the same idea.
+
+Learning on actors, and the stimulus threshold beyond zero, are the other
+differences. The threshold exists and is honoured when a column is wired, but
+the default of zero means it does nothing.
+
 ## What is not here
 
-Learning. The permanences never change after wiring, so a column recognises the
-inputs it was born connected to and nothing else.
-
-That means the parts of the Go implementation called `adaptSynapses`,
-`updateDutyCycles`, `bumpUpWeakColumns`, `updateBoostFactors` and
-`updateInhibitionRadius` have no counterpart here. Boosting in particular exists
-to give unused columns a chance; without learning, an unused column has nothing
-to catch up on.
-
-Learning is also what the [temporal memory](concepts/temporal-memory.md)
-would depend on, so it is the next thing to build.
+A temporal memory can now be put on top of the pooler, and reading this page's
+permanences is how you would see what it learned. What is missing is the rest of
+the representation side - the category and RDSE encoders - and any measurement of
+whether a trained pooler is better than a wired one at a task; that is the
+benchmark that does not exist yet.
