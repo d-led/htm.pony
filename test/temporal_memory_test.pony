@@ -21,6 +21,13 @@ primitive TemporalFixture
   fun memory(): TemporalMemory =>
     TemporalMemory(params())
 
+  fun swift_memory(): TemporalMemory =>
+    """
+    The same, but a synapse moves a long way when it is punished, so a test can
+    reach the outcome in a few steps.
+    """
+    TemporalMemory(TemporalMemoryParams(4, 4, 1, 0.5, 0.5, 0.1, 0.2, 8, 4))
+
   fun teaches(target: TemporalMemory, first: USize, second: USize) ? =>
     """
     Show one column, then another, twice, so the pair is learned.
@@ -53,6 +60,7 @@ class TemporalMemoryTest is TestList
     test(_ALearnedPairIsPredicted)
     test(_APredictedColumnDoesNotBurst)
     test(_AnUnrelatedColumnIsNotPredicted)
+    test(_ASegmentThatPredictsWronglyIsForgotten)
     test(_AColumnOutsideTheMemoryIsRefused)
 
 class iso _AFreshMemoryPredictsNothing is UnitTest
@@ -113,6 +121,38 @@ class iso _AnUnrelatedColumnIsNotPredicted is UnitTest
     h.assert_true(
       not _contains(predicted, 2),
       "column 2 was never taught and should not be predicted")
+
+  fun _contains(values: ReadSeq[USize], wanted: USize): Bool =>
+    for value in values.values() do
+      if value == wanted then return true end
+    end
+    false
+
+class iso _ASegmentThatPredictsWronglyIsForgotten is UnitTest
+  fun name(): String => "a segment that keeps predicting wrongly is forgotten"
+
+  fun apply(h: TestHelper) ? =>
+    let memory = TemporalFixture.swift_memory()
+    TemporalFixture.teaches(memory, 0, 1)?
+
+    let after_first = memory.compute([0], false)?
+    h.assert_true(
+      _contains(TemporalFixture.columns_of(after_first.predictive_cells, memory.params), 1),
+      "column 0 should predict column 1 before the sequence changes")
+
+    // column 0 is followed by column 2 from now on, so the segment that expected
+    // column 1 is wrong every time it fires
+    var round: USize = 0
+    while round < 6 do
+      memory.compute([0], true)?
+      memory.compute([2], true)?
+      round = round + 1
+    end
+
+    let predicted = TemporalFixture.columns_of(memory.compute([0], false)?.predictive_cells, memory.params)
+    h.assert_true(
+      not _contains(predicted, 1),
+      "a segment that never comes true should stop predicting column 1")
 
   fun _contains(values: ReadSeq[USize], wanted: USize): Bool =>
     for value in values.values() do

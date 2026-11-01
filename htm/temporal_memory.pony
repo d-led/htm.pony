@@ -48,6 +48,7 @@ class TemporalMemory
     let active = Array[Bool].init(false, cells())
     let bursting: Array[USize] iso = recover iso Array[USize] end
     let predicted_now = _predictive(_previous)
+    let predicted_segments = _active_segments(_previous)
 
     for column in active_columns.values() do
       if column >= params.columns then error end
@@ -72,9 +73,42 @@ class TemporalMemory
       end
     end
 
+    if learn then _punish_wrong(predicted_segments, active) end
+
     _previous = active
 
     TemporalOutput(_indexes(active), _indexes(_predictive(active)), consume bursting)
+
+  fun ref _punish_wrong(segments: Array[TemporalSegment], active: ReadSeq[Bool]) =>
+    """
+    A segment that was active enough to predict, on a cell that then did not
+    become active, was wrong. Its synapses towards the cells that were active are
+    moved away from connection.
+    """
+    for segment in segments.values() do
+      try
+        if not active(segment.owner)? then
+          segment.weaken(_previous, params.permanence_decrement)
+          segment.prune()
+        end
+      end
+    end
+
+  fun ref _active_segments(state: ReadSeq[Bool]): Array[TemporalSegment] =>
+    let result = Array[TemporalSegment]
+    var cell: USize = 0
+    while cell < cells() do
+      try
+        for segment in _segments(cell)?.values() do
+          if segment.matching(state, params.connected_threshold) >= params.activation_threshold
+          then
+            result.push(segment)
+          end
+        end
+      end
+      cell = cell + 1
+    end
+    result
 
   fun _predictive(state: ReadSeq[Bool]): Array[Bool] =>
     """

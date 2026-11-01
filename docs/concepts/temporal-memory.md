@@ -38,6 +38,12 @@ A **burst** is a column that was not predicted. It activates all of its cells,
 because the memory does not know which one applies, and it learns a segment for
 the situation that preceded it.
 
+A segment that was active and whose cell then did not become active was wrong,
+and its synapses towards the cells that were active move away from connection.
+Without that, a segment keeps the synapses it was born with forever, including
+the ones pointing at cells that never fire again, and those hold its match count
+down.
+
 ## Using it
 
 ```pony
@@ -72,8 +78,6 @@ Zero means everything that happened was expected. One means nothing was.
 
 - **Actors.** The memory is a plain object. Running it on actors, the way the
   spatial pooler already does, has not been done.
-- **Punishing wrong segments.** Segments that matched and predicted wrongly are
-  not weakened; only segments that were right are reinforced.
 - **Segment reuse over long runs.** A column that keeps bursting and never
   matches grows a new segment until it hits `max_segments_per_cell`, and then
   stops learning.

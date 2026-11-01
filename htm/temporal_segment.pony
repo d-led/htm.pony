@@ -45,6 +45,21 @@ class TemporalSegment
       end
     end
 
+  fun ref weaken(previous: ReadSeq[Bool], decrement: F64) =>
+    """
+    Move towards disconnection every synapse that reaches a cell which was
+    active when this segment predicted and did not become active afterwards.
+
+    Without this a segment keeps the synapses it was born with forever, including
+    the ones pointing at cells that never fire again, and the orphaned synapses
+    hold its match count down.
+    """
+    for synapse in synapses.values() do
+      if _was_active(previous, synapse.source) then
+        synapse.permanence = _clipped(synapse.permanence - decrement)
+      end
+    end
+
   fun ref connect_to(cells: ReadSeq[USize], permanence: F64, limit: USize) =>
     """
     Grow synapses to cells this segment does not already reach, up to `limit`.
