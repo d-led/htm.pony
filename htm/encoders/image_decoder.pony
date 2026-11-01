@@ -14,4 +14,4 @@ interface ImageDecoder
   before reducing to brightness, because an image with an alpha channel is two
   pictures at once otherwise.
   """
-  fun decode(bytes: ReadSeq[U8]): (GrayscaleImage val | DecodeFailed)
+  fun decode(bytes: Array[U8] val): (GrayscaleImage val | DecodeFailed)

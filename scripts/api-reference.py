@@ -24,7 +24,12 @@ OUT = ROOT / "docs" / "reference" / "api"
 STDLIB = "https://stdlib.ponylang.io"
 
 # package directory, and the prefix pony-doc gives its pages
-PACKAGES = [("htm", "htm"), ("htm/encoders", "encoders"), ("htm/util", "util")]
+PACKAGES = [
+    ("htm", "htm"),
+    ("htm/encoders", "encoders"),
+    ("htm/encoders/stb", "stb"),
+    ("htm/util", "util"),
+]
 
 # pony-doc prefixes a package it reached as a dependency with a dash, and joins
 # the path with dashes: deps/sagittarius/sagittarius becomes -deps-sagittarius-sagittarius
@@ -35,6 +40,10 @@ OWNERS = [
     (re.compile(r"^htm-(.+)$"), "htm"),
     (re.compile(r"^encoders-(.+)$"), "encoders"),
     (re.compile(r"^util-(.+)$"), "util"),
+    # The stb package imports its parent, and pony-doc names those pages after the
+    # relative import: they belong to encoders, which has already written them.
+    (re.compile(r"^stb-\.\.-(.+)$"), "encoders"),
+    (re.compile(r"^stb-(.+)$"), "stb"),
 ]
 
 LINK = re.compile(r"\]\(([^)\s]+)\)")
@@ -79,6 +88,7 @@ def source_name(path):
         "-deps-sagittarius-sagittarius": "sagittarius",
         "htm": "htm",
         "encoders": "encoders",
+        "stb": "stb",
         "util": "util",
     }.get(package)
     if renamed is None:
@@ -178,6 +188,7 @@ def drop_dangling_sources():
 LABELS = {
     "htm": "htm — the core package",
     "encoders": "htm/encoders",
+    "stb": "htm/encoders/stb",
     "util": "htm/util",
     "sagittarius": "sagittarius — a dependency",
 }

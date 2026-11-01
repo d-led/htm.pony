@@ -69,13 +69,41 @@ fingerprint bits and survives as 9 shared columns out of 23.
   `DifferenceHash` without the encoder noticing, because the encoder only ever
   sees an `ImageFingerprint`.
 - **Rotation**, for the same reason.
-- **Reading a file.** Pony has no image decoder, so `ImageDecoder` is an
-  interface with no implementation yet. Everything above it works on a
-  `GrayscaleImage`, which the caller supplies.
 
-Anything that decodes pixels — PNG, JPEG, or an FFI call to a C decoder — plugs
-in at that one interface. A decoder is also where transparency has to be
-composited against a background, before the reduction to brightness.
+## Reading a file
+
+`StbDecoder` reads PNG, JPEG, BMP and GIF through
+[stb_image](https://github.com/nothings/stb), a single public-domain header. It
+is the only implementation of `ImageDecoder`, and the only FFI call in the
+library:
+
+```pony
+match StbDecoder.decode(bytes)
+| let image: GrayscaleImage val => encoder.encode(image)?
+| DecodeFailed => /* not a picture, or a broken one */
+end
+```
+
+The bytes are asked of stb as one channel per pixel, so the reduction to
+brightness happens in C next to the decoder rather than in Pony. stb allocates
+the pixels; they are copied into a Pony array and freed on every path, including
+the ones that reject the file.
+
+Two consequences of going through stb are worth knowing. An image with an alpha
+channel loses it: transparency is not composited against a background, so a
+transparent region contributes whatever colour it was stored with. And a format
+stb does not know — TIFF, WebP, AVIF — is refused rather than guessed at.
+
+The header is compiled in with `STBI_NO_STDIO` and `STBI_ONLY_PNG`,
+`STBI_ONLY_JPEG`, `STBI_ONLY_BMP`, `STBI_ONLY_GIF`, so the binary carries four
+decoders and no file handling of its own.
+
+Everything above the decoder works on a `GrayscaleImage` and knows nothing about
+file formats, which is why the fingerprint, the resize, the hash and the mapping
+to positions are all tested on pixel grids built in code. The decoder is tested
+against a PNG written by hand — eighteen by sixteen pixels, in `test/fixtures/` —
+and asserts both the pixels and that the decoded picture hashes the same as the
+same picture built in code.
 
 ## Why not an embedding
 

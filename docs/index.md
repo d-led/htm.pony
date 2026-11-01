@@ -22,7 +22,7 @@ not written yet.
 | Spatial pooler, in process | Implemented, tested |
 | Actor layer: shards, ballot box, pooler | Implemented, tested |
 | Image fingerprint and encoder, from pixels | Implemented, tested |
-| A picture file decoder | Not written; the seam it plugs into exists |
+| A picture file decoder (PNG, JPEG, BMP, GIF) | Implemented, tested |
 | Permanence learning, duty cycles, boosting | Not written |
 | Temporal memory: cells, segments, prediction, bursts | Implemented, tested, in process |
 | Temporal memory on actors | Not written |

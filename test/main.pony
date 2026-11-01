@@ -25,3 +25,4 @@ actor Main is TestList
     AnomalyTest.tests(test)
     SDRClassifierTest.tests(test)
     PredictionClassifierTest.tests(test)
+    StbDecoderTest.tests(test)

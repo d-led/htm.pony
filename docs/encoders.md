@@ -166,6 +166,8 @@ something similar give overlapping ones. It is described on its own page in
 [Picture encoders](image-encoder.md) and shown end to end in
 [the example](examples.md#picture-similarity).
 
-The part that is missing is reading a file. Pony has no image decoder, so
-`ImageDecoder` is an interface with no implementation yet; everything above it
-works on a `GrayscaleImage` that the caller supplies.
+The part that is missing is reading a file — Pony has no image decoder — so it is
+supplied by one FFI call to [stb_image](https://github.com/nothings/stb):
+`StbDecoder` reads PNG, JPEG, BMP and GIF into a `GrayscaleImage`, and the rest
+of the page above it stays unaware of file formats. See
+[reading a file](image-encoder.md#reading-a-file).
