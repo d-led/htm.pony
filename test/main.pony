@@ -17,3 +17,4 @@ actor Main is TestList
     SpatialPoolerConfigTest.tests(test)
     SpatialPoolerTest.tests(test)
     BallotBoxTest.tests(test)
+    CorticalColumnTest.tests(test)

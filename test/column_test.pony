@@ -13,7 +13,7 @@ class ColumnTest is TestList
     test(_InactiveInputNeverCounts)
     test(_SynapseOutsideTheInputIsAWiringError)
 
-primitive Synapses
+primitive TestSynapses
   """
   A synapse strong enough to count, and one too weak to.
   """
@@ -26,39 +26,39 @@ class iso _SilentColumnHasNoOverlap is UnitTest
   fun name(): String => "a column sees nothing when no input is active"
 
   fun apply(h: TestHelper) ? =>
-    let column = Column([Synapses.solid(0); Synapses.solid(1)])
-    h.assert_eq[USize](0, column.overlap([false; false], Synapses.threshold())?)
+    let column = Column([TestSynapses.solid(0); TestSynapses.solid(1)])
+    h.assert_eq[USize](0, column.overlap([false; false], TestSynapses.threshold())?)
 
 class iso _OverlapCountsTheActiveInputsItIsConnectedTo is UnitTest
   fun name(): String => "a column's overlap is the active inputs it is connected to"
 
   fun apply(h: TestHelper) ? =>
-    let column = Column([Synapses.solid(0); Synapses.solid(1); Synapses.solid(2)])
+    let column = Column([TestSynapses.solid(0); TestSynapses.solid(1); TestSynapses.solid(2)])
 
     // three connections, two of their inputs on
-    h.assert_eq[USize](2, column.overlap([true; false; true], Synapses.threshold())?)
+    h.assert_eq[USize](2, column.overlap([true; false; true], TestSynapses.threshold())?)
 
 class iso _WeakSynapsesDoNotCount is UnitTest
   fun name(): String => "a synapse below the connection threshold does not count"
 
   fun apply(h: TestHelper) ? =>
-    let column = Column([Synapses.solid(0); Synapses.weak(1)])
+    let column = Column([TestSynapses.solid(0); TestSynapses.weak(1)])
 
     // the input is on, but the connection to it is too weak to claim it
-    h.assert_eq[USize](1, column.overlap([true; true], Synapses.threshold())?)
+    h.assert_eq[USize](1, column.overlap([true; true], TestSynapses.threshold())?)
 
 class iso _InactiveInputNeverCounts is UnitTest
   fun name(): String => "an inactive input never counts, however strong the synapse"
 
   fun apply(h: TestHelper) ? =>
-    let column = Column([Synapses.solid(0)])
+    let column = Column([TestSynapses.solid(0)])
 
-    h.assert_eq[USize](0, column.overlap([false], Synapses.threshold())?)
+    h.assert_eq[USize](0, column.overlap([false], TestSynapses.threshold())?)
 
 class iso _SynapseOutsideTheInputIsAWiringError is UnitTest
   fun name(): String => "a synapse reaching outside the input is a wiring error"
 
   fun apply(h: TestHelper) =>
-    let column = Column([Synapses.solid(0); Synapses.solid(5)])
+    let column = Column([TestSynapses.solid(0); TestSynapses.solid(5)])
 
-    h.assert_error({() ? => column.overlap([true; true], Synapses.threshold())? })
+    h.assert_error({() ? => column.overlap([true; true], TestSynapses.threshold())? })

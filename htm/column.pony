@@ -24,13 +24,5 @@ class Column
     Fails when a synapse reaches outside the input: the caller owns the input
     width, so a column that does not fit it is a wiring error, not an overlap.
     """
-    var count: USize = 0
-
-    for synapse in synapses.values() do
-      if not synapse.connected(connection_threshold) then continue end
-      if active(synapse.input)? then
-        count = count + 1
-      end
-    end
-
-    count
+    if not Synapses.fits(synapses, active.size()) then error end
+    Synapses.overlap(synapses, active, connection_threshold)
