@@ -18,7 +18,17 @@ interface Tally
   """
   be tallied(votes: Array[Vote] iso)
 
-actor BallotBox
+interface Ballot
+  """
+  Where votes go during a round.
+
+  Columns push into this shape and never name the collector, so neither side
+  depends on the other's type and a shard can be tested against any sink.
+  """
+  be vote(vote': Vote)
+  be cast(votes: Array[Vote] iso)
+
+actor BallotBox is Ballot
   """
   Collects the columns' votes on one question.
 

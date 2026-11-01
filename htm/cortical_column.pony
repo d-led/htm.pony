@@ -17,9 +17,9 @@ actor CorticalColumn
     _synapses = synapses
     _threshold = threshold
 
-  be consider(active: Array[Bool] val, ballot: BallotBox tag) =>
+  be observe(active: Array[Bool] val, ballot: Ballot tag) =>
     """
-    Report this column's overlap for the given input.
+    Push this column's overlap to the round's sink. No reply comes back.
     """
     let overlap = Synapses.overlap(_synapses, active, _threshold)
     ballot.vote(Vote(_index, overlap.f64()))

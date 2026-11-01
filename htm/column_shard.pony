@@ -28,9 +28,9 @@ actor ColumnShard
     _columns = columns
     _threshold = threshold
 
-  be consider(active: Array[Bool] val, ballot: BallotBox tag) =>
+  be observe(active: Array[Bool] val, ballot: Ballot tag) =>
     """
-    Vote the overlap of every column in the band.
+    Push the overlap of every column in the band to the round's sink.
     """
     let votes: Array[Vote] iso = recover iso Array[Vote] end
 

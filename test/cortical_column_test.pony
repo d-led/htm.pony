@@ -39,7 +39,7 @@ class iso _AColumnVotesItsOverlap is UnitTest
     end
     let input: Array[Bool] val = recover val [true; false] end
 
-    CorticalColumn(3, synapses, 0.2).consider(input, BallotBox(VoteWatcher(h, 3, 1.0), 1))
+    CorticalColumn(3, synapses, 0.2).observe(input, BallotBox(VoteWatcher(h, 3, 1.0), 1))
 
 class iso _AColumnWithNoActiveInputAbstains is UnitTest
   fun name(): String => "a column with nothing active to claim reports no overlap"
@@ -52,4 +52,4 @@ class iso _AColumnWithNoActiveInputAbstains is UnitTest
     end
     let input: Array[Bool] val = recover val [false] end
 
-    CorticalColumn(0, synapses, 0.2).consider(input, BallotBox(VoteWatcher(h, 0, 0.0), 1))
+    CorticalColumn(0, synapses, 0.2).observe(input, BallotBox(VoteWatcher(h, 0, 0.0), 1))
