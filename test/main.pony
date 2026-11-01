@@ -23,3 +23,4 @@ actor Main is TestList
     ImageEncoderTest.tests(test)
     TemporalMemoryTest.tests(test)
     AnomalyTest.tests(test)
+    SDRClassifierTest.tests(test)

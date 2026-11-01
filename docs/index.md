@@ -26,6 +26,7 @@ not written yet.
 | Permanence learning, duty cycles, boosting | Not written |
 | Temporal memory: cells, segments, prediction, bursts | Implemented, tested, in process |
 | Temporal memory on actors | Not written |
+| SDR classifier, categories | Implemented, tested |
 | Category, RDSE and graph encoders | Not written |
 
 The [module reference](reference/modules.md) lists every file, type and public

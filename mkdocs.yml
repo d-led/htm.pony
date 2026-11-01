@@ -33,6 +33,7 @@ nav:
       - Encoders: encoders.md
       - Picture encoders: image-encoder.md
       - Streaming anomaly detection: anomaly-detection.md
+      - Classification: classification.md
   - Examples: examples.md
   - Tutorial: tutorial.md
   - Reference:
