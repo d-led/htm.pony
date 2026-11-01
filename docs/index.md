@@ -5,10 +5,12 @@ Hierarchical Temporal Memory in Pony. A port of
 computation arranged as actors.
 
 HTM models a stream of inputs as sparse distributed representations and learns
-what tends to follow what. This port has the representation side: encoders turn
-values into bit vectors, and a spatial pooler turns a bit vector into a sparse
-set of columns that recognise it. The sequence side — the temporal memory — is
-not written yet.
+what tends to follow what. This port has both sides: encoders turn values into
+bit vectors, and a spatial pooler turns a bit vector into a sparse set of columns
+that recognise it. The temporal memory then learns which cells in those columns
+predict the next input, and the classifiers turn predictions into probabilities
+over categories. What it does not have yet is learning in the spatial pooler:
+columns are wired from a seed and keep those permanences forever.
 
 ## Status
 
