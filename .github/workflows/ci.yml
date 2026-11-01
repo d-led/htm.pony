@@ -5,6 +5,13 @@ on:
     branches: [master]
   pull_request:
 
+env:
+  # The stb_image decoder is a C source beside a package, and ponyc learns to
+  # compile those in 0.65.0. The ponylang/ponyc images on Docker Hub stop at
+  # 0.58.0, so the compiler comes from ponyup here and in the Dockerfile, which
+  # is also how a developer installs it.
+  PONYC_VERSION: 0.77.2
+
 jobs:
   test:
     name: Build and test
@@ -13,15 +20,16 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
-      # The same image the Dockerfile pins, so CI and a local `docker build`
-      # cannot drift apart.
-      - name: Compile and run the test suite
+      - name: Install ponyc and corral
         run: |
-          docker run --rm \
-            --volume "$PWD:/src/main" \
-            --workdir /src/main/test \
-            ponylang/ponyc:release \
-            sh -c 'corral run -- ponyc --debug && ./test'
+          curl --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/ponylang/ponyup/latest-release/ponyup-init.sh | sh
+          echo "$HOME/.local/share/ponyup/bin" >> "$GITHUB_PATH"
+          "$HOME/.local/share/ponyup/bin/ponyup" update ponyc release "$PONYC_VERSION"
+          "$HOME/.local/share/ponyup/bin/ponyup" update corral release
+
+      - name: Compile and run the test suite
+        working-directory: test
+        run: corral run -- ponyc --debug && ./test
 
   examples:
     name: Build and run the examples
@@ -30,15 +38,18 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
+      - name: Install ponyc and corral
+        run: |
+          curl --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/ponylang/ponyup/latest-release/ponyup-init.sh | sh
+          echo "$HOME/.local/share/ponyup/bin" >> "$GITHUB_PATH"
+          "$HOME/.local/share/ponyup/bin/ponyup" update ponyc release "$PONYC_VERSION"
+          "$HOME/.local/share/ponyup/bin/ponyup" update corral release
+
       # Each example checks its own claim and exits non-zero when it fails, so
       # running them is the check. They are documented, so they must not rot.
       - name: Build and run every example
         run: |
           for example in first-representation in-process-pooler actor-pooler scalar-encoder image-similarity temporal-memory anomaly-stream; do
             echo "=== $example ==="
-            docker run --rm \
-              --volume "$PWD:/src/main" \
-              --workdir "/src/main/examples/$example" \
-              ponylang/ponyc:release \
-              sh -c "corral run -- ponyc --debug && ./$example"
+            ( cd "examples/$example" && corral run -- ponyc --debug && "./$example" )
           done

@@ -19,6 +19,13 @@ ponyup update corral release
 `ponyup` writes its binaries to `~/.local/share/ponyup/bin`. Put that directory
 on `PATH`.
 
+The compiler must be 0.65.0 or later. The decoder for picture files is a C source
+sitting beside a Pony package, and ponyc only started compiling those in 0.65.0;
+with an older compiler the build fails at the link step with an undefined
+reference to `stbi_load_from_memory`. The images on Docker Hub stop at 0.58.0,
+which is why the `Dockerfile` in this repository installs the compiler from
+ponyup rather than starting from one of them.
+
 ## Get the code
 
 ```
