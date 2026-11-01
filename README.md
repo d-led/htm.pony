@@ -2,6 +2,8 @@
 
 [![CI](https://github.com/d-led/htm.pony/actions/workflows/ci.yml/badge.svg?branch=master)](https://github.com/d-led/htm.pony/actions/workflows/ci.yml)
 
+Documentation: **https://d-led.github.io/htm.pony/**
+
 - Status: the spatial pooler works; the temporal memory is not written yet
 - based off the [Go implementation: https://github.com/htm-community/htm](https://github.com/htm-community/htm) (MIT License)
 - no direct dependency on other implementations
@@ -47,9 +49,16 @@ memory; the CLA temporal pooler.
 
 ## Progress
 
-- Sparse Binary Matrix, Dense Binary Matrix: Go tests translated & running. Untested Go code left for later
-- Initial implementation ready: Scalar Encoder (#1)
-- Next: Date Encoder (#2), any other chunk with minimal dependencies
+- Dense and sparse binary matrices, with the Go tests translated
+- Scalar encoder, including decoding
+- Date encoder: the season field is encoded; the other four reserve width but are
+  not written
+- Grid topology, column wiring, overlap, global and local inhibition
+- Spatial pooler, in process and on actors
+- Runnable examples under `examples/`, described in the
+  [documentation](https://d-led.github.io/htm.pony/examples/)
+- Not started: permanence learning, duty cycles, boosting, the temporal memory,
+  the category and RDSE encoders, the benchmarks
 
 ## Developing
 

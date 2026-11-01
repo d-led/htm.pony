@@ -22,3 +22,23 @@ jobs:
             --workdir /src/main/test \
             ponylang/ponyc:release \
             sh -c 'corral run -- ponyc --debug && ./test'
+
+  examples:
+    name: Build and run the examples
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v7
+
+      # Each example checks its own claim and exits non-zero when it fails, so
+      # running them is the check. They are documented, so they must not rot.
+      - name: Build and run every example
+        run: |
+          for example in first-representation in-process-pooler actor-pooler scalar-encoder; do
+            echo "=== $example ==="
+            docker run --rm \
+              --volume "$PWD:/src/main" \
+              --workdir "/src/main/examples/$example" \
+              ponylang/ponyc:release \
+              sh -c "corral run -- ponyc --debug && ./$example"
+          done

@@ -4,6 +4,31 @@ site_url: https://d-led.github.io/htm.pony/
 repo_url: https://github.com/d-led/htm.pony
 theme:
   name: material
+  features:
+    - navigation.sections
+    - navigation.top
+    - content.code.copy
+markdown_extensions:
+  - admonition
+  - tables
+  - pymdownx.details
+  - pymdownx.superfences
+  - pymdownx.inlinehilite
+  - pymdownx.highlight:
+      anchor_linenums: true
+      pygments_lang_class: true
 nav:
   - Home: index.md
-  - Spatial pooler: spatial-pooler.md
+  - Getting started: getting-started.md
+  - Concepts:
+      - Representations: concepts/representations.md
+      - Topology: concepts/topology.md
+      - Encoding: concepts/encoding.md
+  - Guides:
+      - Spatial pooler: spatial-pooler.md
+      - Actors: actors.md
+      - Encoders: encoders.md
+  - Examples: examples.md
+  - Tutorial: tutorial.md
+  - Reference:
+      - Modules: reference/modules.md

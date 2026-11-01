@@ -9,3 +9,10 @@ test/test.lib
 test/test.pdb
 test/test.obj
 site/
+.venv-docs/
+*.bc
+examples/*/*.dSYM/
+examples/in-process-pooler/in-process-pooler
+examples/actor-pooler/actor-pooler
+examples/scalar-encoder/scalar-encoder
+examples/first-representation/first-representation

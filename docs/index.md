@@ -4,33 +4,95 @@ Hierarchical Temporal Memory in Pony. A port of
 [htm-community/htm](https://github.com/htm-community/htm) (MIT), with the
 computation arranged as actors.
 
-## What works today
+HTM models a stream of inputs as sparse distributed representations and learns
+what tends to follow what. This port has the representation side: encoders turn
+values into bit vectors, and a spatial pooler turns a bit vector into a sparse
+set of columns that recognise it. The sequence side — the temporal memory — is
+not written yet.
 
-The spatial pooler runs end to end. Columns are wired to receptive fields,
-overlap counts the active inputs a column is connected to, and inhibition
-chooses which columns represent the input. Global and local inhibition are both
-implemented, and wiring takes a seed, so a seed and an input always give the
-same representation.
+## Status
 
-The same computation also runs on messages. Column shards push their votes into
-a ballot box, which closes a round when every vote has arrived, when a quorum
-has arrived, or when a deadline expires. A pooler coordinator inhibits the
-tally and pushes the representation back to whoever asked.
+| Area | State |
+| --- | --- |
+| Dense and sparse binary matrices | Implemented, tested |
+| Grid topology: coordinates, flattening, neighbours | Implemented, tested |
+| Scalar encoder, including top-down mapping | Implemented, tested |
+| Date encoder | Season encoded; four further fields reserve width but are not written |
+| Column wiring, overlap, global and local inhibition | Implemented, tested |
+| Spatial pooler, in process | Implemented, tested |
+| Actor layer: shards, ballot box, pooler | Implemented, tested |
+| Permanence learning, duty cycles, boosting | Not written |
+| Temporal memory, CLA temporal pooler | Not written |
+| Category, RDSE, image and graph encoders | Not written |
 
-## What is not written yet
+The [module reference](reference/modules.md) lists every file, type and public
+function, including the parts that do nothing yet.
 
-Permanence learning, duty cycles and boosting. The temporal memory. The CLA
-temporal pooler.
+## How the computation is arranged
+
+The spatial pooler runs in one process or on actors. Both paths compute the same
+representation from the same seed, and the
+[actor example](examples.md#the-same-computation-on-actors) checks that they
+agree.
+
+The in-process path is a plain object graph:
+
+```
+input bits -> column overlaps -> inhibition -> representation
+```
+
+The actor path keeps that computation and changes where it runs:
+
+```text
+Asker        --represent(active, asker)-->   Pooler
+Pooler       --observe(active, ballot)-->    ColumnShard, once per shard
+ColumnShard  --cast(votes)-->                BallotBox
+BallotBox    --tallied(votes)-->             Pooler
+Pooler       --represented(winners)-->       Asker
+```
+
+Nothing in that path returns a value. Each actor pushes to the next and the
+answer arrives as a message, which is what lets a round overlap with work that
+is still in flight.
+
+## The modules
+
+| Module | What it holds |
+| --- | --- |
+| `htm/topology.pony` | `Grid`: flat index to coordinates, and the neighbours of a cell |
+| `htm/synapse.pony` | `Synapse`: one input, and the permanence the column holds for it |
+| `htm/synapses.pony` | `Synapses`: overlap counting that cannot fail |
+| `htm/column.pony` | `Column`: a set of synapses and its overlap |
+| `htm/inhibition.pony` | `Inhibition`: which columns win, globally or among neighbours |
+| `htm/dimensions.pony` | `Dimensions`: the product of a shape |
+| `htm/spatial_pooler_config.pony` | `SpatialPoolerConfig`: the shape, and how strictly columns compete |
+| `htm/spatial_pooler.pony` | `Wiring` and `SpatialPooler`: receptive fields, and compute |
+| `htm/ballot_box.pony` | `Vote`, `Ballot`, `Tally`, `BallotBox`, `Deadline`: one round of votes |
+| `htm/cortical_column.pony` | `CorticalColumn`: one column answering on its own |
+| `htm/column_shard.pony` | `ColumnView`, `ColumnShard`: a band of columns sharing one actor |
+| `htm/pooler.pony` | `Representation`, `Round`, `Pooler`: the coordinator |
+| `htm/dense_binary_matrix.pony` | `DenseBinaryMatrix`: one bit per cell |
+| `htm/sparse_binary_matrix.pony` | `SparseBinaryMatrix`: only the set cells |
+| `htm/htm_types.pony` | `MatrixResult`: `SetOk` or `SetFailed` |
+| `htm/encoders/` | `ScalarEncoder`, `DateEncoder` and their parameters |
+| `htm/util/bool_array.pony` | `BoolArray`: conversions and indexed access on bit vectors |
+
+## Requirements
+
+Pony 0.77 or later, with corral. Both are installed by
+[ponyup](https://github.com/ponylang/ponyup).
 
 ## Building
-
-Pony 0.77 or later, with corral.
 
 ```
 cd test
 corral run -- ponyc --debug
 ./test
 ```
+
+The examples build the same way from their own directories. See
+[getting started](getting-started.md) for the whole sequence, including the
+first run of each example.
 
 ## References
 
