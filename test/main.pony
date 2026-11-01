@@ -14,3 +14,4 @@ actor Main is TestList
     TopologyTest.tests(test)
     ColumnTest.tests(test)
     InhibitionTest.tests(test)
+    SpatialPoolerConfigTest.tests(test)
