@@ -36,6 +36,14 @@ with `#` for a set bit. Counts the bits each pair of neighbours shares.
 Demonstrates `ScalarEncoderParams` and `ScalarEncoder.encode`, and the sliding
 block of set bits that makes similar values share most of their encoding.
 
+## [image-similarity](image-similarity/)
+
+Encodes a picture, the same picture twice as wide, a brighter copy of it, and a
+different picture, then reports the fingerprint distance and how many columns of
+the spatial pooler each one shares with the first. Demonstrates `DifferenceHash`,
+`ImageFingerprint` and `ImageEncoder`, and that scale and brightness leave a
+picture's representation unchanged while an unrelated picture shares few columns.
+
 ## Running them
 
 Build and run one from its own directory:

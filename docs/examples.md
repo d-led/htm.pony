@@ -121,6 +121,23 @@ let wired = Wiring.synapses(config, inputs, random, column)?
 views.push(ColumnView(column, _frozen_synapses(wired)))
 ```
 
+## Picture similarity
+
+`examples/image-similarity/main.pony` encodes four pictures, fingerprints them,
+and puts each representation through the spatial pooler.
+[Picture encoders](image-encoder.md) explains what the two steps do.
+
+```
+picture           bits set  distance  columns  shared with the original
+the original      10        0         18       18
+twice the size    10        0         18       18
+brighter          10        0         18       18
+a different one   16        22        23       9
+```
+
+The pictures are built in code rather than read from a file, because reading a
+file needs a decoder and Pony has none yet.
+
 ## A scalar encoder
 
 `examples/scalar-encoder/main.pony` encodes four values and counts the bits each

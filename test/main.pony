@@ -20,3 +20,4 @@ actor Main is TestList
     CorticalColumnTest.tests(test)
     ColumnShardTest.tests(test)
     PoolerTest.tests(test)
+    ImageEncoderTest.tests(test)

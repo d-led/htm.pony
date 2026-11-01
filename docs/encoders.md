@@ -157,5 +157,15 @@ Calling `encode` on it is a programming error, and the log line says so.
 | --- | --- |
 | Category | one random bit set per category, kept stable across runs |
 | RDSE | a random distributed encoding for a range, as in `htm.core` |
-| Image | a decoder for the file format — Pony has none — then a resolution-independent reduction |
 | Graph | a decision first: no implementation in the reference repositories defines one |
+
+## Image encoder
+
+`ImageEncoder` turns a picture into a representation, so that two pictures of
+something similar give overlapping ones. It is described on its own page in
+[Picture encoders](image-encoder.md) and shown end to end in
+[the example](examples.md#picture-similarity).
+
+The part that is missing is reading a file. Pony has no image decoder, so
+`ImageDecoder` is an interface with no implementation yet; everything above it
+works on a `GrayscaleImage` that the caller supplies.

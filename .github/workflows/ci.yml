@@ -34,7 +34,7 @@ jobs:
       # running them is the check. They are documented, so they must not rot.
       - name: Build and run every example
         run: |
-          for example in first-representation in-process-pooler actor-pooler scalar-encoder; do
+          for example in first-representation in-process-pooler actor-pooler scalar-encoder image-similarity; do
             echo "=== $example ==="
             docker run --rm \
               --volume "$PWD:/src/main" \

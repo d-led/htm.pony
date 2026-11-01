@@ -21,9 +21,11 @@ not written yet.
 | Column wiring, overlap, global and local inhibition | Implemented, tested |
 | Spatial pooler, in process | Implemented, tested |
 | Actor layer: shards, ballot box, pooler | Implemented, tested |
+| Image fingerprint and encoder, from pixels | Implemented, tested |
+| A picture file decoder | Not written; the seam it plugs into exists |
 | Permanence learning, duty cycles, boosting | Not written |
 | Temporal memory, CLA temporal pooler | Not written |
-| Category, RDSE, image and graph encoders | Not written |
+| Category, RDSE and graph encoders | Not written |
 
 The [module reference](reference/modules.md) lists every file, type and public
 function, including the parts that do nothing yet. Two concept pages describe what

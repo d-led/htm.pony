@@ -31,6 +31,7 @@ nav:
       - Spatial pooler: spatial-pooler.md
       - Actors: actors.md
       - Encoders: encoders.md
+      - Picture encoders: image-encoder.md
   - Examples: examples.md
   - Tutorial: tutorial.md
   - Reference:

@@ -55,6 +55,9 @@ memory; the CLA temporal pooler.
   not written
 - Grid topology, column wiring, overlap, global and local inhibition
 - Spatial pooler, in process and on actors
+- Picture encoder: difference hash over a grayscale image, turned into
+  overlapping representations. Reading a picture file is not written yet;
+  `ImageDecoder` is the seam it plugs into
 - Runnable examples under `examples/`, described in the
   [documentation](https://d-led.github.io/htm.pony/examples/)
 - Not started: permanence learning, duty cycles, boosting, the temporal memory,
