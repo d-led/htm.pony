@@ -27,6 +27,7 @@ not written yet.
 | Temporal memory: cells, segments, prediction, bursts | Implemented, tested, in process |
 | Temporal memory on actors | Not written |
 | SDR classifier, categories | Implemented, tested |
+| Prediction classifier: the label of the next step | Implemented, tested |
 | Category, RDSE and graph encoders | Not written |
 
 The [module reference](reference/modules.md) lists every file, type and public

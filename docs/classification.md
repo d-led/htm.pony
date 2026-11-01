@@ -27,6 +27,29 @@ through a softmax. Learning moves every active bit's weight towards the category
 that turned out to be true and away from the others, in the same pass as
 inference.
 
+## Classifying a prediction, not a present
+
+Fed the cells that are active, a classifier describes the present. Fed the cells
+that are *predicted*, it says what comes next - and it can say so before the next
+input arrives.
+
+`PredictionClassifier` is that pairing:
+
+```pony
+let predictor = PredictionClassifier(memory, categories = 3)?
+
+// one step at a time, with the label that step turned out to be
+let probabilities = predictor.observe(columns, label, learn = true)?
+predictor.best()   // what the next step is expected to be
+```
+
+The bookkeeping is the whole of the class. A prediction is made at one step and
+the label that tests it arrives at the next, so it learns on the previous step's
+expectation with the current step's label, and reports the new expectation.
+
+The test that matters is that the label of the next step is named before that
+step is shown.
+
 ## What it does not do
 
 - **Values, not just labels.** Numenta's classifier also reports a distribution

@@ -24,3 +24,4 @@ actor Main is TestList
     TemporalMemoryTest.tests(test)
     AnomalyTest.tests(test)
     SDRClassifierTest.tests(test)
+    PredictionClassifierTest.tests(test)
