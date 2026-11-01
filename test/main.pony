@@ -12,3 +12,4 @@ actor Main is TestList
     ArrayConversionsTest.tests(test)
     DateEncodingTest.tests(test)
     TopologyTest.tests(test)
+    ColumnTest.tests(test)
