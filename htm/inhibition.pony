@@ -61,6 +61,58 @@ primitive Inhibition
       strongest.pop()?
     end
 
+  fun local(overlaps: ReadSeq[F64], grid: Grid, radius: USize, density: F64): Array[USize] ? =>
+    """
+    The columns that stand out among their own neighbours.
+
+    A column wins when fewer than the area's allowance of its neighbours beat
+    it. Comparisons are local, so two distant regions of the grid can each be
+    represented by their own strongest column.
+    """
+    let active = Array[USize]
+
+    var column: USize = 0
+    while column < grid.size do
+      let neighbours = grid.neighbours(column, radius, false)?
+      let allowance = _allowance(neighbours.size(), density)
+
+      var beaten_by: USize = 0
+      for neighbour in neighbours.values() do
+        if _outranks(overlaps, neighbour, column)? then
+          beaten_by = beaten_by + 1
+        end
+      end
+
+      if beaten_by < allowance then
+        active.push(column)
+      end
+
+      column = column + 1
+    end
+
+    active
+
+  fun _allowance(neighbour_count: USize, density: F64): USize =>
+    """
+    How many columns of a neighbourhood may be active. The column itself counts
+    towards its own neighbourhood, so a lone column always has room.
+    """
+    ((density * (neighbour_count + 1).f64()) + 0.5).usize()
+
+  fun _outranks(overlaps: ReadSeq[F64], challenger: USize, other: USize): Bool ? =>
+    """
+    Whether one column beats another. Equal overlaps are settled by position, so
+    that "the strongest in a neighbourhood" always names exactly one column.
+    """
+    let challenger_overlap = overlaps(challenger)?
+    let other_overlap = overlaps(other)?
+
+    if challenger_overlap != other_overlap then
+      challenger_overlap > other_overlap
+    else
+      challenger < other
+    end
+
   fun _ascending(columns: Array[USize]): Array[USize] ? =>
     let sorted = Array[USize](columns.size())
     for column in columns.values() do

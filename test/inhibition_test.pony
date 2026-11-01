@@ -13,6 +13,11 @@ class InhibitionTest is TestList
     test(_ATieGoesToTheEarlierColumn)
     test(_AskingForMoreWinnersThanColumns)
     test(_NoWinnersWhenNoneAreAllowed)
+    test(_StrongestInItsNeighbourhoodWins)
+    test(_AStrongerNeighbourTakesThePlace)
+    test(_ADistantPeakIsRepresentedToo)
+    test(_ALoneColumnAlwaysWins)
+    test(_SparseAllowanceSilencesEdgeColumns)
 
 class iso _StrongestColumnWins is UnitTest
   fun name(): String => "the column that best matches the input represents it"
@@ -52,3 +57,39 @@ class iso _NoWinnersWhenNoneAreAllowed is UnitTest
 
   fun apply(h: TestHelper) ? =>
     h.assert_eq[USize](0, Inhibition.winners([0.9; 0.8], 0)?.size())
+
+class iso _StrongestInItsNeighbourhoodWins is UnitTest
+  fun name(): String => "the column that beats its own neighbours wins"
+
+  fun apply(h: TestHelper) ? =>
+    let grid = Grid([3])?
+    h.assert_array_eq[USize]([1], Inhibition.local([0.1; 0.9; 0.2], grid, 1, 0.2)?)
+
+class iso _AStrongerNeighbourTakesThePlace is UnitTest
+  fun name(): String => "a column with a stronger neighbour stays silent"
+
+  fun apply(h: TestHelper) ? =>
+    let grid = Grid([2])?
+    h.assert_array_eq[USize]([1], Inhibition.local([0.2; 0.8], grid, 1, 0.3)?)
+
+class iso _ADistantPeakIsRepresentedToo is UnitTest
+  fun name(): String => "two separate peaks are both represented"
+
+  fun apply(h: TestHelper) ? =>
+    let grid = Grid([5])?
+    h.assert_array_eq[USize]([0; 2; 4], Inhibition.local([0.9; 0.1; 0.8; 0.1; 0.7], grid, 1, 0.5)?)
+
+class iso _SparseAllowanceSilencesEdgeColumns is UnitTest
+  fun name(): String => "a low density can leave a column with too few neighbours to win"
+
+  fun apply(h: TestHelper) ? =>
+    // with one neighbour the allowance truncates to zero, so neither column wins
+    let grid = Grid([2])?
+    h.assert_eq[USize](0, Inhibition.local([0.9; 0.1], grid, 1, 0.2)?.size())
+
+class iso _ALoneColumnAlwaysWins is UnitTest
+  fun name(): String => "a column with no neighbours always represents its area"
+
+  fun apply(h: TestHelper) ? =>
+    let grid = Grid([1])?
+    h.assert_array_eq[USize]([0], Inhibition.local([0.4], grid, 1, 0.5)?)
