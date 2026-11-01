@@ -30,3 +30,4 @@ actor Main is TestList
     AnomalyLikelihoodTest.tests(test)
     TemporalRegionTest.tests(test)
     CategoryEncoderTest.tests(test)
+    RandomDistributedScalarTest.tests(test)

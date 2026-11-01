@@ -32,7 +32,8 @@ columns are wired from a seed and keep those permanences forever.
 | Prediction classifier: the label of the next step | Implemented, tested |
 | Streaming anomaly score, and its likelihood | Implemented, tested |
 | Category encoder | Implemented, tested |
-| RDSE and graph encoders | Not written |
+| Random distributed encoder | Implemented, tested |
+| Graph encoder | Not written |
 
 The [module reference](reference/modules.md) lists every file, type and public
 function, including the parts that do nothing yet. Two concept pages describe what

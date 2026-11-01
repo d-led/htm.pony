@@ -178,11 +178,37 @@ being checked - and that is the only difference from the reference.
 `decode` reads a category back by finding the busiest block, which is what
 still works after a pooler has been at the representation.
 
+## Random distributed encoder
+
+`RandomDistributedScalarEncoder` encodes a real number without being told its
+range. It keeps a bucket per `resolution`, creates a bucket the first time a
+value falls into it, and gives each new bucket one bit different from its
+neighbour:
+
+```pony
+let encoder = RandomDistributedScalarEncoder(0.1, 21, 400, 42)?
+let encoded = encoder.encode(1.0)?     // 21 of 400 positions
+```
+
+That one rule gives the encoder its property: neighbouring buckets share twenty
+of twenty-one bits, buckets two apart share nineteen, and once the distance
+reaches the width of a representation the overlap has to fall to two or fewer.
+Near values overlap; distant ones do not; nothing had to know the range.
+
+The cost is that the bits depend on the order values arrive in and on the seed,
+so two encoders do not agree bit for bit. What is stable is the property that
+matters.
+
+The rules are nupic's, including the odd number of active bits, the width having
+to be more than six times that, and a maximum of two shared bits between distant
+representations. The bits themselves are not nupic's: they come from this
+library's generator rather than numpy's, so an encoding is reproducible here and
+nowhere else.
+
 ## Not implemented
 
 | Encoder | Would need |
 | --- | --- |
-| RDSE | a random distributed encoding for a range, as in `htm.core` |
 | Graph | a decision first: no implementation in the reference repositories defines one |
 
 ## Image encoder

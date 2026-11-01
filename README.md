@@ -52,6 +52,8 @@ memory; the CLA temporal pooler.
 - Dense and sparse binary matrices, with the Go tests translated
 - Scalar encoder, including decoding
 - Category encoder: one block of bits per label, no overlap between labels
+- Random distributed encoder: a value becomes a bucket whose neighbours differ by
+  one bit, so near values overlap without a range being known in advance
 - Date encoder: the season field is encoded; the other four reserve width but are
   not written
 - Grid topology, column wiring, overlap, global and local inhibition
@@ -70,8 +72,8 @@ memory; the CLA temporal pooler.
   and how unusual that share is given the scores that came before it
 - Runnable examples under `examples/`, described in the
   [documentation](https://d-led.github.io/htm.pony/examples/)
-- Not started: duty cycles and boosting on actors, the RDSE and graph encoders,
-  the benchmarks
+- Not started: duty cycles and boosting on actors, the graph encoder, the
+  benchmarks
 
 The [documentation](https://d-led.github.io/htm.pony/) says what each of these
 actually does, including the parts that are present but empty.
