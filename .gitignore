@@ -11,6 +11,8 @@ test/test.obj
 site/
 .venv-docs/
 *.bc
+build/
+docs/reference/api/
 examples/*/*.dSYM/
 examples/in-process-pooler/in-process-pooler
 examples/actor-pooler/actor-pooler

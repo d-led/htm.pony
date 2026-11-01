@@ -35,3 +35,12 @@ nav:
   - Tutorial: tutorial.md
   - Reference:
       - Modules: reference/modules.md
+      - API: reference/api/index.md
+
+  - Building the docs: building-the-docs.md
+
+# The API reference is generated per type, so its hundred pages are linked from
+# reference/api/index.md rather than listed here.
+validation:
+  nav:
+    omitted_files: ignore

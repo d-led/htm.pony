@@ -4,6 +4,10 @@ Every file in the repository, with its types, its public members, and what state
 it is in. Private members, those whose names begin with an underscore, are left
 out.
 
+This page is written by hand and says what each module is *for*. The
+[API reference](api/index.md) is generated from the source and says exactly what
+each type declares.
+
 A member that can fail to produce a value is marked with `?`, which is how Pony
 declares a partial function. A constructor marked `?` raises instead of
 returning an object.

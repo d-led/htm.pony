@@ -27,6 +27,18 @@ jobs:
       - name: Install MkDocs
         run: pip install mkdocs-material
 
+      # pony-doc ships inside the ponyc release, and the ponylang/ponyc image on
+      # Docker Hub is older than the compiler this project targets and carries no
+      # pony-doc. Installing the compiler here brings the documenter with it.
+      - name: Install ponyc and pony-doc
+        run: |
+          curl --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/ponylang/ponyup/latest-release/ponyup-init.sh | sh
+          echo "$HOME/.local/share/ponyup/bin" >> "$GITHUB_PATH"
+          "$HOME/.local/share/ponyup/bin/ponyup" update ponyc release
+
+      - name: Generate the API reference
+        run: python3 scripts/api-reference.py
+
       - name: Build the site
         run: mkdocs build --strict
 
