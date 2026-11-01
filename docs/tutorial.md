@@ -52,8 +52,8 @@ That reads as: an 8 by 8 grid of columns, an input of 46 bits, global
 inhibition, two active columns per inhibition area.
 
 The last number becomes a fraction. An inhibition area of radius 1 covers 9
-cells, so two of them is $2/9 \approx 0.222$, and a quarter of 64 columns may be
-active at once:
+cells, so two of them is $2/9 \approx 0.222$, and that fraction of 64 columns
+is what may be active at once:
 
 ```
 columns: 64, active per round: 14
@@ -64,8 +64,11 @@ pooler.
 
 ## Step 3: compute a representation
 
+The example wraps that match in a helper, `_encode`, and hands the result to the
+pooler:
+
 ```pony
-let representation = pooler.compute(encoder.encode(0.50, false) as Array[Bool])?
+let representation = pooler.compute(_encode(encoder, 0.50)?)?
 ```
 
 The result is the list of columns that recognise the input:
