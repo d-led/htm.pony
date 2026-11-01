@@ -15,3 +15,4 @@ actor Main is TestList
     ColumnTest.tests(test)
     InhibitionTest.tests(test)
     SpatialPoolerConfigTest.tests(test)
+    SpatialPoolerTest.tests(test)

@@ -42,7 +42,7 @@ class Grid
 
     size = _dims(0)? * _bounds(0)?
 
-  fun coords(flat: USize): Array[USize] ? =>
+  fun box coords(flat: USize): Array[USize] ? =>
     """
     The coordinates of a flat index.
     """
@@ -57,7 +57,7 @@ class Grid
     end
     result
 
-  fun flatten(coords': ReadSeq[USize]): USize ? =>
+  fun box flatten(coords': ReadSeq[USize]): USize ? =>
     """
     The flat index of a coordinate tuple.
     """
@@ -74,7 +74,7 @@ class Grid
     end
     flat
 
-  fun neighbours(flat: USize, radius: USize, wrap_around: Bool): Array[USize] ? =>
+  fun box neighbours(flat: USize, radius: USize, wrap_around: Bool): Array[USize] ? =>
     """
     The cells within `radius` steps of the given cell in every dimension, as a
     set (each cell once), without the cell itself. With `wrap_around` the far
@@ -128,7 +128,7 @@ class Grid
 
     result
 
-  fun _axis_range(centre: USize, dimension: USize, radius: USize, wrap_around: Bool): Array[USize] =>
+  fun box _axis_range(centre: USize, dimension: USize, radius: USize, wrap_around: Bool): Array[USize] =>
     let range = Array[USize]
     let span = (radius * 2) + 1
 
@@ -152,7 +152,7 @@ class Grid
 
     range
 
-  fun _euclidean_mod(value: ISize, modulus: ISize): ISize =>
+  fun box _euclidean_mod(value: ISize, modulus: ISize): ISize =>
     """
     A non-negative remainder, so that stepping left from the first cell lands
     on the last one.

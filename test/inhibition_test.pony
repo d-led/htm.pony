@@ -18,6 +18,7 @@ class InhibitionTest is TestList
     test(_ADistantPeakIsRepresentedToo)
     test(_ALoneColumnAlwaysWins)
     test(_SparseAllowanceSilencesEdgeColumns)
+    test(_AColumnThatMatchesNothingCannotWin)
 
 class iso _StrongestColumnWins is UnitTest
   fun name(): String => "the column that best matches the input represents it"
@@ -86,6 +87,14 @@ class iso _SparseAllowanceSilencesEdgeColumns is UnitTest
     // with one neighbour the allowance truncates to zero, so neither column wins
     let grid = Grid([2])?
     h.assert_eq[USize](0, Inhibition.local([0.9; 0.1], grid, 1, 0.2)?.size())
+
+class iso _AColumnThatMatchesNothingCannotWin is UnitTest
+  fun name(): String => "a column that matches no input cannot represent it"
+
+  fun apply(h: TestHelper) ? =>
+    let grid = Grid([4])?
+    h.assert_eq[USize](0, Inhibition.winners([0.0; 0.0; 0.0], 2)?.size())
+    h.assert_eq[USize](0, Inhibition.local([0.0; 0.0; 0.0; 0.0], grid, 1, 0.5)?.size())
 
 class iso _ALoneColumnAlwaysWins is UnitTest
   fun name(): String => "a column with no neighbours always represents its area"

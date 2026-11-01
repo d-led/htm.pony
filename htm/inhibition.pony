@@ -22,7 +22,10 @@ primitive Inhibition
 
     var column: USize = 0
     for overlap in overlaps.values() do
-      _offer(strongest, overlaps, column, count)?
+      // a column that matches nothing has no claim to represent anything
+      if overlap > 0.0 then
+        _offer(strongest, overlaps, column, count)?
+      end
       column = column + 1
     end
 
@@ -61,7 +64,7 @@ primitive Inhibition
       strongest.pop()?
     end
 
-  fun local(overlaps: ReadSeq[F64], grid: Grid, radius: USize, density: F64): Array[USize] ? =>
+  fun local(overlaps: ReadSeq[F64], grid: Grid box, radius: USize, density: F64): Array[USize] ? =>
     """
     The columns that stand out among their own neighbours.
 
@@ -83,7 +86,7 @@ primitive Inhibition
         end
       end
 
-      if beaten_by < allowance then
+      if (beaten_by < allowance) and (overlaps(column)? > 0.0) then
         active.push(column)
       end
 
