@@ -31,3 +31,4 @@ actor Main is TestList
     TemporalRegionTest.tests(test)
     CategoryEncoderTest.tests(test)
     RandomDistributedScalarTest.tests(test)
+    ColumnLearningTest.tests(test)
