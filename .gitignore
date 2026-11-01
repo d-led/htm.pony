@@ -22,3 +22,4 @@ examples/first-representation/first-representation
 examples/image-similarity/image-similarity
 examples/temporal-memory/temporal-memory
 examples/anomaly-stream/anomaly-stream
+examples/anomaly-likelihood/anomaly-likelihood

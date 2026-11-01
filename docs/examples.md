@@ -1,6 +1,6 @@
 # Examples
 
-Eight programs live under `examples/`, each its own package with its own
+Nine programs live under `examples/`, each its own package with its own
 `main.pony`. They print what they do and exit non-zero when a claim in them
 fails.
 
@@ -207,6 +207,32 @@ d  ####################  1
 
 The first four steps score one because nothing has been learned yet.
 [Streaming anomaly detection](anomaly-detection.md) explains the reading.
+
+## What a score is worth
+
+`examples/anomaly-likelihood/main.pony` has no HTM in it at all: it feeds two
+hundred made-up scores that wobble around 0.15, then one of 0.9, and prints what
+each score is worth against the ones before it.
+
+```
+its idea of ordinary: centred at 0.151, spreading 0.017
+
+step                    score   likelihood
+an ordinary step       0.141   0.57
+another ordinary step  0.183   0.517
+the odd step           0.9     1
+
+the noisiest ordinary likelihood in two hundred steps was 0.908
+only the odd step comes near certainty
+```
+
+The score itself says nothing: 0.141 and 0.183 are both ordinary, and both read
+above a half, because the value is one minus a tail probability and half of all
+ordinary steps are above a half. What the odd step has that they do not is
+distance from everything the estimator has seen.
+
+[Streaming anomaly detection](anomaly-detection.md#the-likelihood) explains the
+statistic, including the degenerate case of a stream that never varies.
 
 ## Prediction
 

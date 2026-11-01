@@ -49,7 +49,7 @@ jobs:
       # running them is the check. They are documented, so they must not rot.
       - name: Build and run every example
         run: |
-          for example in first-representation in-process-pooler pooler-learning actor-pooler scalar-encoder image-similarity temporal-memory anomaly-stream; do
+          for example in first-representation in-process-pooler pooler-learning actor-pooler scalar-encoder image-similarity temporal-memory anomaly-stream anomaly-likelihood; do
             echo "=== $example ==="
             ( cd "examples/$example" && corral run -- ponyc --debug && "./$example" )
           done

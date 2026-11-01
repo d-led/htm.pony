@@ -65,12 +65,12 @@ memory; the CLA temporal pooler.
   punishment for predictions that do not come true
 - SDR classifier and prediction classifier: probabilities over categories, and
   the label of the next step
-- Streaming anomaly detection: the share of active columns that had to burst
+- Streaming anomaly detection: the share of active columns that had to burst,
+  and how unusual that share is given the scores that came before it
 - Runnable examples under `examples/`, described in the
   [documentation](https://d-led.github.io/htm.pony/examples/)
 - Not started: duty cycles and boosting on actors, the temporal memory on
-  actors, the category and RDSE encoders, the benchmarks, smoothing the anomaly
-  score into a likelihood
+  actors, the category and RDSE encoders, the benchmarks
 
 The [documentation](https://d-led.github.io/htm.pony/) says what each of these
 actually does, including the parts that are present but empty.

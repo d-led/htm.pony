@@ -37,6 +37,11 @@ OWNERS = [
     (re.compile(r"^-htm-util-(.+)$"), "util"),
     (re.compile(r"^-htm-(.+)$"), "htm"),
     (re.compile(r"^(-?)deps-sagittarius-sagittarius-(.+)$"), "sagittarius"),
+    # htm now reaches htm/util itself, and pony-doc names that page without the
+    # leading dash a dependency usually gets: it is the same page the util run
+    # writes, under a different name.
+    (re.compile(r"^htm-util-(.+)$"), "util"),
+    (re.compile(r"^htm-(.+)$"), "htm"),
     (re.compile(r"^htm-(.+)$"), "htm"),
     (re.compile(r"^encoders-(.+)$"), "encoders"),
     (re.compile(r"^util-(.+)$"), "util"),

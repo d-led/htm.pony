@@ -27,3 +27,4 @@ actor Main is TestList
     PredictionClassifierTest.tests(test)
     StbDecoderTest.tests(test)
     SpatialPoolerLearningTest.tests(test)
+    AnomalyLikelihoodTest.tests(test)

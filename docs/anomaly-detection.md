@@ -56,22 +56,62 @@ one.
 ## Reading the numbers honestly
 
 A single score is noisy. A column can light up differently because the spatial
-pooler wired it that way, not because anything is wrong. Two things carry
-meaning:
+pooler wired it that way, not because anything is wrong. A threshold on the raw
+score is a decision for whatever is consuming it, and this library does not set
+one.
 
-- a **run** of high scores, where the pattern used to be steady;
-- a **shift** in the distribution over a longer window.
+What it does instead is [say how unusual the score itself is](#the-likelihood).
 
-A threshold on the raw score is a decision for whatever is consuming it. This
-library does not set one, and does not smooth the score.
+## The likelihood
+
+`AnomalyLikelihood` answers "given the scores that came before, how strange is
+this one". It keeps the recent scores, smooths them, models them as a normal
+distribution and reports one minus the probability of a score that far out:
+near the middle of what it has seen, about a half; far outside it, one.
+
+The example feeds it two hundred ordinary scores that wobble a little, then one
+that does not:
+
+```
+its idea of ordinary: centred at 0.151, spreading 0.017
+
+step                    score   likelihood
+an ordinary step       0.141   0.57
+another ordinary step  0.183   0.517
+the odd step           0.9     1
+
+the noisiest ordinary likelihood in two hundred steps was 0.908
+only the odd step comes near certainty
+```
+
+Three things about those numbers are worth knowing before trusting them.
+
+**An ordinary step is not near zero.** The value is one minus a tail
+probability, so half of all ordinary steps read above a half. An alarm wants a
+threshold near `0.999`, not near `0.5`. The noisiest of the two hundred ordinary
+steps above read 0.908, which is what a run of scores with a narrow spread looks
+like.
+
+**The first `learning_period + estimation_samples` scores read a flat half.**
+A distribution from ten points is not a distribution. The defaults are the
+reference's: 288 to learn and 100 to estimate from, which at five-minute
+samples is about a day and a half of a stream before anything is judged.
+
+**A perfectly predicted stream is a degenerate case.** If every score is
+exactly zero, the estimator's variance floor takes over and the smallest
+movement in the raw score becomes a certainty. The reference has the same floor,
+and the same consequence: the likelihood is meant for streams that vary.
+
+### What is not ported
+
+The reference filters runs of high likelihood down to a lower value so that a
+dashboard is not permanently red. That is a display decision rather than part of
+the estimate, so it is not here.
 
 ## What is not here
 
-- **No likelihood.** Numenta's anomaly likelihood smooths the raw score over a
-  rolling window and reports how unusual the score itself is. That is not
-  written; only the raw score is.
 - **No classification.** The third piece of the pipeline — learning which label
-  a predicted state corresponds to — is not written, so the score says "this is
-  unexpected" and not "this is the value that was expected".
-- **A learning spatial pooler.** The columns are fixed at construction, so the
-  same input always produces the same columns.
+  a predicted state corresponds to — is not written here, though the [SDR
+  classifier](classification.md) does that part on its own.
+- **Learning on actors.** The columns learn in process, so the whole pipeline is
+  in process.
