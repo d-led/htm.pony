@@ -52,7 +52,7 @@ That reads as: an 8 by 8 grid of columns, an input of 46 bits, global
 inhibition, two active columns per inhibition area.
 
 The last number becomes a fraction. An inhibition area of radius 1 covers 9
-cells, so two of them is $2/9 \approx 0.222$, and that fraction of 64 columns
+cells, so two of them is 2/9, about 0.222, and that fraction of 64 columns
 is what may be active at once:
 
 ```

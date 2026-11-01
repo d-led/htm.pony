@@ -22,8 +22,11 @@ nav:
   - Getting started: getting-started.md
   - Concepts:
       - Representations: concepts/representations.md
+      - Sparsity: concepts/sparsity.md
       - Topology: concepts/topology.md
       - Encoding: concepts/encoding.md
+      - Columns and cells: concepts/columns-and-cells.md
+      - Temporal memory: concepts/temporal-memory.md
   - Guides:
       - Spatial pooler: spatial-pooler.md
       - Actors: actors.md

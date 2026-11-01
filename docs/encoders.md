@@ -48,7 +48,7 @@ above `max_val`, more than one of the three sizes set, or none of them.
 ### A worked encoding
 
 The [scalar encoder example](examples.md#a-scalar-encoder) uses width 23, range
-0 to 1, radius 0.5, periodic. That gives a resolution of $0.5/23 \approx 0.0217$
+0 to 1, radius 0.5, periodic. That gives a resolution of 0.5/23, about 0.0217,
 and an output of 46 bits:
 
 ```

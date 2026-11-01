@@ -26,7 +26,9 @@ not written yet.
 | Category, RDSE, image and graph encoders | Not written |
 
 The [module reference](reference/modules.md) lists every file, type and public
-function, including the parts that do nothing yet.
+function, including the parts that do nothing yet. Two concept pages describe what
+is missing and why it matters: [columns and cells](concepts/columns-and-cells.md)
+and [temporal memory](concepts/temporal-memory.md).
 
 ## How the computation is arranged
 

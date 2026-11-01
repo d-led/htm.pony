@@ -45,9 +45,13 @@ around its own position, spread evenly across the input and widened by
 
 The centre of a column's field is its position scaled onto the input:
 
-$$
-\text{centre} = \left\lfloor (\text{inputs} - 1) \cdot \frac{\text{column}}{\text{columns} - 1} \right\rceil
-$$
+```text
+centre = truncate((inputs - 1) * column / (columns - 1))
+```
+
+With 64 columns over 64 inputs, column 9 lands on centre 9 and column 63 lands
+on centre 63. The value is computed in floating point and truncated towards
+zero, which for a non-negative result matches rounding down.
 
 The field is `centre - potential_radius` to `centre + potential_radius`, clipped
 to the input. Those two rules give the numbers in the example:
@@ -138,9 +142,12 @@ represented by their own strongest column, which global inhibition would forbid.
 A column wins when fewer than the area's allowance of its neighbours outrank it.
 The allowance counts the column itself:
 
-$$
-\text{allowance} = \left\lfloor \text{density} \cdot (\text{neighbours} + 1) + 0.5 \right\rfloor
-$$
+```text
+allowance = truncate(density * (neighbours + 1) + 0.5)
+```
+
+The `+ 0.5` makes the truncation round to the nearest whole number instead of
+down.
 
 With a density of 0.2222 and radius 1, a column in the middle of an `[8; 8]`
 grid has 8 neighbours, so the allowance is 2: a column wins if at most one
@@ -162,9 +169,9 @@ let config = SpatialPoolerConfig([8; 8], [64], false, 2.0)
 config.density(1)  // 0.222222
 ```
 
-The area of radius 1 on an `[8; 8]` grid is 9 cells, so 2 columns is
-$2/9 \approx 0.222$. The cap stops a small area from asking for more winners
-than it holds cells.
+The area of radius 1 on an `[8; 8]` grid is 9 cells, so 2 columns is 2/9, about
+0.222. The cap stops a small area from asking for more winners than it holds
+cells.
 
 ## A worked example
 
@@ -214,3 +221,6 @@ That means the parts of the Go implementation called `adaptSynapses`,
 `updateInhibitionRadius` have no counterpart here. Boosting in particular exists
 to give unused columns a chance; without learning, an unused column has nothing
 to catch up on.
+
+Learning is also what the [temporal memory](concepts/temporal-memory.md)
+would depend on, so it is the next thing to build.
