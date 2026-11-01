@@ -13,3 +13,4 @@ actor Main is TestList
     DateEncodingTest.tests(test)
     TopologyTest.tests(test)
     ColumnTest.tests(test)
+    InhibitionTest.tests(test)
