@@ -1,0 +1,42 @@
+use "collections"
+
+class val ColumnView
+  """
+  What a shard needs to answer for one column: its index, and the synapses it
+  votes with.
+  """
+  let index: USize
+  let synapses: Array[Synapse] val
+
+  new val create(index': USize, synapses': Array[Synapse] val) =>
+    index = index'
+    synapses = synapses'
+
+actor ColumnShard
+  """
+  A band of columns that share one actor.
+
+  One actor per column would cost a message in and a message out for every
+  column; a shard costs that once for the whole band and reports its votes in a
+  single message. The quorum still counts votes, so grouping columns does not
+  change what the ballot box does.
+  """
+  let _columns: Array[ColumnView] val
+  let _threshold: F64
+
+  new create(columns: Array[ColumnView] val, threshold: F64) =>
+    _columns = columns
+    _threshold = threshold
+
+  be consider(active: Array[Bool] val, ballot: BallotBox tag) =>
+    """
+    Vote the overlap of every column in the band.
+    """
+    let votes: Array[Vote] iso = recover iso Array[Vote] end
+
+    for column in _columns.values() do
+      let overlap = Synapses.overlap(column.synapses, active, _threshold)
+      votes.push(Vote(column.index, overlap.f64()))
+    end
+
+    ballot.cast(consume votes)

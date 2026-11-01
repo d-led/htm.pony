@@ -64,6 +64,23 @@ actor BallotBox
       _decide()
     end
 
+  be cast(votes: Array[Vote] iso) =>
+    """
+    A whole shard's votes in one message. Each vote counts towards the quorum,
+    so the caller's numbers stay in votes however the columns are grouped.
+    """
+    if _decided then return end
+
+    let received: Array[Vote] val = consume votes
+    for one in received.values() do
+      _votes.push(one)
+    end
+    _arrived = _arrived + received.size()
+
+    if (_arrived >= _quorum) or (_arrived >= _expected) then
+      _decide()
+    end
+
   be deadline_reached() =>
     if _decided then return end
     _decide()
@@ -72,8 +89,8 @@ actor BallotBox
     _decided = true
 
     let answer: Array[Vote] iso = recover iso Array[Vote] end
-    for cast in _votes.values() do
-      answer.push(cast)
+    for one in _votes.values() do
+      answer.push(one)
     end
     _tally.tallied(consume answer)
 
