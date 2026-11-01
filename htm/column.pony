@@ -9,7 +9,7 @@ class Column
   is connected to are active. Inhibition then decides which claims are strong
   enough to become the representation.
   """
-  let synapses: Array[Synapse]
+  embed synapses: Array[Synapse]
 
   new create(synapses': ReadSeq[Synapse]) =>
     synapses = Array[Synapse](synapses'.size())
