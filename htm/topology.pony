@@ -10,12 +10,12 @@ use "collections"
 //
 // The cells of a grid are laid out row-major: for [3, 3], index 4 is the centre.
 
-class Grid
+class val Grid
   let _dims: Array[USize] val
   let _bounds: Array[USize] val
   let size: USize
 
-  new create(dims': ReadSeq[USize]) ? =>
+  new val create(dims': Array[USize] val) ? =>
     """
     A grid of the given dimensions. Fails when a dimension is missing or zero:
     a grid without cells has no meaningful topology.
@@ -23,12 +23,10 @@ class Grid
     let count = dims'.size()
     if count == 0 then error end
 
-    let dims = recover trn Array[USize](count) end
     for d in dims'.values() do
       if d == 0 then error end
-      dims.push(d)
     end
-    _dims = consume dims
+    _dims = dims'
 
     // _bounds(i) is how much one step along dimension i is worth in the flat
     // array: [3, 3] -> [3, 1].

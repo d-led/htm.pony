@@ -15,13 +15,3 @@ primitive Dimensions
       result = result * dimension
     end
     result
-
-  fun frozen(dims: ReadSeq[USize]): Array[USize] val =>
-    """
-    A shareable copy, so a caller cannot change a shape after it is in use.
-    """
-    let copy = recover trn Array[USize](dims.size()) end
-    for dimension in dims.values() do
-      copy.push(dimension)
-    end
-    consume copy

@@ -2,7 +2,7 @@ use "collections"
 
 // https://github.com/htm-community/htm/blob/master/spatialPooler.go : InhibitColumns, density
 
-class SpatialPoolerConfig
+class val SpatialPoolerConfig
   """
   The shape of a spatial pooler and how strictly it competes.
 
@@ -20,9 +20,9 @@ class SpatialPoolerConfig
   let permanence_increment: F64
   let inhibition_radius: USize
 
-  new create(
-    column_dimensions': ReadSeq[USize],
-    input_dimensions': ReadSeq[USize],
+  new val create(
+    column_dimensions': Array[USize] val,
+    input_dimensions': Array[USize] val,
     global_inhibition': Bool = false,
     num_active_columns_per_inh_area': F64 = 10.0,
     local_area_density': F64 = -1.0,
@@ -32,8 +32,8 @@ class SpatialPoolerConfig
     permanence_increment': F64 = 0.1,
     inhibition_radius': USize = 1)
   =>
-    column_dimensions = Dimensions.frozen(column_dimensions')
-    input_dimensions = Dimensions.frozen(input_dimensions')
+    column_dimensions = column_dimensions'
+    input_dimensions = input_dimensions'
     global_inhibition = global_inhibition'
     num_active_columns_per_inh_area = num_active_columns_per_inh_area'
     local_area_density = local_area_density'
