@@ -102,6 +102,27 @@ exactly zero, the estimator's variance floor takes over and the smallest
 movement in the raw score becomes a certainty. The reference has the same floor,
 and the same consequence: the likelihood is meant for streams that vary.
 
+### Using the two together
+
+The detector and the likelihood are separate objects on purpose: the score is a
+property of one step, and the likelihood is a property of a stream of them. They
+compose in three lines.
+
+```pony
+let detector = StreamingAnomalyDetector(pooler, memory)
+let likelihood = AnomalyLikelihood()?
+
+let score = detector.observe(input)?       // the share of columns that burst
+let strange = likelihood.observe(score)?   // how unusual that share is
+```
+
+The defaults on the likelihood mean nothing is judged for the first 388 steps.
+For a short demonstration, hand it smaller periods:
+
+```pony
+AnomalyLikelihood(10, 10, 200, 5, 10)?   // learn, estimate, keep, re-estimate, smooth
+```
+
 ### What is not ported
 
 The reference filters runs of high likelihood down to a lower value so that a
