@@ -19,3 +19,4 @@ examples/actor-pooler/actor-pooler
 examples/scalar-encoder/scalar-encoder
 examples/first-representation/first-representation
 examples/image-similarity/image-similarity
+examples/temporal-memory/temporal-memory

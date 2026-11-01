@@ -44,6 +44,13 @@ the spatial pooler each one shares with the first. Demonstrates `DifferenceHash`
 `ImageFingerprint` and `ImageEncoder`, and that scale and brightness leave a
 picture's representation unchanged while an unrelated picture shares few columns.
 
+## [temporal-memory](temporal-memory/)
+
+Teaches a temporal memory that one column follows another, then shows the first
+column alone and reads what the memory expects next. Then shows the second,
+which no longer bursts because it was predicted. Demonstrates `TemporalMemory`,
+`TemporalMemoryParams` and `TemporalOutput`.
+
 ## Running them
 
 Build and run one from its own directory:

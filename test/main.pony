@@ -21,3 +21,4 @@ actor Main is TestList
     ColumnShardTest.tests(test)
     PoolerTest.tests(test)
     ImageEncoderTest.tests(test)
+    TemporalMemoryTest.tests(test)

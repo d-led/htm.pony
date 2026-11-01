@@ -1,15 +1,12 @@
 # Temporal memory
 
-!!! warning "Not implemented"
+The spatial pooler answers "what is this". The temporal memory answers "what
+usually comes next". It takes the active columns of one step, compares them with
+what it remembers about the step before, and says which cells it expects to be
+active at the next one.
 
-    Nothing on this page exists in this repository. It describes what the
-    temporal memory is and where it would attach, so that the gap between the
-    spatial pooler and a working HTM is stated rather than implied.
-
-The spatial pooler answers "what is this input". The temporal memory answers
-"what usually comes next". It takes the active columns of one step, compares them
-with what it remembers about the previous steps, and predicts which columns will
-be active at the next one.
+It is implemented and tested in process. It does not run as actors yet, and the
+spatial pooler still does not learn, so the columns it is given never change.
 
 ## Why it needs cells
 
@@ -21,67 +18,63 @@ That is what [cells](columns-and-cells.md) are for. A column holds several cells
 and which of them is active records the context. The references express this with
 `cellsPerColumn`, which `htm.core` defaults to 32.
 
-## The mechanism, in the reference
+A cell owns **segments**. A segment holds synapses onto other cells, and it is
+active when enough of those cells were active at the previous step. A cell with
+an active segment is the memory's prediction.
 
-The Go implementation has the pieces under names that say what they do. The entry
-point takes the spatial pooler's output:
-
-```
-func (tm *TemporalMemory) Compute(activeColumns []int, learn bool)
-```
-
-Inside, the steps are:
-
-| Step | Function | What it does |
-| --- | --- | --- |
-| 1 | `computeActiveSynapses` | finds which cells were active at the previous step |
-| 2 | `computePredictiveCells` | a segment predicts when enough of its synapses are on active cells |
-| 3 | `activateCorrectlyPredictiveCells` | cells that predicted correctly become active |
-| 4 | `burstColumns` | a column that was not predicted activates all its cells |
-| 5 | `learnOnSegments` | segments that predicted get reinforced, the others weakened |
-| 6 | `getBestMatchingCell` | picks the cell to extend when a column bursts |
-
-The structures those steps work on are in `temporalMemoryConnections.go`:
+## One step
 
 ```
-CreateSegment(cell) int
-CreateSynapse(segment, sourceCell int, permanence float64) *TmSynapse
-SegmentsForCell(cell int) []int
-UpdateSynapsePermanence(synapse int, permanence float64)
+columns ---------> which cells were predicted for those columns?
+                        |
+             yes: activate only those cells
+              no: activate every cell in the column, and call it a burst
+                        |
+             learn: move the synapses of the segments that were right
+                    grow a new segment where nothing predicted
 ```
 
-A **segment** belongs to one cell and holds synapses onto other cells. A segment
-is predictive when enough of those synapses reach cells that are currently
-active. Learning moves permanences, which is the same operation the spatial
-pooler needs and does not yet have.
+A **burst** is a column that was not predicted. It activates all of its cells,
+because the memory does not know which one applies, and it learns a segment for
+the situation that preceded it.
 
-The Go repository carries a second, older implementation as well:
-`segment.go`, `segmentUpdate.go`, `temporalPooler.go` and `trivialPredictor.go`.
+## Using it
 
-## Where it would attach here
+```pony
+let memory = TemporalMemory(TemporalMemoryParams(columns = 64, cells_per_column = 32))?
 
-The pooler already emits the right thing. `Pooler` answers with
-`Array[USize] iso`, the active columns, and `Representation.represented` is where
-they arrive.
+let output = memory.compute(active_columns, learn = true)?
+output.active_cells      // what is active now
+output.predictive_cells  // what it expects next
+output.bursting_columns  // the columns it had no prediction for
+```
 
-So a temporal memory would sit behind `Representation`, take the column indexes it
-is given, and hold the state that the pooler deliberately does not have. The
-pooler stays a stateless mapper from input to columns; the sequence layer keeps
-the history.
+`predictive_cells` describes the future, not the present: it is computed from the
+cells that just became active, so it says what the memory expects at the next
+step.
 
-## What is missing, concretely
+The example in [examples](../examples.md#prediction) teaches one column to follow
+another and then shows that the second no longer bursts.
 
-- **Cells.** No type, no `cellsPerColumn`, no cell index. See
-  [columns and cells](columns-and-cells.md).
-- **Segments and distal synapses.** `Synapse` here reaches an input bit, not
-  another cell.
-- **Activation state that survives a step.** Every type in `htm/` is either a
-  value or a stateless actor. A round leaves no trace.
-- **A previous step.** Nothing in the code holds "the cells that were active
-  before".
-- **Permanence learning.** The temporal memory cannot work without it, and neither
-  can a spatial pooler that adapts. `adaptSynapses`, `updateDutyCycles` and
-  `updateBoostFactors` from the Go implementation are all absent.
+## The anomaly reading
 
-The first of these is the one to build first: learning. It needs no new types, it
-makes the spatial pooler complete, and the temporal memory depends on it.
+A burst is a prediction that failed. The share of active columns that burst is
+therefore a direct measure of how surprising the input was, and it is what
+streaming anomaly detection reads:
+
+```
+anomaly = bursting columns / active columns
+```
+
+Zero means everything that happened was expected. One means nothing was.
+
+## What is not here
+
+- **Actors.** The memory is a plain object. Running it on actors, the way the
+  spatial pooler already does, has not been done.
+- **Punishing wrong segments.** Segments that matched and predicted wrongly are
+  not weakened; only segments that were right are reinforced.
+- **Segment reuse over long runs.** A column that keeps bursting and never
+  matches grows a new segment until it hits `max_segments_per_cell`, and then
+  stops learning.
+- **The spatial pooler's own learning.** Permanences there still never change.

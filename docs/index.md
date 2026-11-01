@@ -24,7 +24,8 @@ not written yet.
 | Image fingerprint and encoder, from pixels | Implemented, tested |
 | A picture file decoder | Not written; the seam it plugs into exists |
 | Permanence learning, duty cycles, boosting | Not written |
-| Temporal memory, CLA temporal pooler | Not written |
+| Temporal memory: cells, segments, prediction, bursts | Implemented, tested, in process |
+| Temporal memory on actors | Not written |
 | Category, RDSE and graph encoders | Not written |
 
 The [module reference](reference/modules.md) lists every file, type and public

@@ -138,6 +138,25 @@ a different one   16        22        23       9
 The pictures are built in code rather than read from a file, because reading a
 file needs a decoder and Pony has none yet.
 
+## Prediction
+
+`examples/temporal-memory/main.pony` teaches a temporal memory that one column
+follows another, then shows the first alone and reads what the memory expects.
+
+```
+showing column 0 alone
+  active cells:      [0]
+  bursts:            [] (columns)
+  predicts columns:  [1]
+
+showing column 1, which was predicted
+  active cells:      [4]
+  bursts:            [] (columns)
+```
+
+A predicted column activates only the cells that were predicted, so it no
+longer bursts. [The temporal memory](concepts/temporal-memory.md) explains why.
+
 ## A scalar encoder
 
 `examples/scalar-encoder/main.pony` encodes four values and counts the bits each
