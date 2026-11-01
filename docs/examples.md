@@ -132,42 +132,44 @@ last section checks: an inference does not learn.
 
 ## The same computation on actors
 
-`examples/actor-pooler/main.pony` wires the same 64 columns into four shards of
-sixteen, hands them to a `Pooler`, and asks for a representation. It also builds
-the in-process pooler from the same seed, and compares the two answers when the
-message arrives.
+`examples/actor-pooler/main.pony` wires 64 columns into four shards of sixteen,
+hands them to a `Pooler`, and runs sixty learning rounds through it. It runs the
+same sixty rounds through an in-process `SpatialPooler` built from the same seed
+and compares the two answers round by round.
 
 ```
-in process: [3, 5, 7, 8, 13, 17, 19, 28, 42, 45, 55, 56]
-on actors:  [3, 5, 7, 8, 13, 17, 19, 28, 42, 45, 55, 56]
-both paths give the same representation
+round 1 in process: [3, 5, 7, 8, 13, 17, 19, 28, 42, 45, 55, 56]
+round 1 on actors:  [3, 5, 7, 8, 13, 17, 19, 28, 42, 45, 55, 56]
+round 60 in process: [7, 8, 9, 19, 20, 21, 42, 45, 52, 55, 56]
+round 60 on actors:  [7, 8, 9, 19, 20, 21, 42, 45, 52, 55, 56]
+the two paths agreed on all 60 learning rounds
 ```
 
-The asking side is an actor that implements `Representation`:
+The representation moves between the first round and the sixtieth because those
+rounds learn: the columns that keep losing are helped until they win, and the
+winners have moved their permanences towards the input. That both paths move the
+same way is the claim - the actor layer changes where the work runs, not what it
+computes.
+
+The asking side is an actor that implements `Representation`, compares the answer
+with what one process gave for the same round, and asks for the next round:
 
 ```pony
 actor Listener is Representation
   be represented(active: Array[USize] iso) =>
-    /* the answer */
+    /* compare the answer, then ask again */
 ```
 
 and the request is a message with no return value:
 
 ```pony
-pooler.represent(input, Listener(this))
+pooler.represent(input, true, Listener(this, pooler, input))
 ```
 
-The example wires its shards with `Wiring.synapses` and one seeded generator,
-which is how `SpatialPooler` wires itself. That is why the two lists match: the
-actor layer moves where the work runs, and does not change what it computes.
-
-Each shard's synapses are frozen into a value first, because a shard shares them
-between actor messages:
-
-```pony
-let wired = Wiring.synapses(config, inputs, random, column)?
-views.push(ColumnView(column, _frozen_synapses(wired)))
-```
+`PoolerShards.build(config, seed, width)` cuts the population into bands and wires
+each column as `SpatialPooler` wires its own: in column order, from one seeded
+generator, raised until it can be heard and trimmed. Both paths start from the
+same population, which is what makes the answers comparable at all.
 
 ## The temporal memory on actors
 

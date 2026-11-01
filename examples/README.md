@@ -2,7 +2,7 @@
 
 Each subdirectory is a self-contained Pony program demonstrating a different
 part of the library. Ordered from simplest to most involved: the first two build
-a representation, the third builds the same one out of actors, and the last
+a representation, the third runs the same session out of actors, and the last
 covers encoding on its own.
 
 ## [first-representation](first-representation/)
@@ -22,12 +22,13 @@ same seed and compares the two answers. Demonstrates `Wiring.receptive_field`,
 
 ## [actor-pooler](actor-pooler/)
 
-Wires the same 64 columns into four `ColumnShard` actors, hands them to a
-`Pooler`, and asks for a representation. The asking side is an actor that
-implements `Representation` and compares the answer with the in-process one.
-Demonstrates the message path — `Pooler.represent`, `Ballot.cast`,
-`Representation.represented` — and that grouping columns into shards does not
-change the result.
+Wires 64 columns into four `ColumnShard` actors, hands them to a `Pooler`, and
+runs sixty learning rounds on it and on an in-process `SpatialPooler`. The asking
+side is an actor that implements `Representation`, compares every answer with the
+in-process one, and asks for the next round. Demonstrates the message path —
+`Pooler.represent`, `Ballot.cast`, `Representation.represented`,
+`ColumnShard.learn` — and that grouping columns into shards does not change what
+the pooler computes or learns.
 
 ## [scalar-encoder](scalar-encoder/)
 

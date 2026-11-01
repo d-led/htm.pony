@@ -10,16 +10,22 @@ slow or absent column cannot hold up a round.
 ## The shape of the path
 
 ```text
-Asker        --represent(active, asker)-->   Pooler
-Pooler       --observe(active, ballot)-->    ColumnShard, once per shard
-ColumnShard  --cast(votes)-->                BallotBox
-BallotBox    --tallied(votes)-->             Pooler
-Pooler       --represented(winners)-->       Asker
+Asker        --represent(active, learn, asker)-->  Pooler
+Pooler       --observe(active, ballot)-->          ColumnShard, once per shard
+ColumnShard  --cast(votes)-->                      BallotBox
+BallotBox    --tallied(votes)-->                   Pooler
+Pooler       --learn(active, winners, starving)--> ColumnShard, once per shard
+Pooler       --represented(winners)-->             Asker
 ```
 
 No step returns a value. The asker hands over a `Representation` and the answer
 arrives at `represented` when the round closes. That is what lets a round be in
 flight while the caller does something else.
+
+A round that learns has one more step, and it comes last because only the votes
+say who won. The input the round learned from has to be kept until then, which
+is why the pooler holds the round rather than forgetting it once the shards have
+been asked.
 
 ## Three interfaces and nothing else
 
@@ -105,16 +111,16 @@ be observe(active: Array[Bool] val, ballot: Ballot tag) =>
 
 ```pony
 actor ColumnShard
-  let _columns: Array[ColumnView] val
-  let _threshold: F64
+  let _columns: Array[Column] ref
+  let _indices: Array[USize] val
+  let _positions: Map[USize, USize] ref
+  let _config: SpatialPoolerConfig val
 
   be observe(active: Array[Bool] val, ballot: Ballot tag) =>
-    let votes: Array[Vote] iso = recover iso Array[Vote] end
-    for column in _columns.values() do
-      let overlap = Synapses.overlap(column.synapses, active, _threshold)
-      votes.push(Vote(column.index, overlap.f64()))
-    end
-    ballot.cast(consume votes)
+    /* one vote per column, in one cast */
+
+  be learn(active: Array[Bool] val, winners: Array[USize] val, starving: Array[USize] val) =>
+    /* adapt the winners, raise the starving ones */
 ```
 
 One actor per column costs a message in and a message out for every column. A
@@ -122,7 +128,14 @@ shard costs that once for the whole band and reports its votes in a single
 message. The ballot box still counts votes, not messages, so grouping columns
 does not change when a round closes.
 
-Both take `Array[Synapse] val`, and neither validates the wiring at
+A shard holds the settings that decide what a column claims and how far it
+moves, so `learn` carries the input and the names of the columns the pooler
+chose, and nothing else. Those names are indices in the population, not
+positions in the band: the pooler decides who learns and knows only the
+population, so each shard looks up the columns that are its own and ignores the
+rest. That lookup is why the shard keeps a `Map` beside its columns.
+
+Both are handed their synapses as values, and neither validates the wiring at
 construction: an actor constructor cannot fail, so there is no place to report a
 connection that reaches past the end of the input. The pooler settles the input
 width first and hands over synapses that fit. `Synapses.overlap` skips anything
@@ -134,20 +147,28 @@ that does not, which is the backstop rather than the rule.
 
 ```pony
 let pooler = Pooler(shards, Grid([8; 8])?, config)
-pooler.represent(active, asker)
+pooler.represent(active, learn, asker)
 ```
 
 It runs one round at a time. A second request waits in a queue rather than
 overwriting a tally still in flight:
 
 ```pony
-be represent(active: Array[Bool] val, asker: Representation tag) =>
-  _queue.push(Round(active, asker))
+be represent(active: Array[Bool] val, learn: Bool, asker: Representation tag) =>
+  _queue.push(Round(active, learn, asker))
   _pump()
 ```
 
-When the tally arrives it inhibits the votes and pushes the winners to the
-asker, then takes the next request.
+When the tally arrives the pooler inhibits the votes. On a learning round it
+raises the claims of the columns that keep losing before inhibiting, remembers
+who claimed what and who won, and sends each shard the two lists of columns that
+are to move. Then it pushes the winners to the asker and takes the next request.
+
+The shards are told before the asker is answered, so a round's `learn` leaves
+before the next round's `observe`. Messages from one actor to another arrive in
+the order they were sent, so a shard cannot be shown the next input before it has
+learned from the last one - and nothing waits for a shard to acknowledge the
+`learn`.
 
 The ballots it creates expect one vote per column and set the quorum to the same
 number. A deadline is not set, so a shard that never answers holds the round

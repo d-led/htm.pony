@@ -28,6 +28,26 @@ primitive Wiring
     end
     result
 
+  fun fresh_column(
+    config: SpatialPoolerConfig,
+    input_grid: Grid,
+    random: Rand,
+    index: USize)
+    : Column ?
+  =>
+    """
+    A column as it starts: what `synapses` picks for it, raised until it has
+    enough connected synapses to be heard, and trimmed.
+
+    A column needs both before it can take part in a round. One wired shy of the
+    minimum could never win, and a column that never wins can never learn.
+    """
+    let fresh = Column(synapses(config, input_grid, random, index)?)
+    fresh.ensure_connected(
+      config.stimulus_threshold, config.connection_threshold, config.raise_stride())
+    fresh.trim(config.trim_threshold())
+    fresh
+
   fun receptive_field(config: SpatialPoolerConfig, input_grid: Grid, column: USize): Array[USize] =>
     """
     The stretch of input a column may reach: its own position, spread evenly
@@ -82,12 +102,9 @@ class SpatialPooler
   """
   Turns an input into a sparse representation: the columns that recognise it.
 
-  The pooler owns the columns and does the work in process. Learning belongs
-  here rather than in the actor layer: inhibition decides the winners only after
-  every overlap is known, and learning is the winners' reaction to that verdict,
-  so there is exactly one place that can make the decision. A shard holds a
-  frozen view of its columns, which is what an inference-only round needs and
-  what the actor layer ships today.
+  The pooler owns the columns and does the work in process. Inhibition can name
+  a winner only once every overlap is known, and learning is the winner's
+  reaction to that verdict, so a round is decided in one place.
 
   A round that does not learn changes nothing, so the same input always gives
   the same answer. A round that learns moves the pooler forward in four ways:
@@ -112,11 +129,7 @@ class SpatialPooler
     let wired = Array[Column](config'.num_columns())
     var column: USize = 0
     while column < config'.num_columns() do
-      let fresh = Column(Wiring.synapses(config', inputs, random, column)?)
-      fresh.ensure_connected(
-        config'.stimulus_threshold, config'.connection_threshold, config'.raise_stride())
-      fresh.trim(config'.trim_threshold())
-      wired.push(fresh)
+      wired.push(Wiring.fresh_column(config', inputs, random, column)?)
       column = column + 1
     end
 

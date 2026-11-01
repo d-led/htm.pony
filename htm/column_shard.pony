@@ -2,8 +2,8 @@ use "collections"
 
 class val ColumnView
   """
-  What a shard needs to answer for one column: its index, and the synapses it
-  votes with.
+  What a shard is handed for one column: its place in the population, and the
+  synapses it starts with.
   """
   let index: USize
   let synapses: Array[Synapse] val
@@ -22,36 +22,76 @@ actor ColumnShard
   change what the ballot box does.
 
   It owns its columns: the synapses arrive as values, one set per column, and
-  are copied into columns of the shard's own. Nothing tells it to learn yet -
-  that is the next message - but nothing is in the way of it either, which the
-  frozen views it used to hold did.
+  are copied into columns of the shard's own. It also holds the settings that
+  decide what a column claims and how far it moves, so `learn` needs nothing
+  from the pooler but the input and the columns the pooler chose.
+
+  Those columns are named by their index in the population, not by their
+  position in the band, because the pooler decides who learns and the pooler
+  knows only the population. A column of another band is ignored.
   """
   let _columns: Array[Column] ref
   let _indices: Array[USize] val
-  let _threshold: F64
+  let _positions: Map[USize, USize] ref
+  let _config: SpatialPoolerConfig val
 
-  new create(columns: Array[ColumnView] val, threshold: F64) =>
+  new create(columns: Array[ColumnView] val, config: SpatialPoolerConfig val) =>
     let owned = Array[Column](columns.size())
     let indices: Array[USize] iso = recover iso Array[USize] end
+    let positions = Map[USize, USize]
 
-    for column in columns.values() do
+    for (position, column) in columns.pairs() do
       owned.push(Column(column.synapses))
       indices.push(column.index)
+      positions(column.index) = position
     end
 
     _columns = owned
     _indices = consume indices
-    _threshold = threshold
+    _positions = positions
+    _config = config
 
   be observe(active: Array[Bool] val, ballot: Ballot tag) =>
     """
     Push the overlap of every column in the band to the round's sink.
+
+    A column matching fewer than the stimulus threshold of the input votes
+    zero: it does not have enough of the input to count as a claim.
     """
     let votes: Array[Vote] iso = recover iso Array[Vote] end
 
     for (position, column) in _columns.pairs() do
-      let overlap = Synapses.overlap(column.synapses, active, _threshold)
-      try votes.push(Vote(_indices(position)?, overlap.f64())) end
+      let claim = Synapses.overlap(column.synapses, active, _config.connection_threshold)
+      let overlap: F64 =
+        if claim < _config.stimulus_threshold then 0.0 else claim.f64() end
+      try votes.push(Vote(_indices(position)?, overlap)) end
     end
 
     ballot.cast(consume votes)
+
+  be learn(active: Array[Bool] val, winners: Array[USize] val, starving: Array[USize] val) =>
+    """
+    Move the columns the pooler named towards the input it judged them on.
+
+    A winner is adapted to the input it won with, raised until it has enough
+    connected synapses to be heard again, and trimmed. A starving column is
+    raised without being adapted: keeping its receptive field and making it
+    stronger is what gives a column that keeps losing another chance.
+    """
+    for winner in winners.values() do
+      try _adapt(_columns(_positions(winner)?)?, active) end
+    end
+
+    for weak in starving.values() do
+      try _raise(_columns(_positions(weak)?)?) end
+    end
+
+  fun ref _adapt(column: Column, active: Array[Bool] val) =>
+    column.adapt(active, _config.permanence_increment, _config.permanence_decrement)
+    column.ensure_connected(
+      _config.stimulus_threshold, _config.connection_threshold, _config.raise_stride())
+    column.trim(_config.trim_threshold())
+
+  fun ref _raise(column: Column) =>
+    column.strengthen_all(_config.raise_stride())
+    column.trim(_config.trim_threshold())

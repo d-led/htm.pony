@@ -20,9 +20,12 @@ class Column
   fun overlap(active: ReadSeq[Bool], connection_threshold: F64): USize ?
 ```
 
-Its identity is its index. Columns have no state that survives a round: the same
-column with the same input always reports the same overlap. That is why a column
-can be frozen into a `ColumnView` and shared between actor messages.
+Its identity is its index. A column does have state that outlasts a round - the
+permanences it holds - but only a learning round moves them, and a column cannot
+move them by itself: inhibition decides who won, and the winner is what learns.
+That is the seam the actor layer is built on. A column's wiring can be handed to
+another actor as a `ColumnView`, and from then on only the actor that owns the
+column changes it.
 
 Nothing above a column exists either. The pooler holds a flat `Array[Column]` and
 a `Grid` for the shape; the shape is used to decide who competes with whom, not to

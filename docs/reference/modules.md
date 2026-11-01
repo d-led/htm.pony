@@ -105,6 +105,7 @@ Tests: `test/spatial_pooler_config_test.pony`.
 | Member | Signature | What it does |
 | --- | --- | --- |
 | `synapses` | `fun synapses(config: SpatialPoolerConfig, input_grid: Grid, random: Rand, column: USize): Array[Synapse] ?` | a column's connections, drawn from one generator |
+| `fresh_column` | `fun fresh_column(config: SpatialPoolerConfig, input_grid: Grid, random: Rand, index: USize): Column ?` | a wired column, raised until it can be heard and trimmed |
 | `receptive_field` | `fun receptive_field(config: SpatialPoolerConfig, input_grid: Grid, column: USize): Array[USize]` | the inputs a column may reach |
 
 `SpatialPooler` — the representation computation, in process.
@@ -151,15 +152,16 @@ Tests: `test/cortical_column_test.pony`.
 
 ### `column_shard.pony`
 
-`ColumnView` (value) — what a shard answers for one column: `index` and
-`synapses`.
+`ColumnView` (value) — what a shard is handed for one column: `index`, its place
+in the population, and the `synapses` it starts with.
 
 `ColumnShard` (actor) — a band of columns sharing one actor.
 
 | Member | Signature | What it does |
 | --- | --- | --- |
-| `create` | `new create(columns: Array[ColumnView] val, threshold: F64)` | |
+| `create` | `new create(columns: Array[ColumnView] val, config: SpatialPoolerConfig val)` | copies the synapses into columns of its own, and keeps the settings |
 | `observe` | `be observe(active: Array[Bool] val, ballot: Ballot tag)` | pushes every column's overlap in one `cast` |
+| `learn` | `be learn(active: Array[Bool] val, winners: Array[USize] val, starving: Array[USize] val)` | adapts the named winners and raises the named starving columns, ignoring indices of other bands |
 
 Tests: `test/column_shard_test.pony`.
 
@@ -168,16 +170,18 @@ Tests: `test/column_shard_test.pony`.
 | Type | What it is |
 | --- | --- |
 | `Representation` (interface) | `be represented(Array[USize] iso)` — whoever asked for a representation |
-| `Round` (value) | one queued request: the input, and who to answer |
+| `Round` (value) | one queued request: the input, whether the round learns, and who to answer |
 | `Pooler` (actor) | the coordinator, and a `Tally` |
+| `PoolerShards` (primitive) | bands of columns wired as `SpatialPooler` wires its own |
 
 | Member | Signature | What it does |
 | --- | --- | --- |
 | `create` | `new create(shards: Array[ColumnShard tag] val, grid: Grid val, config: SpatialPoolerConfig val)` | |
-| `represent` | `be represent(active: Array[Bool] val, asker: Representation tag)` | queues a round and starts it if nothing is in flight |
-| `tallied` | `be tallied(votes: Array[Vote] iso)` | inhibits the votes and answers the asker |
+| `represent` | `be represent(active: Array[Bool] val, learn: Bool, asker: Representation tag)` | queues a round and starts it if nothing is in flight |
+| `tallied` | `be tallied(votes: Array[Vote] iso)` | inhibits the votes, learns from the round if it was asked to, and answers the asker |
+| `PoolerShards.build` | `fun build(config: SpatialPoolerConfig val, seed: U64, width: USize): Array[ColumnShard tag] val ?` | cuts the population into bands of `width` |
 
-Tests: `test/pooler_test.pony`.
+Tests: `test/pooler_test.pony`, `test/pooler_learning_test.pony`.
 
 ### `htm_types.pony`
 

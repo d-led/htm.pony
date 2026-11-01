@@ -20,6 +20,7 @@ actor Main is TestList
     CorticalColumnTest.tests(test)
     ColumnShardTest.tests(test)
     PoolerTest.tests(test)
+    PoolerLearningTest.tests(test)
     ImageEncoderTest.tests(test)
     TemporalMemoryTest.tests(test)
     AnomalyTest.tests(test)

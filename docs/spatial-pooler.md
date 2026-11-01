@@ -219,14 +219,14 @@ better; they are different populations that recognise different things.
 
 The same computation also runs as messages between actors, with the columns
 grouped into shards and a coordinator collecting their votes. That path computes
-the same representation and its example checks it against the in-process one.
+the same representation from the same seed and learns from the same rounds; its
+example runs sixty learning rounds on both and compares the answer to every one.
 [Actors](actors.md) describes it.
 
-A shard holds a frozen copy of its columns' synapses, which is what an
-inference round needs. Learning is not available on that path: inhibition
-decides the winner only after every overlap is known, and learning is the
-winners' reaction to that verdict, so there is exactly one place that can make
-the decision, and it is not any of the shards.
+Learning is decided in one place on both paths. Inhibition can name a winner only
+after every overlap is known, so the coordinator holds the round until the tally
+comes back and then sends each shard the columns that are to move. A shard
+applies the arithmetic to the columns it owns and decides nothing.
 
 ## Learning
 
@@ -297,10 +297,6 @@ answer. It is not ported because it makes a freshly built pooler answer
 [inference-only path](examples.md#the-spatial-pooler-in-one-process) that this
 port ships. What it protects against is a column that never won winning by
 accident; the boost mechanism is the gentler half of the same idea.
-
-Learning on actors, and the stimulus threshold beyond zero, are the other
-differences. The threshold exists and is honoured when a column is wired, but
-the default of zero means it does nothing.
 
 ## What is not here
 

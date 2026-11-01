@@ -40,7 +40,7 @@ primitive PoolerFixture
       columns.push(ColumnView(column, synapses))
       column = column + 1
     end
-    ColumnShard(consume columns, 0.2)
+    ColumnShard(consume columns, config())
 
   fun pooler(): Pooler ? =>
     let shards = recover iso Array[ColumnShard tag] end
@@ -62,7 +62,7 @@ class iso _ARoundReachesAnAnswer is UnitTest
 
   fun apply(h: TestHelper) ? =>
     h.long_test(5_000_000_000)
-    PoolerFixture.pooler()?.represent(PoolerFixture.input()?, Listener(h, 1))
+    PoolerFixture.pooler()?.represent(PoolerFixture.input()?, false, Listener(h, 1))
 
 class iso _TwoRequestsAreAnsweredInTurn is UnitTest
   fun name(): String => "two requests are both answered, one after the other"
@@ -71,5 +71,5 @@ class iso _TwoRequestsAreAnsweredInTurn is UnitTest
     h.long_test(5_000_000_000)
     let pooler = PoolerFixture.pooler()?
     let listener = Listener(h, 2)
-    pooler.represent(PoolerFixture.input()?, listener)
-    pooler.represent(PoolerFixture.input()?, listener)
+    pooler.represent(PoolerFixture.input()?, false, listener)
+    pooler.represent(PoolerFixture.input()?, false, listener)

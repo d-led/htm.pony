@@ -9,8 +9,7 @@ what tends to follow what. This port has both sides: encoders turn values into
 bit vectors, and a spatial pooler turns a bit vector into a sparse set of columns
 that recognise it. The temporal memory then learns which cells in those columns
 predict the next input, and the classifiers turn predictions into probabilities
-over categories. What it does not have yet is learning in the spatial pooler:
-columns are wired from a seed and keep those permanences forever.
+over categories.
 
 ## Status
 
@@ -25,7 +24,7 @@ columns are wired from a seed and keep those permanences forever.
 | Actor layer: shards, ballot box, pooler | Implemented, tested |
 | Image fingerprint and encoder, from pixels | Implemented, tested |
 | A picture file decoder (PNG, JPEG, BMP, GIF) | Implemented, tested |
-| Permanence learning, duty cycles, boosting | Implemented, tested, in process |
+| Permanence learning, duty cycles, boosting | Implemented, tested, in process and on actors |
 | Temporal memory: cells, segments, prediction, bursts | Implemented, tested |
 | Temporal memory on actors | Implemented, tested |
 | SDR classifier, categories | Implemented, tested |
@@ -43,9 +42,9 @@ and [temporal memory](concepts/temporal-memory.md).
 ## How the computation is arranged
 
 The spatial pooler runs in one process or on actors. Both paths compute the same
-representation from the same seed, and the
+representation from the same seed, and both learn from the same rounds; the
 [actor example](examples.md#the-same-computation-on-actors) checks that they
-agree.
+agree round by round through a learning session.
 
 The in-process path is a plain object graph:
 
@@ -56,11 +55,12 @@ input bits -> column overlaps -> inhibition -> representation
 The actor path keeps that computation and changes where it runs:
 
 ```text
-Asker        --represent(active, asker)-->   Pooler
-Pooler       --observe(active, ballot)-->    ColumnShard, once per shard
-ColumnShard  --cast(votes)-->                BallotBox
-BallotBox    --tallied(votes)-->             Pooler
-Pooler       --represented(winners)-->       Asker
+Asker        --represent(active, learn, asker)-->  Pooler
+Pooler       --observe(active, ballot)-->          ColumnShard, once per shard
+ColumnShard  --cast(votes)-->                      BallotBox
+BallotBox    --tallied(votes)-->                   Pooler
+Pooler       --learn(active, winners, starving)--> ColumnShard, once per shard
+Pooler       --represented(winners)-->             Asker
 ```
 
 Nothing in that path returns a value. Each actor pushes to the next and the
