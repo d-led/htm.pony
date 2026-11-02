@@ -18,7 +18,7 @@ over categories.
 | Dense and sparse binary matrices | Implemented, tested |
 | Grid topology: coordinates, flattening, neighbours | Implemented, tested |
 | Scalar encoder, including top-down mapping | Implemented, tested |
-| Date encoder | Season encoded; four further fields reserve width but are not written |
+| Date encoder | Implemented, tested: season, day of week, weekend, time of day and holidays |
 | Column wiring, overlap, global and local inhibition | Implemented, tested |
 | Spatial pooler, in process | Implemented, tested |
 | Actor layer: shards, ballot box, pooler | Implemented, tested |

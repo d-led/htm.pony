@@ -32,7 +32,7 @@ pushing messages, with tests that fail when the two disagree.
 | Anomaly detection joined to the actor pipeline | **not done** - both halves exist, nothing joins them |
 | **CLA temporal pooler** | **not ported** - the largest piece left |
 | Graph encoder | **not written** |
-| Date encoder | season only; day of week, weekend, time of day and holidays are not |
+| Date encoder | done - season, day of week, weekend, time of day, holidays |
 
 ## What is next, in order
 
@@ -48,9 +48,11 @@ that learns and a `TemporalRegion` - and nothing joins them into a score. The
 temporal region also has no deadline and no way to be handed new shards, which is
 what the pooler learned first; see [actors](actors.md).
 
-**3. The date encoder, upgraded.** The Go version takes day of week, weekend,
-time of day and holidays as parameters. This port has the season field only, with
-the other four reserving width.
+**3. The date encoder, upgraded.** Done: the encoder writes day of week, weekend,
+time of day and holidays beside the season, against the reference's own expected
+bits. Writing it turned up a bug worth remembering - `ScalarEncoder.encode_at_pos`
+ignored its offset, so every field of a date was written at the start of the
+vector and the test that should have caught it asserted nothing.
 
 **4. The category encoder, checked against the modern one.** Ours exists; the
 question is whether it matches the `SDRCategoryEncoder` in `htm.java` and

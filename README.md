@@ -62,8 +62,8 @@ examples, not a feature of the pipeline.
 - Category encoder: one block of bits per label, no overlap between labels
 - Random distributed encoder: a value becomes a bucket whose neighbours differ by
   one bit, so near values overlap without a range being known in advance
-- Date encoder: the season field is encoded; the other four reserve width but are
-  not written
+- Date encoder: season, day of week, weekend, time of day and holidays, each a
+  scalar field written side by side into one vector
 - Grid topology, column wiring, overlap, global and local inhibition
 - Spatial pooler, in process and on actors
 - Permanence learning in process and on actors: winners move towards what they

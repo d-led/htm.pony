@@ -161,7 +161,11 @@ class ScalarEncoder
 
     fun encode_at_pos(input: F64, learn_unused: Bool, output: Array[Bool] ref, pos: USize): (None | EncodingFailed) =>  
         """
-        Puts encoded input inline into the output array
+        Puts encoded input inline into the output array, starting at `pos`.
+
+        `pos` is what lets several encoders share one vector: a date is a season,
+        a day of the week, a weekend flag and a time of day, each writing into its
+        own slice of the same output.
         """
 
         try
@@ -179,7 +183,7 @@ class ScalarEncoder
                 if maxbin >= n.i64() then
                     bottombins = (maxbin - n.i64()) + 1
                     try 
-                        _fill_slice_range_bool(output , true, 0, bottombins.usize())?
+                        _fill_slice_range_bool(output , true, pos, bottombins.usize())?
                     else
                         Debug.err("ScalarEncoder.encode[1] failed")
                         error
@@ -190,7 +194,7 @@ class ScalarEncoder
                 if minbin < 0 then
                     topbins = -minbin
                     try 
-                        _fill_slice_range_bool(output, true, n-topbins.usize(), (n - (n - topbins.usize())).usize())?
+                        _fill_slice_range_bool(output, true, pos + (n - topbins.usize()), topbins.usize())?
                     else
                         Debug.err("ScalarEncoder.encode[2] failed")
                         error
@@ -212,7 +216,7 @@ class ScalarEncoder
 
             // set the output (except for periodic wraparound)
             try 
-                _fill_slice_range_bool(output, true, minbin.usize(), ((maxbin+1)-minbin).usize())?
+                _fill_slice_range_bool(output, true, pos + minbin.usize(), ((maxbin+1)-minbin).usize())?
             else
                 Debug.err("ScalarEncoder.encode[3] failed")
                 error
