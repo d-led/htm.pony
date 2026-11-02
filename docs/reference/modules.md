@@ -471,6 +471,9 @@ Tests: `test/sdr_merger_test.pony`.
 
 ## The encoders, `htm/encoders/`
 
+Run the encoder table below with the modules: each encoder has its own file, and
+`SDRCategoryEncoder` is the open-set counterpart of `CategoryEncoder`.
+
 ### `encoder_interfaces.pony`
 
 `EncodingFailed` — the failure value. `SomeScalarEncoder` — the interface every
@@ -548,12 +551,24 @@ encoding; the comparison of the full vector is commented out.
 ### `category_encoder.pony`
 
 `CategoryEncoder` (value) - one block of bits per label, with no overlap between
-labels, and the block read back to the label it came from. The modern
-`SDRCategoryEncoder` in `htm.java` and `nupic` is a different shape - a fixed
-width with `w` random bits per label, so labels may share bits and later ones are
-added as met - and this one is not that.
+labels, and the block read back to the label it came from. A closed set: the
+width grows with the labels and an unknown one is refused. The open-set shape
+lives beside it, in `sdr_category_encoder.pony`.
 
 Tests: `test/category_encoder_test.pony`.
+
+### `sdr_category_encoder.pony`
+
+`SDRCategoryEncoder` - the open-set shape, after `htm.java`'s and `nupic`'s
+encoder of the same name: a fixed width, `bits` random positions per label, a
+label added as it is met, and an unknown category that exists before any label
+does. Two labels may share a position, which is what a closed-set encoder
+refuses and what a fixed width costs.
+
+`RandomPositions` (primitive) - the draw behind it, on a primitive because a
+constructor cannot call its own methods.
+
+Tests: `test/sdr_category_encoder_test.pony`.
 
 ### `random_distributed_scalar.pony`
 

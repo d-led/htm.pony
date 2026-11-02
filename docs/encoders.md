@@ -1,8 +1,9 @@
 # Encoders
 
-Six encoders are implemented: scalar, date, no-op, category, random distributed
-scalar, and image. The scalar, date, no-op and category encoders report failure
-as `EncodingFailed` rather than raising; the other two are partial functions.
+Seven encoders are implemented: scalar, date, no-op, category, open-set
+category, random distributed scalar, and image. The scalar, date, no-op and
+category encoders report failure as `EncodingFailed` rather than raising; the
+open-set category encoder and the other two are partial functions.
 
 ## Scalar encoder
 
@@ -178,6 +179,28 @@ being checked - and that is the only difference from the reference.
 
 `decode` reads a category back by finding the busiest block, which is what
 still works after a pooler has been at the representation.
+
+## Open-set category encoder
+
+`SDRCategoryEncoder` is the other shape, and the one to reach for when the number
+of labels is not known in advance:
+
+```pony
+let encoder = SDRCategoryEncoder(128, 4)?
+encoder.encode("north")   // four positions out of a fixed 128
+encoder.encode("south")   // four more, chosen without replacement
+encoder.unknown()         // something to encode before any label is met
+```
+
+The width never moves - four bits out of 128 stays four bits out of 128 however
+many labels arrive - and a label nobody has met is added as it is met rather than
+refused. The price is that two categories may share a position, which is why an
+encoding from this encoder and one from `CategoryEncoder` are not comparable:
+they do not agree on whether two categories may share a bit.
+
+`bits` defaults to two percent of the width, the density `htm.core` uses for the
+same encoder, and the draw is seeded, so the same labels met in the same order
+give the same encodings.
 
 ## Random distributed encoder
 

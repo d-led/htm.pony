@@ -33,6 +33,7 @@ actor Main is TestList
     ClaStateTest.tests(test)
     TemporalPoolerTest.tests(test)
     SDRMergerTest.tests(test)
+    SDRCategoryEncoderTest.tests(test)
     AnomalyTest.tests(test)
     SDRClassifierTest.tests(test)
     PredictionClassifierTest.tests(test)

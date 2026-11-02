@@ -170,13 +170,18 @@ The reference's third mode, distorting a representation, is deliberately not
 here: nothing asks for it and the account of what it should do is unclear. Write
 it when something needs to say what "distorted" means.
 
-### 5. A fixed-width category encoder
+### 5. A fixed-width category encoder — done
 
-`CategoryEncoder` gives each label a contiguous block, so the width grows with the labels
-and unknown labels are refused. `SDRCategoryEncoder` (in `htm.java` and `nupic`) is the
-other shape: fixed `n`, `w` random bits per label, labels added as they are met, an
-unknown slot. Both are legitimate; ours is documented as the closed-set one. Write the
-open-set one when something needs it — most likely a stream of labels of unknown number.
+`SDRCategoryEncoder` is in `htm/encoders/`: fixed `size`, `bits` random
+positions per label (two percent of the width by default, `htm.core`'s density),
+labels added as they are met, and an `unknown()` that exists before any label
+does. `RandomPositions` is the draw, on a primitive because a constructor cannot
+call its own methods - `this` is `tag` until every field is assigned, and the
+unknown category is the last one.
+
+It was written for a stream of labels whose number is not known; the closed-set
+`CategoryEncoder` stays as it is, and the two encodings are deliberately not
+comparable - they disagree about whether two labels may share a bit.
 
 ### 6. A graph as one SDR
 
