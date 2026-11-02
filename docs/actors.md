@@ -97,15 +97,7 @@ are grouped.
 The deadline is a `TimerNotify` that returns `false` from `apply`, so it fires
 once. A repeating timer would decide a round that had already been decided.
 
-## Columns and shards
-
-`CorticalColumn` is one column answering on its own:
-
-```pony
-be observe(active: Array[Bool] val, ballot: Ballot tag) =>
-  let overlap = Synapses.overlap(_synapses, active, _threshold)
-  ballot.vote(Vote(_index, overlap.f64()))
-```
+## Shards
 
 `ColumnShard` is a band of columns sharing one actor:
 
@@ -123,10 +115,11 @@ actor ColumnShard
     /* adapt the winners, raise the starving ones */
 ```
 
-One actor per column costs a message in and a message out for every column. A
-shard costs that once for the whole band and reports its votes in a single
-message. The ballot box still counts votes, not messages, so grouping columns
-does not change when a round closes.
+One actor per column would cost a message in and a message out for every
+column. A shard costs that once for the whole band and reports its votes in a
+single message. The ballot box still counts votes, not messages, so grouping
+columns does not change when a round closes. A band of one column is the
+single-column case and needs nothing else.
 
 A shard holds the settings that decide what a column claims and how far it
 moves, so `learn` carries the input and the names of the columns the pooler
@@ -135,11 +128,12 @@ positions in the band: the pooler decides who learns and knows only the
 population, so each shard looks up the columns that are its own and ignores the
 rest. That lookup is why the shard keeps a `Map` beside its columns.
 
-Both are handed their synapses as values, and neither validates the wiring at
-construction: an actor constructor cannot fail, so there is no place to report a
-connection that reaches past the end of the input. The pooler settles the input
-width first and hands over synapses that fit. `Synapses.overlap` skips anything
-that does not, which is the backstop rather than the rule.
+The wiring arrives as values - a `ColumnWiring` is an index and a frozen array
+of synapses - and the shard does not validate it at construction: an actor
+constructor cannot fail, so there is no place to report a connection that reaches
+past the end of the input. The pooler settles the input width first and hands
+over synapses that fit. `Synapses.overlap` skips anything that does not, which is
+the backstop rather than the rule.
 
 ## The coordinator
 

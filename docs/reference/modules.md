@@ -139,17 +139,6 @@ Tests: `test/spatial_pooler_test.pony`.
 
 Tests: `test/ballot_box_test.pony`.
 
-### `cortical_column.pony`
-
-`CorticalColumn` (actor) — one column answering on its own.
-
-| Member | Signature | What it does |
-| --- | --- | --- |
-| `create` | `new create(index: USize, synapses: Array[Synapse] val, threshold: F64)` | |
-| `observe` | `be observe(active: Array[Bool] val, ballot: Ballot tag)` | pushes one vote |
-
-Tests: `test/cortical_column_test.pony`.
-
 ### `column_shard.pony`
 
 `ColumnWiring` (value) — one column's wiring as a value: `index`, its place in
