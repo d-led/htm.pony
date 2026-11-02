@@ -497,3 +497,30 @@ The map is the other half of the idea and the title of the encoder. One cell doe
 not fire in one place; it fires wherever it is near a node of its lattice, so its
 receptive field is not a blob but the repeating hexagonal pattern shown, with
 the cells of its module competing for the same nodes at other phases.
+
+## A document, as the words it is made of
+
+`examples/document-similarity/main.pony` encodes five sentences and prints how
+many positions every pair of them has in common.
+
+```
+400 positions, 20 of them set per document
+
+positions in common, row against column:
+                                    1   2   3   4   5
+1 the sky is beautiful today      20  11  9   12  3
+2 the sun is beautiful today      11  20  7   9   4
+3 the sky was beautiful yesterday 9   7   20  9   2
+4 the sky is not beautiful today  12  9   9   20  0
+5 who did my homework today       3   4   2   0   20
+```
+
+A sentence against itself is all twenty. One word swapped is nine to twelve -
+those are the positions where the swapped words were the ones deciding the vote.
+A sentence with no words in common is nought to four, which is what two unrelated
+sets of twenty positions out of four hundred share by chance.
+
+Nothing here knows what a word means, and the encoder is not trying to learn it.
+What it knows is which words a document has, and that is enough for the two things
+this kind of encoding is for: finding near-duplicate documents, and giving a
+spatial pooler a representation whose overlap carries similarity.

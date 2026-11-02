@@ -66,6 +66,8 @@ examples, not a feature of the pipeline.
   scalar field written side by side into one vector
 - Grid cell encoder: a place in the plane becomes the cells a grid cell layer
   would fire, from lattices at several spacings
+- SimHash document encoder: a document becomes the positions its words vote for,
+  so documents with words in common overlap
 - Grid topology, column wiring, overlap, global and local inhibition
 - Spatial pooler, in process and on actors
 - Permanence learning in process and on actors: winners move towards what they

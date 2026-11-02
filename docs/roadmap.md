@@ -31,7 +31,9 @@ pushing messages, with tests that fail when the two disagree.
 | Streaming anomaly score and its likelihood | done, in process |
 | Anomaly detection joined to the actor pipeline | **not done** - both halves exist, nothing joins them |
 | **CLA temporal pooler** | **not ported** - the largest piece left |
-| Graph encoder | **not written** - the grid cell half is done |
+| A graph as one SDR | **not written** |
+| Grid cell encoder | done - a place becomes periodic receptive fields |
+| SimHash document encoder | done - a document becomes the positions its words vote for |
 | Date encoder | done - season, day of week, weekend, time of day, holidays |
 
 ## What is next, in order
@@ -72,7 +74,16 @@ encoding. What is held to the same standard is the relation the algorithm exists
 for: a one-unit move keeps about three quarters of the cells, and beyond the
 shortest period fewer than two fifths.
 
-SimHash over document ids is still to write.
+SimHash over documents is done too, on the same terms: the words of a document are
+digested, each digest votes over every position, and the highest totals are set.
+The digest is this library's rather than that library's, so the bits are not
+theirs either, and the tests hold the property instead - documents sharing words
+overlap, a different sentence shares nothing, the same document always encodes
+the same way.
+
+What is still not written is a graph encoder in the literal sense: a graph - nodes
+and the edges between them - encoded as one SDR. Neither of the two above does
+that, and none of the reference implementations has one.
 
 ## The picture side is an experiment, not the point
 

@@ -466,6 +466,27 @@ repeats.
 
 Tests: `test/grid_cell_encoder_test.pony`.
 
+### `simhash_document_encoder.pony`
+
+`SimHashDocumentEncoder` - a document into the positions its words vote for:
+each word is digested over every position, the digests are summed with a vote per
+position, and the `active_bits` highest totals are set. `SimHashParams` (value) -
+the width, the number of active bits, whether letters are counted beside words,
+whether capitals matter, the frequency floor and ceiling, and the words to
+ignore.
+
+Tests: `test/simhash_document_encoder_test.pony`.
+
+### `token_digest.pony`
+
+`TokenDigest` - the digest of a token and the bits it spreads over. FNV-1a and the
+SplitMix64 finaliser, not a cryptographic hash: what SimHash needs is that two
+tokens look nothing alike and one token always looks the same.
+`Spans` finds where a document's tokens are, so that a token never has to become a
+string of its own.
+
+Tests: covered through `test/simhash_document_encoder_test.pony`.
+
 ### `grayscale_image.pony`
 
 `GrayscaleImage` (value) - the picture both image steps work on: width, height,

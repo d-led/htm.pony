@@ -31,3 +31,5 @@ examples/sequence-training-value/sequence-training-value
 examples/sequence-training-value/*.dSYM/
 examples/grid-cells/grid-cells
 examples/grid-cells/*.dSYM/
+examples/document-similarity/document-similarity
+examples/document-similarity/*.dSYM/
