@@ -59,6 +59,7 @@ class TemporalMemoryTest is TestList
     test(_AColumnWithNoPredictionBursts)
     test(_ALearnedPairIsPredicted)
     test(_APredictedColumnDoesNotBurst)
+    test(_ASegmentNeedsEnoughActiveSynapsesToPredict)
     test(_AnUnrelatedColumnIsNotPredicted)
     test(_ASegmentThatPredictsWronglyIsForgotten)
     test(_AColumnOutsideTheMemoryIsRefused)
@@ -170,3 +171,28 @@ class iso _AColumnOutsideTheMemoryIsRefused is UnitTest
       memory.compute([99], false)?
       h.fail("a column past the end of the memory should be refused")
     end
+
+class iso _ASegmentNeedsEnoughActiveSynapsesToPredict is UnitTest
+  fun name(): String => "a segment needs enough active synapses to be a prediction"
+
+  // the Go reference: temporalMemory.computePredictiveCells, which leaves every
+  // segment that matches too little out of the prediction
+  fun apply(h: TestHelper) ? =>
+    // the same sequence, learned by two memories that differ in one number: how
+    // many active synapses make a segment a prediction. Their segments are
+    // allowed one synapse each, so the patient one can never reach two.
+    let eager = TemporalMemory(TemporalMemoryParams(4, 4, 1, 0.5, 0.5, 0.1, 0.02, 1, 4))
+    let patient = TemporalMemory(TemporalMemoryParams(4, 4, 2, 0.5, 0.5, 0.1, 0.02, 1, 4))
+
+    for memory in [eager; patient].values() do
+      TemporalFixture.teaches(memory, 0, 1)?
+    end
+
+    let by_eager = eager.compute([0], false)?
+    let by_patient = patient.compute([0], false)?
+
+    let predicted = TemporalFixture.columns_of(by_eager.predictive_cells, eager.params)
+    h.assert_array_eq[USize]([1], predicted)
+
+    h.assert_eq[USize](0, by_patient.predictive_cells.size(),
+      "one active synapse is not a prediction when two are needed")
