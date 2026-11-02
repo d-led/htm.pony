@@ -46,10 +46,8 @@ jobs:
           "$HOME/.local/share/ponyup/bin/ponyup" update corral release
 
       # Each example checks its own claim and exits non-zero when it fails, so
-      # running them is the check. They are documented, so they must not rot.
+      # running them is the check. The list is run-all.sh's, not a copy of it:
+      # the copy that used to live here stopped running the newer studies
+      # without anyone noticing.
       - name: Build and run every example
-        run: |
-          for example in first-representation in-process-pooler pooler-learning actor-pooler scalar-encoder image-similarity temporal-memory temporal-memory-on-actors anomaly-stream anomaly-likelihood; do
-            echo "=== $example ==="
-            ( cd "examples/$example" && corral run -- ponyc --debug && "./$example" )
-          done
+        run: ./examples/run-all.sh
