@@ -35,6 +35,7 @@ nav:
       - Streaming anomaly detection: anomaly-detection.md
       - Classification: classification.md
   - Examples: examples.md
+  - Roadmap: roadmap.md
   - Tutorial: tutorial.md
   - Reference:
       - Modules: reference/modules.md

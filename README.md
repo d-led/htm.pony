@@ -26,6 +26,11 @@ says why for each: the **graph encoder** is not written, the **date encoder** ha
 its season field but not the other four, and the **CLA temporal pooler** is not
 ported.
 
+The [roadmap](https://d-led.github.io/htm.pony/roadmap/) says what this is for, in
+the order it was asked for - predictions, classification, online anomaly detection
+- and what comes next. The picture side is an experiment that lives in the
+examples, not a feature of the pipeline.
+
 ## Rough Plan
 
 - Port the [Go version](https://github.com/htm-community/htm) to Pony

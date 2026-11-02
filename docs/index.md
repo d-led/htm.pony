@@ -39,6 +39,10 @@ function, including the parts that do nothing yet. Two concept pages describe wh
 is missing and why it matters: [columns and cells](concepts/columns-and-cells.md)
 and [temporal memory](concepts/temporal-memory.md).
 
+The [roadmap](roadmap.md) says what this is for, in the order the goals were set -
+predictions, classification, online anomaly detection - and what is left: the CLA
+temporal pooler first, then the anomaly score on the actor path.
+
 ## How the computation is arranged
 
 The spatial pooler runs in one process or on actors. Both paths compute the same
