@@ -32,12 +32,22 @@ primitive Patterns
     end
     columns
 
-  fun pooler(nodes: USize = 50): TemporalPooler ? =>
+  fun of_value(index: USize): Array[USize] val =>
+    """
+    The same pattern as a value, which is what an actor is handed.
+    """
+    let columns: Array[USize] iso = recover iso Array[USize] end
+    for column in of(index).values() do
+      columns.push(column)
+    end
+    columns
+
+  fun config(nodes: USize = 50): TemporalPoolerConfig val ? =>
     """
     The reference's TestLearnPredict setup: two cells a node, ten synapses to a
     segment, and no pooling, over fifty nodes unless more are needed.
     """
-    let config = TemporalPoolerConfig(
+    TemporalPoolerConfig(
       nodes, 2,           // nodes, and cells in each
       8, 10, 10,          // activation threshold, min threshold, synapses wanted
       false,              // no pooling
@@ -49,7 +59,9 @@ primitive Patterns
       100000,             // nothing is ever aged out
       32,                 // longest sequence worth naming
       0, 0)?              // no fixed-size limits
-    TemporalPooler(config, 7)
+
+  fun pooler(nodes: USize = 50): TemporalPooler ? =>
+    TemporalPooler(config(nodes)?, 7)
 
   fun learn_sequences(subject: TemporalPooler, epochs: USize) ? =>
     var epoch: USize = 0
@@ -90,7 +102,7 @@ primitive Patterns
     """
     The same pooler, but pooling, and with a window of its own.
     """
-    let config = TemporalPoolerConfig(
+    let pooling = TemporalPoolerConfig(
       50, 2,
       8, 10, 10,
       true,               // pooling
@@ -102,7 +114,7 @@ primitive Patterns
       100000,
       32,
       0, 0)?
-    TemporalPooler(config, 7)
+    TemporalPooler(pooling, 7)
 
   fun predicts_the_sequence(h: TestHelper, subject: TemporalPooler) ? =>
     """

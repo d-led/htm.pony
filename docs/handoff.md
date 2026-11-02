@@ -24,7 +24,7 @@ something the Go one does not. This library is MPL-2.0.
 | Temporal memory: cells, segments, prediction, bursts | done, in process and on actors |
 | Classification: `SDRClassifier`, `PredictionClassifier` | done |
 | Streaming anomaly score and its likelihood | done, in process and on actors (`AnomalyStream`) |
-| CLA temporal pooler | **in slices** - a step with and without pooling, inference backtracking; learning backtracking and the actor form are not in |
+| CLA temporal pooler | **in slices** - a step with and without pooling, inference backtracking, and the actor form; learning backtracking and the pooled representation are not in |
 | Graph as one SDR | done, as a design - `GraphEncoder`: a node is a category, an edge is two nodes and a direction, a graph is the union |
 
 Verification at that commit: **172 tests green**, 16 examples run, `mkdocs build --strict`
@@ -138,9 +138,20 @@ that survives wins** - that is what this port does, and it is what the comment's
 own goal asks for. Its history buffer is popped from the wrong end when it is
 full (a bug that would throw away the newest input); this port drops the oldest.
 Its `inferPhase2` decides "enough predicted going forward" by counting *cells*
-against half the average *column* density, which is kept as it is. What is still
-missing from the pooler is the second backtracking, over the learning history,
-and the actor form.
+against half the average *column* density, which is kept as it is.
+
+**Slice (e), the actor form, is in.** `TemporalPoolerActor` is one actor, not a
+set of shards, and that is a finding rather than a shortcut: a temporal memory's
+segment reaches cells of its own column, so its columns split cleanly between
+shards, while a pooler's segment reaches across nodes and its prediction is
+decided by scanning the whole population. There is no part of a pooler's state
+that can be owned separately. So the actor is the ordering - steps answered in
+the order they arrive - and the answer is a value, `ClaOutput`, so nothing that
+crosses back points into the pooler. The test compares every answer with the
+one-process pooler's, which is the rule this repository holds every actor form to.
+
+What is still missing from the pooler: the second backtracking, over the learning
+history (`max_learning_backtrack`), and the pooled representation itself.
 
 - Reference: `/Users/dmitryledentsov/src/htm/temporalPooler.go`, ~2 150 lines, with
   `temporalPooler_test.go`, `temporalPoolerPrint.go`, `temporalPoolerStats.go` beside it.

@@ -85,23 +85,23 @@ class TemporalPooler
     end
     counted
 
-  fun active_cells(): Array[USize] =>
+  fun active_cells(): Array[USize] val =>
     """
     The cells the inference pass activated at the last step.
     """
     _inference.cells_in_state()
 
-  fun predicted_cells(): Array[USize] =>
+  fun predicted_cells(): Array[USize] val =>
     """
     The cells the inference pass expects at the next step.
     """
     _inference.predicted_cells()
 
-  fun predicted_columns(): Array[USize] =>
+  fun predicted_columns(): Array[USize] val =>
     """
     The nodes the inference pass expects to receive input at the next step.
     """
-    let found = Array[USize]
+    let found: Array[USize] iso = recover iso Array[USize] end
     let seen = Array[Bool].init(false, _config.columns)
 
     for cell in _inference.predicted_cells().values() do
@@ -116,10 +116,17 @@ class TemporalPooler
 
     found
 
+  fun ref answer(): ClaOutput =>
+    """
+    Everything the last step produced, as one value: what it answered with, the
+    cells it activated, the cells it predicts, and the nodes those belong to.
+    """
+    ClaOutput(_output(), active_cells(), predicted_cells(), predicted_columns())
+
   fun ref compute(
     active_columns: ReadSeq[USize],
     learn: Bool,
-    infer: Bool): Array[USize] ?
+    infer: Bool): Array[USize] val ?
   =>
     """
     One step: read the columns that received input, learn if asked, and answer
@@ -854,11 +861,11 @@ class TemporalPooler
       end
     end
 
-  fun ref _output(): Array[USize] =>
+  fun ref _output(): Array[USize] val =>
     """
     What the step answers with: every cell that is active or predicted.
     """
-    let out = Array[USize]
+    let out: Array[USize] iso = recover iso Array[USize] end
 
     for node in _nodes.values() do
       for cell in node.cells().values() do

@@ -467,6 +467,27 @@ inputs before it are dropped. When none does, the step bursts as it would have.
 Tests: `test/temporal_pooler_test.pony`, which is the reference's `TestLearnPredict`
 translated, plus what pooling measurably changes and what the re-play recovers.
 
+### `cla_output.pony`
+
+`ClaOutput` (value) - one step of a pooler as one value: the cells it answered
+with, the cells it activated, the cells it predicts for the next step, and the
+nodes those predictions belong to. What crosses back to whoever asked, so that
+nothing handed out points into the pooler.
+
+Tests: covered through `TemporalPooler` and its actor.
+
+### `temporal_pooler_actor.pony`
+
+`ClaObserver` - whoever asked for a step, and so receives the answer.
+
+`TemporalPoolerActor` (actor) - `TemporalPooler` as messages: one actor, answers
+in the order the steps arrive. One actor and not shards, because a pooler's
+segments reach across nodes and its prediction is decided by scanning the whole
+population, so there is no part of the state that can be owned separately.
+
+Tests: `test/temporal_pooler_actor_test.pony`, which compares every answer with
+the one-process pooler's.
+
 ### `sdr_merger.pony`
 
 `SDRMerger` (primitive) - putting two sparse representations into one, and

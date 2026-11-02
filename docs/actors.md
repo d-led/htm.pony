@@ -324,6 +324,35 @@ reachable only through its own timer, and a ballot nobody holds can be
 collected - with the timer for its retry inside it - leaving the round waiting
 for an answer that can no longer come.
 
+## The CLA temporal pooler, on actors
+
+`TemporalPooler` also runs as an actor, but it is **one** actor rather than a
+set of shards, and the reason is worth stating because it looks like an
+omission:
+
+```pony
+let pooler = TemporalPoolerActor(config, 7)
+pooler.compute(active_columns, learn, infer, an_observer)
+```
+
+A temporal memory's segment sits on a cell and reaches cells of its own column
+only, so the memory splits between shards that never write to the same state. A
+pooler's segment sits on a cell of one node and reaches cells of many, and its
+prediction is decided by scanning the whole population for what the active cells
+wake. There is nothing to split: any division would either copy the state or let
+two actors learn from the same segments at once.
+
+So the actor is the ordering, and that is what it buys. Steps are answered in the
+order they arrive, which is what makes a sequence of them a sequence, and an
+answer is a value - `ClaOutput` - so nothing that crosses back to the asker
+points into the pooler.
+
+Two behaviours differ from the in-process pooler, again because an actor cannot
+refuse a message. A step asking for neither learning nor inferring does not step,
+and answers with the state as it stands rather than with nothing. And a `reset`
+is ordered with the steps of whoever sent it and with nothing else, so the sender
+that ends a training sequence has to be the one that sent it.
+
 ## What is missing
 
 - A retry is one more deadline, not a backoff. A shard that is busy twice is

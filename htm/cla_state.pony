@@ -91,32 +91,32 @@ class CellState
     """
     try _predicted_before(cell)? else false end
 
-  fun active_in(node: USize): Array[USize] =>
+  fun active_in(node: USize): Array[USize] val =>
     """
     The cells of one node that are active now.
     """
     _in(_active, node)
 
-  fun active_in_before(node: USize): Array[USize] =>
+  fun active_in_before(node: USize): Array[USize] val =>
     """
     The cells of one node that were active at the step before.
     """
     _in(_active_before, node)
 
-  fun predicted_in_before(node: USize): Array[USize] =>
+  fun predicted_in_before(node: USize): Array[USize] val =>
     """
     The cells of one node that were predicted at the step before, which is what
     the current step's activity is decided against.
     """
     _in(_predicted_before, node)
 
-  fun cells_in_state(): Array[USize] =>
+  fun cells_in_state(): Array[USize] val =>
     """
     Every cell that is active now, by its name in the whole population.
     """
     _all(_active)
 
-  fun predicted_cells(): Array[USize] =>
+  fun predicted_cells(): Array[USize] val =>
     """
     Every cell that is predicted now.
     """
@@ -138,7 +138,7 @@ class CellState
     """
     _active_before.clone()
 
-  fun predicted_in(node: USize): Array[USize] =>
+  fun predicted_in(node: USize): Array[USize] val =>
     """
     The cells of one node that are predicted now. In the learning pass there is
     at most one: the best matching segment of the node settles it.
@@ -180,8 +180,8 @@ class CellState
     carried._predicted_before = _predicted_before.clone()
     carried
 
-  fun _in(states: ReadSeq[Bool], node: USize): Array[USize] =>
-    let found = Array[USize]
+  fun _in(states: ReadSeq[Bool], node: USize): Array[USize] val =>
+    let found: Array[USize] iso = recover iso Array[USize] end
     let start = node * cells_per_column
     var offset: USize = 0
     while offset < cells_per_column do
@@ -192,8 +192,8 @@ class CellState
     end
     found
 
-  fun _all(states: ReadSeq[Bool]): Array[USize] =>
-    let found = Array[USize]
+  fun _all(states: ReadSeq[Bool]): Array[USize] val =>
+    let found: Array[USize] iso = recover iso Array[USize] end
     var cell: USize = 0
     while cell < states.size() do
       try

@@ -32,6 +32,7 @@ actor Main is TestList
     ClaCellTest.tests(test)
     ClaStateTest.tests(test)
     TemporalPoolerTest.tests(test)
+    TemporalPoolerActorTest.tests(test)
     SDRMergerTest.tests(test)
     SDRCategoryEncoderTest.tests(test)
     GraphEncoderTest.tests(test)
