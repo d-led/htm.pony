@@ -4,7 +4,7 @@
     "info": {
         "description": "An HTM experiment in Pony based on the Go implementation",
         "homepage": "https://github.com/d-led/htm.pony",
-        "license": "AGPLv2",
+        "license": "MPL-2.0",
         "documentation_url": "https://github.com/d-led/htm.pony",
         "version": "",
         "name": "HTM.pony"

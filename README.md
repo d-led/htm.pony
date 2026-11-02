@@ -92,5 +92,9 @@ actually does, including the parts that are present but empty.
 
 ## License
 
-- See [LICENSE](LICENSE)
+- [Mozilla Public License 2.0](LICENSE): file-level copyleft, so changes to these
+  files stay open while the library can be used in software that is not
+- the port follows the [Go implementation](https://github.com/htm-community/htm),
+  which is MIT (Copyright (c) 2014 Zac Gross); the MIT notice covers the parts
+  that came from it
 - See also, [Numenta Licenses](https://numenta.org/licenses/)
