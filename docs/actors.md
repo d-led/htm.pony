@@ -34,13 +34,13 @@ The actors do not name each other's types:
 ```pony
 interface Ballot
   be vote(vote': Vote)
-  be cast(votes: Array[Vote] iso)
+  be cast(band: USize, votes: Array[Vote] iso)
 
 interface Tally
-  be tallied(votes: Array[Vote] iso)
+  be tallied(votes: Array[Vote] iso, silent: Array[USize] val)
 
 interface Shard
-  be observe(active: Array[Bool] val, ballot: Ballot tag)
+  be observe(band: USize, active: Array[Bool] val, ballot: Ballot tag)
   be learn(active: Array[Bool] val, winners: Array[USize] val, starving: Array[USize] val)
 
 interface Representation
@@ -52,6 +52,11 @@ ballot box pushes into a `Tally` and never learns what asked. The pooler asks a
 `Shard` and never learns which band of columns answers. An asker implements
 `Representation` and is handed the answer, together with the number of columns
 the round never heard from - zero for a round every column answered.
+
+The one thing that does cross those seams is a band's name. A shard is told
+which band it is and sends that name back with its votes, so a collector can tell
+who has reported without knowing what any of them are. That is what makes a
+silent band something the pooler can act on rather than only count.
 
 The practical effect is that a shard can be tested against any sink, and a sink
 against any source. `test/column_shard_test.pony` and `test/ballot_box_test.pony`
@@ -97,9 +102,20 @@ A vote that arrives after the round is decided is dropped. Without the guard, a
 straggler would deliver a second `tallied` to the same collector, and the
 collector would answer the same question twice.
 
-`cast` is the bulk form: a whole shard's votes in one message. Each vote counts
-towards the quorum, so the caller's numbers stay in votes however the columns
-are grouped.
+`cast` is the bulk form: a whole shard's votes in one message, naming the band
+they came from. Each vote counts towards the quorum, so the caller's numbers stay
+in votes however the columns are grouped.
+
+Give the box the bands it should hear from and it also reports which of them
+never reported:
+
+```pony
+let box = BallotBox(collector, expected_votes, quorum, deadline_ms, bands)
+```
+
+That roster is the whole of what makes a retry possible. Without one the box
+only counts votes, which is all it can do when the votes are not grouped into
+bands.
 
 The deadline is a `TimerNotify` that returns `false` from `apply`, so it fires
 once. A repeating timer would decide a round that had already been decided.
@@ -115,8 +131,8 @@ actor ColumnShard is Shard
   let _positions: Map[USize, USize] ref
   let _config: SpatialPoolerConfig val
 
-  be observe(active: Array[Bool] val, ballot: Ballot tag) =>
-    /* one vote per column, in one cast */
+  be observe(band: USize, active: Array[Bool] val, ballot: Ballot tag) =>
+    /* one vote per column, in one cast that names the band */
 
   be learn(active: Array[Bool] val, winners: Array[USize] val, starving: Array[USize] val) =>
     /* adapt the winners, raise the starving ones */
@@ -187,6 +203,19 @@ applies to any straggler. The answer carries the count of columns that never
 answered, so an asker can tell a representation the whole population agreed on
 from one that part of it was never asked about.
 
+A round that closes with bands missing is then asked a second time - of those
+bands only, for one more deadline, on a ballot that expects only the votes still
+owed. The bands that answered are not asked again, so a shard that was merely
+slow costs one extra deadline and the round comes back complete. A shard that is
+gone costs the same deadline and is then counted in `missing`. It is one retry
+and not a policy: a round that waits longer than two deadlines is a round the
+caller asked to bound.
+
+Because the answer is held until the retry is over, the next request waits for
+both deadlines. The alternative - answering at the first deadline and folding the
+late votes in afterwards - would mean deciding, learning and *then* changing the
+representation the round already acted on.
+
 ## Ordering and ties
 
 Votes are stored in the order they arrive, which is not the column order. The
@@ -230,11 +259,12 @@ agree, which is the only reason to believe the split.
 
 ## What is missing
 
-- No retry. A deadline closes the round and the answer says how many columns
-  were never heard from, but nothing asks them again, and nothing tells a shard
-  that is slow from one that is gone.
+- A retry is one more deadline, not a backoff. A shard that is slow twice is
+  given up on, and nothing tells a shard that is slow from one that is gone.
 - No way to add or remove a shard while the pooler is running.
 - One pooler is one coordinator. Two poolers over the same shards would each
   start their own rounds.
-- The temporal region inherits the same gaps, and one more: a region waits for
-  every shard on both passes, because a prediction needs all of them.
+- The temporal region inherits these gaps and adds one: it has no deadline at
+  all, so a region waits for every shard on both passes. A prediction needs all
+  of them, so there is nothing to decide without the missing shard - which is
+  why the retry that the pooler has would not help it as it stands.

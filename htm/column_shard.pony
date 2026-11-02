@@ -54,12 +54,15 @@ actor ColumnShard is Shard
     _positions = positions
     _config = config
 
-  be observe(active: Array[Bool] val, ballot: Ballot tag) =>
+  be observe(band: USize, active: Array[Bool] val, ballot: Ballot tag) =>
     """
     Push the overlap of every column in the band to the round's sink.
 
     A column matching fewer than the stimulus threshold of the input votes
     zero: it does not have enough of the input to count as a claim.
+
+    The band's name goes back with the votes, so the pooler can tell which band
+    has still not answered.
     """
     let votes: Array[Vote] iso = recover iso Array[Vote] end
 
@@ -70,7 +73,7 @@ actor ColumnShard is Shard
       try votes.push(Vote(_indices(position)?, overlap)) end
     end
 
-    ballot.cast(consume votes)
+    ballot.cast(band, consume votes)
 
   be learn(active: Array[Bool] val, winners: Array[USize] val, starving: Array[USize] val) =>
     """

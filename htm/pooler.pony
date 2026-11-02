@@ -20,8 +20,12 @@ interface Shard
 
   The pooler names this rather than `ColumnShard`, so any band of columns can be
   put behind it - including one that is slow, or one that answers nothing.
+
+  `band` is the shard's own name: its place in the array the pooler was built
+  with. A shard sends it back when it reports, which is how the pooler knows
+  which band stayed silent and can ask that one again.
   """
-  be observe(active: Array[Bool] val, ballot: Ballot tag)
+  be observe(band: USize, active: Array[Bool] val, ballot: Ballot tag)
   be learn(active: Array[Bool] val, winners: Array[USize] val, starving: Array[USize] val)
 
 class val Round
@@ -58,9 +62,14 @@ actor Pooler is Tally
   the only way it closes. With `deadline_ms` the round also closes on the votes
   that arrived in time; columns that stayed silent claim nothing, and the round
   learns from the representation those votes produce. A shard that answers after
-  the deadline is dropped, so it cannot answer the round twice. The answer says
-  how many columns were never heard from, so a caller can tell a complete
-  representation from one that was decided without part of the population.
+  the deadline is dropped, so it cannot answer the round twice.
+
+  A round that closes with bands missing is asked once more, and only of those
+  bands, for one more deadline. A band that answered is never asked twice, so a
+  shard that was merely slow costs one extra deadline and the round still comes
+  back complete; a shard that is gone costs the same one deadline and is then
+  counted in the answer's `missing`. A second round is not started in between,
+  so the retry cannot be overtaken by the next request.
 
   One round runs at a time: a second request waits rather than overwriting a
   tally still in flight.
@@ -73,6 +82,8 @@ actor Pooler is Tally
 
   var _queue: Array[Round] = Array[Round]
   var _current: (Round | None) = None
+  var _heard: Array[Vote] val = recover val Array[Vote] end
+  var _retrying: Bool = false
 
   new create(
     shards: Array[Shard tag] val,
@@ -90,23 +101,48 @@ actor Pooler is Tally
     _queue.push(Round(active, learn, asker))
     _pump()
 
-  be tallied(votes: Array[Vote] iso) =>
+  be tallied(votes: Array[Vote] iso, silent: Array[USize] val) =>
     let received: Array[Vote] val = consume votes
 
     match _current
     | let round: Round =>
-      _current = None
+      let all = _joined(_heard, received)
 
-      let winners = _decide(round, received)
-      let answer: Array[USize] iso = recover iso Array[USize] end
-      for winner in winners.values() do
-        answer.push(winner)
+      if _may_retry(silent) then
+        _retrying = true
+        _heard = all
+        _ask(round.active, silent, _unheard(all.size()))
+      else
+        _close(round, all)
       end
-
-      round.asker.represented(consume answer, _unheard(received.size()))
     end
 
     _pump()
+
+  fun ref _close(round: Round, votes: Array[Vote] val) =>
+    """
+    Decide the round on the votes it holds and answer the asker.
+    """
+    _current = None
+    _retrying = false
+    _heard = recover val Array[Vote] end
+
+    let winners = _decide(round, votes)
+    let answer: Array[USize] iso = recover iso Array[USize] end
+    for winner in winners.values() do
+      answer.push(winner)
+    end
+
+    round.asker.represented(consume answer, _unheard(votes.size()))
+
+  fun box _may_retry(silent: Array[USize] val): Bool =>
+    """
+    A round is asked again only if it closed with bands missing and a deadline
+    is what closed it. Without a deadline a round waits for every vote, so there
+    is nothing left to ask, and a retry that could not close would hang the
+    pooler.
+    """
+    (not _retrying) and (_deadline_ms > 0) and (silent.size() > 0)
 
   fun ref _pump() =>
     if _current isnt None then return end
@@ -114,13 +150,47 @@ actor Pooler is Tally
     match _take()
     | let round: Round =>
       _current = round
+      _retrying = false
+      _heard = recover val Array[Vote] end
       _learning.round()
 
-      let ballot = BallotBox(this, _grid.size, _grid.size, _deadline_ms)
-      for shard in _shards.values() do
-        shard.observe(round.active, ballot)
-      end
+      _ask(round.active, _bands(), _grid.size)
     end
+
+  fun ref _ask(active: Array[Bool] val, bands: Array[USize] val, expected: USize) =>
+    """
+    Put the input to the named bands. `expected` is in votes, so a round asked
+    again expects only the votes it has not heard.
+    """
+    let ballot = BallotBox(this, expected, expected, _deadline_ms, bands)
+    for band in bands.values() do
+      try _shards(band)?.observe(band, active, ballot) end
+    end
+
+  fun _bands(): Array[USize] val =>
+    """
+    Every band, named by its place in the array the pooler was built with.
+    """
+    let bands: Array[USize] iso = recover iso Array[USize] end
+    var band: USize = 0
+    while band < _shards.size() do
+      bands.push(band)
+      band = band + 1
+    end
+    consume bands
+
+  fun _joined(first: Array[Vote] val, second: Array[Vote] val): Array[Vote] val =>
+    """
+    The votes a round holds so far, plus the ones that just came in.
+    """
+    let all: Array[Vote] iso = recover iso Array[Vote] end
+    for vote in first.values() do
+      all.push(vote)
+    end
+    for vote in second.values() do
+      all.push(vote)
+    end
+    consume all
 
   fun ref _take(): (Round | None) =>
     if _queue.size() == 0 then return None end

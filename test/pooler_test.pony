@@ -8,16 +8,63 @@ class PoolerTest is TestList
     test(_ARoundReachesAnAnswer)
     test(_TwoRequestsAreAnsweredInTurn)
     test(_ASilentShardDoesNotHoldTheRoundOpen)
+    test(_OnlyTheBandThatStayedSilentIsAskedAgain)
 
 actor SilentShard is Shard
   """
   A band that never answers, which is what a shard that is slow, stuck or gone
   looks like to the pooler.
   """
-  be observe(active: Array[Bool] val, ballot: Ballot tag) => None
+  be observe(band: USize, active: Array[Bool] val, ballot: Ballot tag) => None
 
   be learn(active: Array[Bool] val, winners: Array[USize] val, starving: Array[USize] val) =>
     None
+
+actor LateShard is Shard
+  """
+  A band that misses the first deadline and reports when it is asked again,
+  which is what a shard that is merely slow looks like from the pooler.
+  """
+  let _first: USize
+  var _asked: USize = 0
+
+  new create(first: USize) =>
+    _first = first
+
+  be observe(band: USize, active: Array[Bool] val, ballot: Ballot tag) =>
+    _asked = _asked + 1
+    if _asked == 1 then return end
+
+    let votes: Array[Vote] iso = recover iso Array[Vote] end
+    votes.push(Vote(_first, 2.0))
+    votes.push(Vote(_first + 1, 2.0))
+    ballot.cast(band, consume votes)
+
+  be learn(active: Array[Bool] val, winners: Array[USize] val, starving: Array[USize] val) =>
+    None
+
+actor CountingShard is Shard
+  """
+  A real band of columns that also counts how often it is asked: a band that
+  answered must not be asked again because another one was slow.
+  """
+  let _inner: Shard tag
+  let _h: TestHelper
+  var _asked: USize = 0
+
+  new create(inner: Shard tag, h: TestHelper) =>
+    _inner = inner
+    _h = h
+
+  be observe(band: USize, active: Array[Bool] val, ballot: Ballot tag) =>
+    _asked = _asked + 1
+    if _asked > 1 then
+      _h.fail("a band that answered was asked again")
+    end
+    _inner.observe(band, active, ballot)
+
+  be learn(active: Array[Bool] val, winners: Array[USize] val, starving: Array[USize] val) =>
+    _inner.learn(active, winners, starving)
 
 actor Listener is Representation
   let _h: TestHelper
@@ -104,3 +151,21 @@ class iso _ASilentShardDoesNotHoldTheRoundOpen is UnitTest
     // the band that answered holds columns 0 and 1, so the two silent ones are
     // the other half of the population
     pooler.represent(PoolerFixture.input()?, false, Listener(h, 1, 2))
+
+class iso _OnlyTheBandThatStayedSilentIsAskedAgain is UnitTest
+  fun name(): String =>
+    "a band that missed the deadline is asked again, and the one that answered is not"
+
+  fun apply(h: TestHelper) ? =>
+    h.long_test(5_000_000_000)
+
+    let shards: Array[Shard tag] iso = recover iso Array[Shard tag] end
+    shards.push(CountingShard(PoolerFixture.band(0), h))
+    shards.push(LateShard(2))
+
+    let pooler = Pooler(
+      consume shards, Grid([4])?, PoolerFixture.config(), 20)
+
+    // the late band answers as soon as it is asked again, so nothing is
+    // missing from the representation
+    pooler.represent(PoolerFixture.input()?, false, Listener(h, 1, 0))

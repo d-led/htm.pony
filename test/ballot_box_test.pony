@@ -10,6 +10,7 @@ class BallotBoxTest is TestList
     test(_AQuorumAnswersWithoutTheSlowColumns)
     test(_TheDeadlineAnswersWithWhatArrived)
     test(_AStragglerCannotAnswerTwice)
+    test(_TheBoxNamesTheBandsThatNeverReported)
 
 class Settle is TimerNotify
   let _recorder: Recorder
@@ -28,26 +29,31 @@ actor Recorder is Tally
   """
   let _h: TestHelper
   let _expected: USize
+  let _silent: USize
   var _answered: USize = 0
   var _votes: USize = 0
+  var _quiet: USize = 0
   let _timers: Timers = Timers
 
-  new create(h: TestHelper, expected: USize) =>
+  new create(h: TestHelper, expected: USize, silent: USize = 0) =>
     _h = h
     _expected = expected
+    _silent = silent
 
-  be tallied(votes: Array[Vote] iso) =>
+  be tallied(votes: Array[Vote] iso, silent: Array[USize] val) =>
     _answered = _answered + 1
     let received: Array[Vote] val = consume votes
 
     if _answered == 1 then
       _votes = received.size()
+      _quiet = silent.size()
       _timers(Timer(Settle(this), 30_000_000))
     end
 
   be settle() =>
     _h.assert_eq[USize](1, _answered, "the question should be answered exactly once")
     _h.assert_eq[USize](_expected, _votes, "votes in the answer")
+    _h.assert_eq[USize](_silent, _quiet, "bands that never reported")
     _h.complete(true)
 
 class iso _EveryVoteCompletesTheRound is UnitTest
@@ -88,3 +94,17 @@ class iso _AStragglerCannotAnswerTwice is UnitTest
 
     ballot.vote(Vote(0, 0.4)); ballot.vote(Vote(1, 0.7))
     ballot.vote(Vote(2, 0.9))
+
+class iso _TheBoxNamesTheBandsThatNeverReported is UnitTest
+  fun name(): String => "a box told who to expect names the bands that stayed silent"
+
+  fun apply(h: TestHelper) =>
+    h.long_test(5_000_000_000)
+
+    let expected: Array[USize] val = recover val [0; 1; 2] end
+    let ballot = BallotBox(Recorder(h, 2, 1), 3, 2, 0, expected)
+
+    let first: Array[Vote] iso = recover iso [Vote(0, 0.4)] end
+    let second: Array[Vote] iso = recover iso [Vote(1, 0.7)] end
+    ballot.cast(0, consume first)
+    ballot.cast(1, consume second)

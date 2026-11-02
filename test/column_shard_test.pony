@@ -20,7 +20,7 @@ actor ShardWatcher is Tally
     _h = h
     _overlaps = overlaps
 
-  be tallied(votes: Array[Vote] iso) =>
+  be tallied(votes: Array[Vote] iso, silent: Array[USize] val) =>
     let received: Array[Vote] val = consume votes
     let seen = Set[USize]
 
@@ -51,4 +51,4 @@ class iso _AShardVotesForEveryColumnItOwns is UnitTest
 
     // two votes means the round needs both of them, however they are grouped
     let ballot = BallotBox(ShardWatcher(h, recover val [1.0; 0.0] end), 2)
-    ColumnShard(wirings, SpatialPoolerConfig([2], [2], false, 2.0)).observe(input, ballot)
+    ColumnShard(wirings, SpatialPoolerConfig([2], [2], false, 2.0)).observe(0, input, ballot)

@@ -15,8 +15,12 @@ class val Vote
 interface Tally
   """
   Whoever asked the question, and so receives the answer.
+
+  `silent` names the bands that were asked and had not reported when the round
+  closed. A tally that can tell its bands apart can ask those again; one that
+  cannot may ignore it.
   """
-  be tallied(votes: Array[Vote] iso)
+  be tallied(votes: Array[Vote] iso, silent: Array[USize] val)
 
 interface Ballot
   """
@@ -24,9 +28,13 @@ interface Ballot
 
   Columns push into this shape and never name the collector, so neither side
   depends on the other's type and a shard can be tested against any sink.
+
+  A band that owns several columns reports them in one `cast` and names itself,
+  which is how the collector can tell a band that answered from one that never
+  spoke.
   """
   be vote(vote': Vote)
-  be cast(votes: Array[Vote] iso)
+  be cast(band: USize, votes: Array[Vote] iso)
 
 actor BallotBox is Ballot
   """
@@ -41,18 +49,31 @@ actor BallotBox is Ballot
 
   A vote that arrives after the round is decided is dropped, so a straggler
   cannot deliver a second answer to the same question.
+
+  Given the bands it should hear from, it also says which of them stayed
+  silent - that is what lets a pooler ask a slow band again instead of deciding
+  without it. Without a roster it only counts votes.
   """
   let _tally: Tally tag
   let _timers: Timers
+  let _bands: Array[USize] val
+  let _answered: Set[USize] = Set[USize]
   var _expected: USize
   var _quorum: USize
   var _arrived: USize = 0
   var _decided: Bool = false
   var _votes: Array[Vote] = Array[Vote]
 
-  new create(tally: Tally tag, expected: USize, quorum: USize = 0, deadline_ms: U64 = 0) =>
+  new create(
+    tally: Tally tag,
+    expected: USize,
+    quorum: USize = 0,
+    deadline_ms: U64 = 0,
+    bands: Array[USize] val = [])
+  =>
     _tally = tally
     _expected = expected
+    _bands = bands
 
     // asking for more votes than exist would wait forever, and a quorum of
     // zero would answer an empty question straight away
@@ -74,13 +95,14 @@ actor BallotBox is Ballot
       _decide()
     end
 
-  be cast(votes: Array[Vote] iso) =>
+  be cast(band: USize, votes: Array[Vote] iso) =>
     """
-    A whole shard's votes in one message. Each vote counts towards the quorum,
+    A whole band's votes in one message. Each vote counts towards the quorum,
     so the caller's numbers stay in votes however the columns are grouped.
     """
     if _decided then return end
 
+    _answered.set(band)
     let received: Array[Vote] val = consume votes
     for one in received.values() do
       _votes.push(one)
@@ -102,7 +124,15 @@ actor BallotBox is Ballot
     for one in _votes.values() do
       answer.push(one)
     end
-    _tally.tallied(consume answer)
+
+    let silent: Array[USize] iso = recover iso Array[USize] end
+    for band in _bands.values() do
+      if not _answered.contains(band) then
+        silent.push(band)
+      end
+    end
+
+    _tally.tallied(consume answer, consume silent)
 
 class Deadline is TimerNotify
   let _box: BallotBox
