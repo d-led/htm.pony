@@ -128,7 +128,10 @@ Tests: `test/spatial_pooler_config_test.pony`.
 | `columns` | `let columns: Array[Column]` | the wired columns |
 | `config` | `let config: SpatialPoolerConfig` | the settings it was built with |
 
-Tests: `test/spatial_pooler_test.pony`.
+Tests: `test/spatial_pooler_test.pony`; `Wiring` through
+`test/wiring_test.pony` (which is where the reference's `mapPotential` and
+`initPermanence` cases live), and what a learning round changes through
+`test/spatial_pooler_learning_test.pony`.
 
 ### `ballot_box.pony`
 
@@ -490,6 +493,17 @@ and indexed operations on bit vectors: `from01`, `are_equal`, `subset_slice`,
 `set_value_at_indices`, `set_value_in_range`, `on_indices`.
 
 Tests: `test/array_conversions_test.pony`.
+
+### `erfc.pony`
+
+`Erfc` — the complementary error function, `1 - erf(x)`: the share of a normal
+curve further than `x` standard deviations from its middle. `of(x)` is the
+Numerical Recipes approximation, so there is no dependency and no link to a
+maths library, at an absolute error below 1.2e-7. `Normal.tail_probability` is
+its only caller: it is what turns a distance from the mean into a probability.
+
+Tests: covered through `test/anomaly_likelihood_test.pony`, which holds it to
+known values at four points.
 
 ## Benchmarks, `microbenchmarks/`
 
