@@ -30,23 +30,29 @@ primitive Study
   fun seeds(): Array[U64] => [3; 5; 11; 23; 41]
 
   fun config(max_boost: F64): SpatialPoolerConfig val =>
+    """
+    The reference's boost test in our terms: one competition over the whole
+    population, a column may look at any input bit, and nothing is learned.
+    """
+    let untouched: F64 = 0.0
+
     SpatialPoolerConfig(
       [columns()],
       [inputs()],
-      true,
-      density() * columns().f64(),
+      true,                        // one competition for the whole population
+      density() * columns().f64(), // not consulted while a density is stated
       density(),
-      inputs(),
-      0.9,
-      0.1,
-      0.0,
-      1,
-      0.0,
-      0,
-      50,
+      inputs(),                    // a column may look at any input bit
+      0.9,                         // so it is wired to nine in ten of them
+      0.1,                         // and a synapse counts once it is this strong
+      untouched,                   // a winner moves no permanence...
+      1,                           // a column competes with its neighbours only
+      untouched,                   // ...and neither does a loser
+      0,                           // any overlap may be heard
+      50,                          // activity over the last fifty inputs
       max_boost,
-      0.001,
-      0.1)
+      0.001,                       // starving: below a thousandth of the busiest
+      0.1)                         // boosting starts below a tenth of it
 
   fun patterns(): Array[Array[Bool] val] val ? =>
     """
