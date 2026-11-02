@@ -171,8 +171,18 @@ learned from the last one - and nothing waits for a shard to acknowledge the
 `learn`.
 
 The ballots it creates expect one vote per column and set the quorum to the same
-number. A deadline is not set, so a shard that never answers holds the round
-open. Setting one is a change to `_pump`, and the ballot box already supports it.
+number. That means a round closes when every shard has answered, and without a
+deadline that is the only way it closes:
+
+```pony
+let pooler = Pooler(shards, grid, config, 50)   // fifty milliseconds
+```
+
+With a deadline the round also closes on the votes that arrived in time. Columns
+that stayed silent claim nothing, and the round learns from the representation
+those votes produce, so a slow shard costs accuracy rather than the answer. A
+shard that answers after the deadline is dropped, the same guard the ballot box
+applies to any straggler.
 
 ## Ordering and ties
 
@@ -218,7 +228,9 @@ agree, which is the only reason to believe the split.
 ## What is missing
 
 - No retry when a shard does not answer, and no way to tell a slow shard from a
-  dead one. A deadline would close the round but the pooler does not set one.
+  dead one. A deadline closes the round on the votes that arrived, so a late
+  shard costs accuracy rather than the answer, but the pooler cannot report that
+  a shard is missing.
 - No way to add or remove a shard while the pooler is running.
 - No supervision: an actor that crashes is gone, and the pooler waits.
 - One pooler is one coordinator. Two poolers over the same shards would each

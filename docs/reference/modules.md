@@ -166,7 +166,7 @@ Tests: `test/column_shard_test.pony`.
 
 | Member | Signature | What it does |
 | --- | --- | --- |
-| `create` | `new create(shards: Array[Shard tag] val, grid: Grid val, config: SpatialPoolerConfig val)` | |
+| `create` | `new create(shards: Array[Shard tag] val, grid: Grid val, config: SpatialPoolerConfig val, deadline_ms: U64 = 0)` | a deadline of 0 means the round waits for every shard |
 | `represent` | `be represent(active: Array[Bool] val, learn: Bool, asker: Representation tag)` | queues a round and starts it if nothing is in flight |
 | `tallied` | `be tallied(votes: Array[Vote] iso)` | inhibits the votes, learns from the round if it was asked to, and answers the asker |
 | `PoolerShards.build` | `fun build(config: SpatialPoolerConfig val, seed: U64, width: USize): Array[Shard tag] val ?` | cuts the population into bands of `width` |

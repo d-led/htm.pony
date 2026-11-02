@@ -48,12 +48,19 @@ actor Pooler is Tally
   input before it has learned from the last one, and nothing waits for a shard to
   acknowledge the `learn`.
 
+  A round closes when every shard has answered, and without a deadline that is
+  the only way it closes. With `deadline_ms` the round also closes on the votes
+  that arrived in time; columns that stayed silent claim nothing, and the round
+  learns from the representation those votes produce. A shard that answers after
+  the deadline is dropped, so it cannot answer the round twice.
+
   One round runs at a time: a second request waits rather than overwriting a
   tally still in flight.
   """
   let _shards: Array[Shard tag] val
   let _grid: Grid val
   let _config: SpatialPoolerConfig val
+  let _deadline_ms: U64
   embed _learning: ColumnLearning
 
   var _queue: Array[Round] = Array[Round]
@@ -62,11 +69,13 @@ actor Pooler is Tally
   new create(
     shards: Array[Shard tag] val,
     grid: Grid val,
-    config: SpatialPoolerConfig val)
+    config: SpatialPoolerConfig val,
+    deadline_ms: U64 = 0)
   =>
     _shards = shards
     _grid = grid
     _config = config
+    _deadline_ms = deadline_ms
     _learning = ColumnLearning(config, grid, config.num_inputs())
 
   be represent(active: Array[Bool] val, learn: Bool, asker: Representation tag) =>
@@ -99,7 +108,7 @@ actor Pooler is Tally
       _current = round
       _learning.round()
 
-      let ballot = BallotBox(this, _grid.size, _grid.size)
+      let ballot = BallotBox(this, _grid.size, _grid.size, _deadline_ms)
       for shard in _shards.values() do
         shard.observe(round.active, ballot)
       end

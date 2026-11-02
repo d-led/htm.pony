@@ -7,6 +7,17 @@ class PoolerTest is TestList
   fun tag tests(test: PonyTest) =>
     test(_ARoundReachesAnAnswer)
     test(_TwoRequestsAreAnsweredInTurn)
+    test(_ASilentShardDoesNotHoldTheRoundOpen)
+
+actor SilentShard is Shard
+  """
+  A band that never answers, which is what a shard that is slow, stuck or gone
+  looks like to the pooler.
+  """
+  be observe(active: Array[Bool] val, ballot: Ballot tag) => None
+
+  be learn(active: Array[Bool] val, winners: Array[USize] val, starving: Array[USize] val) =>
+    None
 
 actor Listener is Representation
   let _h: TestHelper
@@ -73,3 +84,17 @@ class iso _TwoRequestsAreAnsweredInTurn is UnitTest
     let listener = Listener(h, 2)
     pooler.represent(PoolerFixture.input()?, false, listener)
     pooler.represent(PoolerFixture.input()?, false, listener)
+
+class iso _ASilentShardDoesNotHoldTheRoundOpen is UnitTest
+  fun name(): String => "a shard that never answers does not hold the round open"
+
+  fun apply(h: TestHelper) ? =>
+    h.long_test(5_000_000_000)
+
+    let shards: Array[Shard tag] iso = recover iso Array[Shard tag] end
+    shards.push(PoolerFixture.band(0))
+    shards.push(SilentShard)
+
+    let pooler = Pooler(
+      consume shards, Grid([4])?, PoolerFixture.config(), 20)
+    pooler.represent(PoolerFixture.input()?, false, Listener(h, 1))
