@@ -18,6 +18,7 @@ examples/*/*.dSYM/
 examples/in-process-pooler/in-process-pooler
 examples/pooler-learning/pooler-learning
 examples/pooler-training-value/pooler-training-value
+examples/boosting-value/boosting-value
 examples/actor-pooler/actor-pooler
 examples/scalar-encoder/scalar-encoder
 examples/first-representation/first-representation

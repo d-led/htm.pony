@@ -183,6 +183,43 @@ seeds and changes sign on one kind of damage. A single run of this study gave
 otherwise. The last line of the seed table is the one to read; the rows under it
 are the spread that makes the mean worth anything.
 
+## What boosting is worth
+
+A column that never wins never shows what it would have recognised, and a column
+that cannot be heard cannot learn. `examples/boosting-value/main.pony` asks what
+the boost is worth: two hundred columns competing for twenty places over five
+inputs of twenty bits, run twice - once by a pooler that may boost the columns it
+does not hear by up to tenfold, once by a pooler that may not boost at all.
+
+The learning rate is zero in both runs, so no permanence is ever moved by a
+winner and the only thing that can change who wins is a boost. That makes the
+count of columns that have never won a measurement of boosting and of nothing
+else:
+
+```
+        boosting                    no boost
+seed    @50      @100     @200      @50      @100     @200
+3       122      0        0         122      122      122
+5       120      0        0         120      120      120
+11      118      0        0         118      118      118
+23      119      0        0         119      119      119
+41      120      0        0         120      120      120
+```
+
+A checkpoint is a count of the inputs a pooler has seen. The pooler works out
+what counts as normal activity every fifty inputs, so the checkpoint at fifty is
+taken before any of that has been applied - and there the two columns are
+identical, which is the control: the two poolers are the same pooler until a
+boost exists to apply.
+
+Fifty inputs later boosting has heard every column, on all five seeds. Without it
+the count cannot move at all: about 120 of the 200 columns never win, and since
+nothing else changes a winner in this setup, they never will.
+
+The reference tests this as a property - that every column should win at some
+point - and it is stated here as a measurement instead, because how many columns
+go unheard depends on the wiring a seed happens to draw.
+
 ## What a learned pooler gives the memory
 
 `examples/sequence-training-value/main.pony` asks the question the pattern study

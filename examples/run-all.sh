@@ -5,7 +5,7 @@ set -e
 
 root=$(cd "$(dirname "$0")" && pwd)
 
-for example in first-representation in-process-pooler pooler-learning pooler-training-value sequence-training-value actor-pooler scalar-encoder image-similarity temporal-memory temporal-memory-on-actors anomaly-stream anomaly-likelihood; do
+for example in first-representation in-process-pooler pooler-learning pooler-training-value boosting-value sequence-training-value actor-pooler scalar-encoder image-similarity temporal-memory temporal-memory-on-actors anomaly-stream anomaly-likelihood; do
     echo "=== $example ==="
     cd "$root/$example"
     corral run -- ponyc --debug -o . .

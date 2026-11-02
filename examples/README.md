@@ -33,6 +33,14 @@ prints how much of the clean representation each pooler still reaches. The two
 tables are the answer to "what does learning buy?", and the per-seed rows under
 them are the spread that makes the answer worth anything.
 
+## [boosting-value](boosting-value/)
+
+Two hundred columns over two hundred inputs, five of twenty bits, through two
+poolers that differ in one setting: one may boost the columns it never hears by
+up to tenfold, the other may not boost at all. Nothing else can move - the
+learning rate is zero - so the count of columns that have never won is decided
+by boosting alone. Prints that count at three checkpoints over five seeds.
+
 ## [sequence-training-value](sequence-training-value/)
 
 Runs one cycle of four symbols through two watchers - a memory over a pooler that
