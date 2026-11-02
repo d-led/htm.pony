@@ -146,12 +146,17 @@ retry, and the round waits for an answer that can no longer come. A second timer
 also needs a fresh `Timers` wheel - adding one to the wheel that is firing
 silently drops it.
 
-### 3. Multi-step prediction
+### 3. Multi-step prediction — done
 
-`PredictionClassifier` answers "what comes next". The Zeesoft ZDK classifier (see the
-music section) takes an array of steps, 0 meaning classify now and n meaning predict n
-steps ahead. Ours has the SDR classifier underneath, so this is a small extension rather
-than new machinery: keep per-step count tables, and let a caller ask for step k.
+`PredictionClassifier(memory, categories, learning_rate, steps)` keeps one
+classifier per step and the last `steps` expectations: the classifier for step k
+is taught by the expectation made k steps back and asked about the newest one.
+`best_at(k)` and `probabilities_at(k)` answer k steps ahead, and asking beyond
+what it was built for raises rather than answering zero, because a number nobody
+computed would look like a prediction with no confidence behind it.
+
+The test teaches a three-step cycle and reads steps one and two off the same
+observation.
 
 ### 4. A combiner for two SDRs — done, before item 3
 

@@ -36,10 +36,10 @@ input arrives.
 `PredictionClassifier` is that pairing:
 
 ```pony
-let predictor = PredictionClassifier(memory, categories = 3)?
+let predictor = PredictionClassifier(memory, 3)?
 
 // one step at a time, with the label that step turned out to be
-let probabilities = predictor.observe(columns, label, learn = true)?
+let probabilities = predictor.observe(columns, label, true)?
 predictor.best()   // what the next step is expected to be
 ```
 
@@ -50,6 +50,24 @@ expectation with the current step's label, and reports the new expectation.
 The test that matters is that the label of the next step is named before that
 step is shown.
 
+## More than one step ahead
+
+A predictor built with more steps keeps one classifier per step and the last
+`steps` expectations. The classifier for step k is taught by the expectation made
+k steps back and is asked about the newest one, so the cells it reads at
+inference are the ones it was taught on:
+
+```pony
+let ahead = PredictionClassifier(memory, 3, 0.1, 2)?
+
+ahead.observe(columns, label, true)?
+ahead.best_at(1)?   // what comes next
+ahead.best_at(2)?   // what comes after that
+```
+
+Asking beyond what it was built for is an error rather than a zero: a number
+nobody computed would look like a prediction with no confidence behind it.
+
 ## What it does not do
 
 - **Values, not just labels.** Numenta's classifier also reports a distribution
@@ -59,3 +77,6 @@ step is shown.
   temporal memory's predicted cells, the way the anomaly score uses the bursts,
   is the caller's job.
 - **Actors.** Like the temporal memory, it is a plain object.
+- **A sequence model of its own.** Each step ahead is its own table of weights;
+  there is no recurrence and nothing shared between them beyond the memory the
+  expectations come from.

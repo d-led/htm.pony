@@ -291,7 +291,9 @@ Tests: `test/sdr_classifier_test.pony`.
 ### `prediction_classifier.pony`
 
 `PredictionClassifier` - the label of the next step, learned from what a memory
-predicted and what then happened.
+predicted and what then happened. Built with more than one step it keeps a
+classifier per step and the last few expectations, and answers for any step it
+was built for.
 
 Tests: `test/prediction_classifier_test.pony`.
 

@@ -8,6 +8,26 @@ primitive PredictionFixture
       2,
       0.1)?
 
+  fun two_step(): PredictionClassifier ? =>
+    PredictionClassifier(
+      TemporalMemory(TemporalMemoryParams(4, 4, 1, 0.5, 0.5, 0.1, 0.02, 8, 4)),
+      3,
+      0.1,
+      2)?
+
+  fun teaches_a_cycle(target: PredictionClassifier) ? =>
+    """
+    Three steps that repeat: column 0 carries label 0, column 1 label 1, column
+    2 label 2.
+    """
+    var round: USize = 0
+    while round < 20 do
+      target.observe([0], 0, true)?
+      target.observe([1], 1, true)?
+      target.observe([2], 2, true)?
+      round = round + 1
+    end
+
   fun teaches(target: PredictionClassifier) ? =>
     """
     Column 0 always carries label 0 and is always followed by column 1, which
@@ -27,6 +47,8 @@ class PredictionClassifierTest is TestList
     test(_AFreshPredictorPrefersNoLabel)
     test(_TheNextLabelIsPredictedBeforeItArrives)
     test(_ThePredictionIsForgottenWhenTheSequenceChanges)
+    test(_ATwoStepPredictorAnswersTwoStepsAhead)
+    test(_AOneStepPredictorRefusesToAnswerFurther)
 
 class iso _AFreshPredictorPrefersNoLabel is UnitTest
   fun name(): String => "a fresh predictor prefers no label"
@@ -73,3 +95,32 @@ class iso _ThePredictionIsForgottenWhenTheSequenceChanges is UnitTest
     h.assert_true(
       probabilities(1)? < 0.5,
       "label 1 was not seen with this sequence and should not be predicted")
+
+class iso _ATwoStepPredictorAnswersTwoStepsAhead is UnitTest
+  fun name(): String => "a predictor of two steps answers with the label two steps ahead"
+
+  fun apply(h: TestHelper) ? =>
+    let predictor = PredictionFixture.two_step()?
+    PredictionFixture.teaches_a_cycle(predictor)?
+
+    // the first step again, this time with no label to settle anything
+    predictor.observe([0], None, false)?
+
+    h.assert_eq[USize](1, predictor.best_at(1)?)
+    h.assert_eq[USize](2, predictor.best_at(2)?)
+
+class iso _AOneStepPredictorRefusesToAnswerFurther is UnitTest
+  fun name(): String => "a predictor of one step refuses to answer further"
+
+  fun apply(h: TestHelper) ? =>
+    let predictor = PredictionFixture.predictor()?
+    let _ = predictor.observe([0], None, false)?
+
+    var refused = false
+    try
+      predictor.probabilities_at(2)?
+    else
+      refused = true
+    end
+
+    h.assert_true(refused, "there is no second step to answer for")
