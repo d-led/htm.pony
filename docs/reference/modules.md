@@ -437,7 +437,10 @@ encoding; the comparison of the full vector is commented out.
 ### `category_encoder.pony`
 
 `CategoryEncoder` (value) - one block of bits per label, with no overlap between
-labels, and the block read back to the label it came from.
+labels, and the block read back to the label it came from. The modern
+`SDRCategoryEncoder` in `htm.java` and `nupic` is a different shape - a fixed
+width with `w` random bits per label, so labels may share bits and later ones are
+added as met - and this one is not that.
 
 Tests: `test/category_encoder_test.pony`.
 

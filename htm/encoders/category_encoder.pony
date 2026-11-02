@@ -16,6 +16,16 @@ class val CategoryEncoder
   anything it has not seen there. This one refuses instead: a stream where
   unseen labels quietly become a real block is a stream whose labels stopped
   being checked. The difference is deliberate and is the only one.
+
+  The modern encoders beside it - `SDRCategoryEncoder` in `htm.java` and in
+  `nupic` - are a different shape, and the difference is worth knowing before
+  reaching for this one. They hold a fixed width `n` and turn on `w` bits chosen
+  at random per category, so two categories may share a few of them, the width
+  does not grow with the labels, and a category that arrives later is added as
+  it is met. That shape suits a stream of labels whose number is unknown and a
+  pooler that wants a fixed input width; this one suits a closed set of labels
+  that must stay exactly apart. Since the two disagree about whether two
+  categories may share a bit, an encoding is only comparable within one of them.
   """
   let categories: Array[String] val
   let bits: USize

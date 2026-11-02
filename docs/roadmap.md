@@ -56,9 +56,15 @@ bits. Writing it turned up a bug worth remembering - `ScalarEncoder.encode_at_po
 ignored its offset, so every field of a date was written at the start of the
 vector and the test that should have caught it asserted nothing.
 
-**4. The category encoder, checked against the modern one.** Ours exists; the
-question is whether it matches the `SDRCategoryEncoder` in `htm.java` and
-`neocortexapi`, rather than the older Go one.
+**4. The category encoder, checked against the modern one.** Checked, and the
+answer is that they are different shapes rather than one being right. Ours gives
+each label its own contiguous block, so the width grows with the labels and two
+labels share nothing. `SDRCategoryEncoder`, in `htm.java` and in `nupic`, holds a
+fixed width `n` and turns on `w` random bits per label, so labels may share a few
+bits, the width stays put, and a label that arrives later is added as it is met.
+Both are in the references, neither is wrong, and the encoder says which one it
+is. The fixed-width one is not written here; it is the shape a stream of labels
+of unknown number wants, so it is the natural next addition if a stream needs it.
 
 **5. The graph encoder.** None exists in the Go reference - that was checked - so
 this is new work rather than a port. Two encoders are wanted:
