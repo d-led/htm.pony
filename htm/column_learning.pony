@@ -18,11 +18,11 @@ class ColumnLearning
   let _column_grid: Grid
   let _input_count: USize
 
-  var _overlap_duty_cycles: Array[F64]
-  var _active_duty_cycles: Array[F64]
-  var _min_overlap_duty_cycles: Array[F64]
-  var _min_active_duty_cycles: Array[F64]
-  var _boost_factors: Array[F64]
+  let _overlap_duty_cycles: Array[F64]
+  let _active_duty_cycles: Array[F64]
+  let _min_overlap_duty_cycles: Array[F64]
+  let _min_active_duty_cycles: Array[F64]
+  let _boost_factors: Array[F64]
   var _rounds: USize = 0
 
   // The reference recomputes the minimum duty cycles every fiftieth round. It is

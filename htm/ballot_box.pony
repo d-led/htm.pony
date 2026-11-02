@@ -58,11 +58,11 @@ actor BallotBox is Ballot
   let _timers: Timers
   let _bands: Array[USize] val
   let _answered: Set[USize] = Set[USize]
-  var _expected: USize
-  var _quorum: USize
+  let _expected: USize
+  let _quorum: USize
+  let _votes: Array[Vote] = Array[Vote]
   var _arrived: USize = 0
   var _decided: Bool = false
-  var _votes: Array[Vote] = Array[Vote]
 
   new create(
     tally: Tally tag,

@@ -84,7 +84,7 @@ actor Pooler is Tally
   let _deadline_ms: U64
   embed _learning: ColumnLearning
 
-  var _queue: Array[Round] = Array[Round]
+  let _queue: Array[Round] = Array[Round]
   var _current: (Round | None) = None
   var _heard: Array[Vote] val = recover val Array[Vote] end
   var _retrying: Bool = false

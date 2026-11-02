@@ -117,7 +117,6 @@ class SpatialPooler
   let columns: Array[Column]
   let column_grid: Grid
   let input_grid: Grid
-  let _random: Rand
   embed _learning: ColumnLearning
 
   new create(config': SpatialPoolerConfig, seed: U64 = 42) ? =>
@@ -137,7 +136,6 @@ class SpatialPooler
     columns = wired
     column_grid = Grid(config'.column_dimensions)?
     input_grid = inputs
-    _random = random
 
     _learning = ColumnLearning(config', column_grid, inputs.size)
 
