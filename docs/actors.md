@@ -44,13 +44,14 @@ interface Shard
   be learn(active: Array[Bool] val, winners: Array[USize] val, starving: Array[USize] val)
 
 interface Representation
-  be represented(active: Array[USize] iso)
+  be represented(active: Array[USize] iso, missing: USize)
 ```
 
 A column pushes into a `Ballot` and never learns what collects the votes. The
 ballot box pushes into a `Tally` and never learns what asked. The pooler asks a
 `Shard` and never learns which band of columns answers. An asker implements
-`Representation` and is handed the answer.
+`Representation` and is handed the answer, together with the number of columns
+the round never heard from - zero for a round every column answered.
 
 The practical effect is that a shard can be tested against any sink, and a sink
 against any source. `test/column_shard_test.pony` and `test/ballot_box_test.pony`
@@ -182,7 +183,9 @@ With a deadline the round also closes on the votes that arrived in time. Columns
 that stayed silent claim nothing, and the round learns from the representation
 those votes produce, so a slow shard costs accuracy rather than the answer. A
 shard that answers after the deadline is dropped, the same guard the ballot box
-applies to any straggler.
+applies to any straggler. The answer carries the count of columns that never
+answered, so an asker can tell a representation the whole population agreed on
+from one that part of it was never asked about.
 
 ## Ordering and ties
 
@@ -227,9 +230,9 @@ agree, which is the only reason to believe the split.
 
 ## What is missing
 
-- No supervision. A shard that has crashed and one that is merely slow look the
-  same to the pooler: with a deadline the round closes on the votes that arrived,
-  but nothing says which columns were missing, and nothing retries them.
+- No retry. A deadline closes the round and the answer says how many columns
+  were never heard from, but nothing asks them again, and nothing tells a shard
+  that is slow from one that is gone.
 - No way to add or remove a shard while the pooler is running.
 - One pooler is one coordinator. Two poolers over the same shards would each
   start their own rounds.

@@ -158,7 +158,7 @@ Tests: `test/column_shard_test.pony`.
 
 | Type | What it is |
 | --- | --- |
-| `Representation` (interface) | `be represented(Array[USize] iso)` — whoever asked for a representation |
+| `Representation` (interface) | `be represented(Array[USize] iso, USize)` — whoever asked for a representation, and how many columns the round never heard from |
 | `Shard` (interface) | `be observe(Array[Bool] val, Ballot tag)` and `be learn(Array[Bool] val, Array[USize] val, Array[USize] val)` — what the pooler asks of a band of columns |
 | `Round` (value) | one queued request: the input, whether the round learns, and who to answer |
 | `Pooler` (actor) | the coordinator, and a `Tally` |

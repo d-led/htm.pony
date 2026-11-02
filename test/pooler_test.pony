@@ -22,16 +22,19 @@ actor SilentShard is Shard
 actor Listener is Representation
   let _h: TestHelper
   let _answers: USize
+  let _missing: USize
   var _seen: USize = 0
 
-  new create(h: TestHelper, answers: USize) =>
+  new create(h: TestHelper, answers: USize, missing: USize = 0) =>
     _h = h
     _answers = answers
+    _missing = missing
 
-  be represented(active: Array[USize] iso) =>
+  be represented(active: Array[USize] iso, missing: USize) =>
     let answer: Array[USize] val = consume active
     _seen = _seen + 1
 
+    _h.assert_eq[USize](_missing, missing, "the columns that never answered")
     _h.assert_true(answer.size() > 0, "an answer should name at least one column")
     if _seen == _answers then
       _h.complete(true)
@@ -97,4 +100,7 @@ class iso _ASilentShardDoesNotHoldTheRoundOpen is UnitTest
 
     let pooler = Pooler(
       consume shards, Grid([4])?, PoolerFixture.config(), 20)
-    pooler.represent(PoolerFixture.input()?, false, Listener(h, 1))
+
+    // the band that answered holds columns 0 and 1, so the two silent ones are
+    // the other half of the population
+    pooler.represent(PoolerFixture.input()?, false, Listener(h, 1, 2))

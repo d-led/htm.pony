@@ -83,9 +83,11 @@ actor AgreeingAnswers is Representation
     _h = h
     _expected = expected
 
-  be represented(active: Array[USize] iso) =>
+  be represented(active: Array[USize] iso, missing: USize) =>
     let answer: Array[USize] val = consume active
     _seen = _seen + 1
+
+    _h.assert_eq[USize](0, missing, "every column should answer a learning round")
 
     try
       if _same(answer, _expected(_seen - 1)?) then

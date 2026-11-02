@@ -53,9 +53,14 @@ actor Main
       _env.exitcode(1)
     end
 
-  be answered(round: USize, active: Array[USize] val) =>
+  be answered(round: USize, active: Array[USize] val, missing: USize) =>
     let mine = _expected_at(round - 1)
     if not _same(mine, active) then _agreed = false end
+
+    if missing > 0 then
+      _env.out.print(missing.string() + " columns did not answer round "
+        + round.string())
+    end
 
     let last = Session.rounds()
     if (round == 1) or (round == last) then
@@ -134,9 +139,9 @@ actor Listener is Representation
     _pooler = pooler
     _input = input
 
-  be represented(active: Array[USize] iso) =>
+  be represented(active: Array[USize] iso, missing: USize) =>
     _round = _round + 1
-    _main.answered(_round, consume active)
+    _main.answered(_round, consume active, missing)
 
     if _round < Session.rounds() then
       _pooler.represent(_input, true, this)

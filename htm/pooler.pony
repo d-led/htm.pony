@@ -4,8 +4,14 @@ use "random"
 interface Representation
   """
   Whoever wants a representation, and so receives one when the round closes.
+
+  `missing` is how many columns the round never heard from. Zero means every
+  column the pooler expected answered, and the representation is the one they
+  agreed on; more means it was decided without them, which is what a deadline
+  buys when a shard is slow or gone. A caller that has to trust the answer can
+  look at this number and decide what the answer is worth.
   """
-  be represented(active: Array[USize] iso)
+  be represented(active: Array[USize] iso, missing: USize)
 
 interface Shard
   """
@@ -52,7 +58,9 @@ actor Pooler is Tally
   the only way it closes. With `deadline_ms` the round also closes on the votes
   that arrived in time; columns that stayed silent claim nothing, and the round
   learns from the representation those votes produce. A shard that answers after
-  the deadline is dropped, so it cannot answer the round twice.
+  the deadline is dropped, so it cannot answer the round twice. The answer says
+  how many columns were never heard from, so a caller can tell a complete
+  representation from one that was decided without part of the population.
 
   One round runs at a time: a second request waits rather than overwriting a
   tally still in flight.
@@ -95,7 +103,7 @@ actor Pooler is Tally
         answer.push(winner)
       end
 
-      round.asker.represented(consume answer)
+      round.asker.represented(consume answer, _unheard(received.size()))
     end
 
     _pump()
@@ -155,6 +163,13 @@ actor Pooler is Tally
         shard.learn(round.active, chosen, weak)
       end
     end
+
+  fun _unheard(votes: USize): USize =>
+    """
+    The columns a round never heard from: the ones it expected less the ones
+    that voted.
+    """
+    if votes < _grid.size then _grid.size - votes else 0 end
 
   fun box _overlaps(votes: Array[Vote] val): Array[F64] =>
     let overlaps = Array[F64].init(0.0, _grid.size)
