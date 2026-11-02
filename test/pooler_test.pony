@@ -31,16 +31,16 @@ primitive PoolerFixture
     SpatialPoolerConfig([4], [8], false, 1.0)
 
   fun band(first: USize): ColumnShard tag =>
-    let columns = recover iso Array[ColumnView] end
+    let wirings = recover iso Array[ColumnWiring] end
     var column = first
     while column < (first + 2) do
       let synapses: Array[Synapse] val = recover val
         [Synapse(column % 8, 0.5); Synapse((column + 1) % 8, 0.5)]
       end
-      columns.push(ColumnView(column, synapses))
+      wirings.push(ColumnWiring(column, synapses))
       column = column + 1
     end
-    ColumnShard(consume columns, config())
+    ColumnShard(consume wirings, config())
 
   fun pooler(): Pooler ? =>
     let shards = recover iso Array[ColumnShard tag] end

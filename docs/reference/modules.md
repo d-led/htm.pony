@@ -152,14 +152,14 @@ Tests: `test/cortical_column_test.pony`.
 
 ### `column_shard.pony`
 
-`ColumnView` (value) — what a shard is handed for one column: `index`, its place
-in the population, and the `synapses` it starts with.
+`ColumnWiring` (value) — one column's wiring as a value: `index`, its place in
+the population, and the `synapses` it starts with.
 
 `ColumnShard` (actor) — a band of columns sharing one actor.
 
 | Member | Signature | What it does |
 | --- | --- | --- |
-| `create` | `new create(columns: Array[ColumnView] val, config: SpatialPoolerConfig val)` | copies the synapses into columns of its own, and keeps the settings |
+| `create` | `new create(wirings: Array[ColumnWiring] val, config: SpatialPoolerConfig val)` | copies the synapses into columns of its own, and keeps the settings |
 | `observe` | `be observe(active: Array[Bool] val, ballot: Ballot tag)` | pushes every column's overlap in one `cast` |
 | `learn` | `be learn(active: Array[Bool] val, winners: Array[USize] val, starving: Array[USize] val)` | adapts the named winners and raises the named starving columns, ignoring indices of other bands |
 

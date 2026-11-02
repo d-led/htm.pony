@@ -190,22 +190,22 @@ primitive PoolerShards
     while first < columns do
       let left = columns - first
       let count = if left < width then left else width end
-      let views: Array[ColumnView] iso = recover iso Array[ColumnView] end
+      let wirings: Array[ColumnWiring] iso = recover iso Array[ColumnWiring] end
 
       var column = first
       while column < (first + count) do
         let wired = Wiring.fresh_column(config, inputs, random, column)?
-        views.push(ColumnView(column, _frozen_synapses(wired.synapses)))
+        wirings.push(ColumnWiring(column, _frozen(wired.synapses)))
         column = column + 1
       end
 
-      shards.push(ColumnShard(consume views, config))
+      shards.push(ColumnShard(consume wirings, config))
       first = first + count
     end
 
     consume shards
 
-  fun _frozen_synapses(values: ReadSeq[Synapse]): Array[Synapse] val =>
+  fun _frozen(values: ReadSeq[Synapse]): Array[Synapse] val =>
     let copy: Array[Synapse] iso = recover iso Array[Synapse] end
     for value in values.values() do
       copy.push(value)

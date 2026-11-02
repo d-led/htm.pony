@@ -1,9 +1,12 @@
 use "collections"
 
-class val ColumnView
+class val ColumnWiring
   """
-  What a shard is handed for one column: its place in the population, and the
+  One column's wiring as a value: where it sits in the population, and the
   synapses it starts with.
+
+  A `Column` is a reference object, and only the actor that owns one may move its
+  permanences, so a column travels to its shard in this form instead.
   """
   let index: USize
   let synapses: Array[Synapse] val
@@ -21,10 +24,10 @@ actor ColumnShard
   single message. The quorum still counts votes, so grouping columns does not
   change what the ballot box does.
 
-  It owns its columns: the synapses arrive as values, one set per column, and
-  are copied into columns of the shard's own. It also holds the settings that
-  decide what a column claims and how far it moves, so `learn` needs nothing
-  from the pooler but the input and the columns the pooler chose.
+  It owns its columns: the wiring arrives as values, one per column, and is
+  copied into columns of the shard's own. It also holds the settings that decide
+  what a column claims and how far it moves, so `learn` needs nothing from the
+  pooler but the input and the columns the pooler chose.
 
   Those columns are named by their index in the population, not by their
   position in the band, because the pooler decides who learns and the pooler
@@ -35,15 +38,15 @@ actor ColumnShard
   let _positions: Map[USize, USize] ref
   let _config: SpatialPoolerConfig val
 
-  new create(columns: Array[ColumnView] val, config: SpatialPoolerConfig val) =>
-    let owned = Array[Column](columns.size())
+  new create(wirings: Array[ColumnWiring] val, config: SpatialPoolerConfig val) =>
+    let owned = Array[Column](wirings.size())
     let indices: Array[USize] iso = recover iso Array[USize] end
     let positions = Map[USize, USize]
 
-    for (position, column) in columns.pairs() do
-      owned.push(Column(column.synapses))
-      indices.push(column.index)
-      positions(column.index) = position
+    for (position, wiring) in wirings.pairs() do
+      owned.push(Column(wiring.synapses))
+      indices.push(wiring.index)
+      positions(wiring.index) = position
     end
 
     _columns = owned

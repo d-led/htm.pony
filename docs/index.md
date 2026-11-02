@@ -81,7 +81,7 @@ is still in flight.
 | `htm/spatial_pooler.pony` | `Wiring` and `SpatialPooler`: receptive fields, and compute |
 | `htm/ballot_box.pony` | `Vote`, `Ballot`, `Tally`, `BallotBox`, `Deadline`: one round of votes |
 | `htm/cortical_column.pony` | `CorticalColumn`: one column answering on its own |
-| `htm/column_shard.pony` | `ColumnView`, `ColumnShard`: a band of columns sharing one actor |
+| `htm/column_shard.pony` | `ColumnWiring`, `ColumnShard`: a band of columns sharing one actor |
 | `htm/pooler.pony` | `Representation`, `Round`, `Pooler`: the coordinator |
 | `htm/dense_binary_matrix.pony` | `DenseBinaryMatrix`: one bit per cell |
 | `htm/sparse_binary_matrix.pony` | `SparseBinaryMatrix`: only the set cells |

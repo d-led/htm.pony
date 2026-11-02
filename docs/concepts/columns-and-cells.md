@@ -6,7 +6,7 @@ that boundary explains most of what is missing.
 | Word | What it is | In this repository |
 | --- | --- | --- |
 | input bit | one position in the encoded vector | `Array[Bool]`, via `ReadSeq[Bool]` |
-| column | a unit that recognises something, and votes on it | `Column`, `ColumnView` |
+| column | a unit that recognises something, and votes on it | `Column`, `ColumnWiring` |
 | cell | one of several states a column can be in | not written |
 | minicolumn | a column seen as the group of its cells | not written |
 
@@ -23,9 +23,9 @@ class Column
 Its identity is its index. A column does have state that outlasts a round - the
 permanences it holds - but only a learning round moves them, and a column cannot
 move them by itself: inhibition decides who won, and the winner is what learns.
-That is the seam the actor layer is built on. A column's wiring can be handed to
-another actor as a `ColumnView`, and from then on only the actor that owns the
-column changes it.
+That is the seam the actor layer is built on. A column's wiring travels to its
+shard as a `ColumnWiring`, and from then on only the actor that owns the column
+changes it.
 
 Nothing above a column exists either. The pooler holds a flat `Array[Column]` and
 a `Grid` for the shape; the shape is used to decide who competes with whom, not to

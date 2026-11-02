@@ -31,11 +31,11 @@ class iso _AShardVotesForEveryColumnItOwns is UnitTest
     h.long_test(5_000_000_000)
 
     let field: Array[Synapse] val = recover val [Synapse(0, 0.5)] end
-    let columns: Array[ColumnView] val = recover val
-      [ColumnView(0, field); ColumnView(1, field)]
+    let wirings: Array[ColumnWiring] val = recover val
+      [ColumnWiring(0, field); ColumnWiring(1, field)]
     end
     let input: Array[Bool] val = recover val [true] end
 
     // two votes means the round needs both of them, however they are grouped
     let ballot = BallotBox(ShardWatcher(h, 2), 2)
-    ColumnShard(columns, SpatialPoolerConfig([2], [1], false, 2.0)).observe(input, ballot)
+    ColumnShard(wirings, SpatialPoolerConfig([2], [1], false, 2.0)).observe(input, ballot)
