@@ -4,24 +4,27 @@
 
 Documentation: **https://d-led.github.io/htm.pony/**
 
-- Status: the spatial pooler works; the temporal memory is not written yet
+- Status: the spatial pooler and the temporal memory both work, in process and on actors; the graph encoder is not written
 - based off the [Go implementation: https://github.com/htm-community/htm](https://github.com/htm-community/htm) (MIT License)
 - no direct dependency on other implementations
 
 ## What works
 
-The spatial pooler runs end to end: columns are wired to receptive fields, overlap
-counts the active inputs a column is connected to, and inhibition chooses which
-columns represent the input. Global and local inhibition are both implemented, and
-wiring takes a seed, so a seed and an input always give the same representation.
+A scalar, category, random-distributed, date or picture file goes in as bits; the
+spatial pooler turns those bits into columns that recognise them; the temporal
+memory learns what tends to follow what in those columns; and a classifier turns
+the prediction into probabilities over categories. Every stage is tested, and
+each one runs twice: once in process, and once as actors passing messages.
 
-The same computation also runs on messages. Column shards push their votes into a
-ballot box, which closes a round when every vote has arrived, when a quorum has
-arrived, or when a deadline expires. A pooler coordinator inhibits the tally and
-pushes the representation back to whoever asked.
+`examples/` walks the whole pipeline in thirteen runnable programs, and three of
+them measure rather than demonstrate - what learning is worth, what a learned
+pooler gives a memory, and what boosting is worth - with the numbers published by
+CI so they can be checked.
 
-Not implemented yet: permanence learning, duty cycles and boosting; the temporal
-memory; the CLA temporal pooler.
+Three things are deliberately absent, and the [documentation](https://d-led.github.io/htm.pony/)
+says why for each: the **graph encoder** is not written, the **date encoder** has
+its season field but not the other four, and the **CLA temporal pooler** is not
+ported.
 
 ## Rough Plan
 
