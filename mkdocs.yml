@@ -36,6 +36,7 @@ nav:
       - Classification: classification.md
   - Examples: examples.md
   - Roadmap: roadmap.md
+  - Handoff: handoff.md
   - Tutorial: tutorial.md
   - Reference:
       - Modules: reference/modules.md

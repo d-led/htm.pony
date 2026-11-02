@@ -139,6 +139,12 @@ the estimate, so it is not here.
 - **No classification.** The third piece of the pipeline — learning which label
   a predicted state corresponds to — is not written here, though the [SDR
   classifier](classification.md) does that part on its own.
-- **A detector on actors.** `StreamingAnomalyDetector` is built over the
-  in-process pooler and memory. The actor path has both halves — a `Pooler` that
-  learns and a `TemporalRegion` — but nothing joins them into a streaming score.
+- **No red-and-yellow filter.** The reference turns a run of high likelihoods
+  into a lower one so that a dashboard is not permanently red. That is a display
+  decision, so a caller who wants it writes it.
+
+The detector on the actor path used to be missing too. It is not any more:
+`AnomalyStream` asks a `Pooler` for the columns of an input, hands them to a
+`TemporalRegion`, and answers with the score and its likelihood, one step in
+flight at a time. The example `anomaly-on-actors` prints the same stream this
+page's in-process example does, so the two can be read side by side.

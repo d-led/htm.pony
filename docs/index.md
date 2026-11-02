@@ -44,7 +44,10 @@ and [temporal memory](concepts/temporal-memory.md).
 
 The [roadmap](roadmap.md) says what this is for, in the order the goals were set -
 predictions, classification, online anomaly detection - and what is left: the CLA
-temporal pooler first, then the anomaly score on the actor path.
+temporal pooler is the one piece of the algorithm still missing.
+
+The [handoff](handoff.md) is the working page for whoever picks this up next: what
+is left in the order to do it, what was decided deliberately, and the traps.
 
 ## How the computation is arranged
 
