@@ -82,6 +82,7 @@ actor Pooler is Tally
   let _grid: Grid val
   let _config: SpatialPoolerConfig val
   let _deadline_ms: U64
+  let _tie_breaker: Array[F64] val
   embed _learning: ColumnLearning
 
   let _queue: Array[Round] = Array[Round]
@@ -94,12 +95,14 @@ actor Pooler is Tally
     shards: Array[Shard tag] val,
     grid: Grid val,
     config: SpatialPoolerConfig val,
-    deadline_ms: U64 = 0)
+    deadline_ms: U64 = 0,
+    seed: U64 = 42)
   =>
     _shards = shards
     _grid = grid
     _config = config
     _deadline_ms = deadline_ms
+    _tie_breaker = TieBreaker.of(config.num_columns(), seed)
     _learning = ColumnLearning(config, grid, config.num_inputs())
 
   be represent(active: Array[Bool] val, learn: Bool, asker: Representation tag) =>
@@ -285,10 +288,11 @@ actor Pooler is Tally
   fun box _inhibit(overlaps: Array[F64]): Array[USize] =>
     let density = _config.density(_config.inhibition_radius)
     try
+      let deciding = TieBreaker.nudged(overlaps, _tie_breaker)?
       if _config.global_inhibition then
-        Inhibition.winners(overlaps, (density * _grid.size.f64()).usize())?
+        Inhibition.winners(deciding, (density * _grid.size.f64()).usize())?
       else
-        Inhibition.local(overlaps, _grid, _config.inhibition_radius, density)?
+        Inhibition.local(deciding, _grid, _config.inhibition_radius, density)?
       end
     else
       Array[USize]

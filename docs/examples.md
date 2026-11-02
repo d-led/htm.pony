@@ -144,15 +144,15 @@ One seed in full, so the shape of the damage is visible:
 seed 3, in full
 bits off    learning  looking
 0           1.000     1.000
-1           0.955     0.889
-2           0.892     0.779
-3           0.799     0.632
+1           0.960     0.916
+2           0.934     0.851
+3           0.819     0.717
 
 bits on     learning  looking
 0           1.000     1.000
-1           0.981     0.896
-2           0.912     0.793
-3           0.912     0.799
+1           0.981     0.897
+2           0.943     0.843
+3           0.932     0.825
 ```
 
 and then what learning was worth on every seed, averaged over one, two and three
@@ -160,12 +160,12 @@ damaged bits:
 
 ```
 seed        bits off  bits on
-3           +0.115    +0.106
-5           +0.100    +0.074
-11          +0.133    -0.014
-23          +0.054    +0.099
-41          +0.121    +0.062
-mean        +0.105    +0.065
+3           +0.076    +0.097
+5           +0.034    +0.080
+11          +0.106    +0.007
+23          +0.032    -0.016
+41          +0.118    +0.048
+mean        +0.073    +0.043
 
 learning kept more of the answer on 5 of 5 seeds when a pattern lost bits,
 and on 4 of 5 when it gained bits it never had.
@@ -199,11 +199,11 @@ else:
 ```
         boosting                    no boost
 seed    @50      @100     @200      @50      @100     @200
-3       122      0        0         122      122      122
-5       120      0        0         120      120      120
-11      118      0        0         118      118      118
-23      119      0        0         119      119      119
-41      120      0        0         120      120      120
+3       120      0        0         120      120      120
+5       122      0        0         122      122      122
+11      116      0        0         116      116      116
+23      116      0        0         116      116      116
+41      121      0        0         121      121      121
 ```
 
 A checkpoint is a count of the inputs a pooler has seen. The pooler works out
@@ -234,29 +234,34 @@ it knocks bits out of every symbol and scores the sequence again:
 
 ```
 seed    clean: L  W         1 bit: L  W         2 bits: L  W
-3       0.000     0.000     0.019     0.294     0.496      0.434
-5       0.000     0.000     0.085     0.311     0.189      0.329
-11      0.000     0.000     0.039     0.021     0.153      0.053
-23      0.000     0.067     0.068     0.149     0.441      0.588
-41      0.000     0.000     0.042     0.169     0.095      0.316
-mean    0.000     0.013     0.051     0.189     0.275      0.344
+3       0.000     0.019     0.033     0.142     0.072      0.245
+5       0.221     0.000     0.517     0.269     0.555      0.307
+11      0.000     0.000     0.064     0.105     0.146      0.178
+23      0.000     0.000     0.021     0.019     0.380      0.269
+41      0.000     0.000     0.019     0.227     0.096      0.236
+mean    0.044     0.004     0.131     0.153     0.250      0.247
 ```
 
 `L` is the watcher whose pooler learned, `W` the one whose pooler only looked, and
 a number is the mean anomaly score - the share of a step's columns the memory did
-not expect, so lower means the sequence was followed. The lines are the same on
-both sides: `0.000` clean says the cycle itself was learned.
+not expect, so lower means the sequence was followed.
 
-One bit of damage is where the difference lives. Losing a bit of eight leaves the
-learned pooler's symbols recognisable, so the memory still predicts them, and the
-score stays near nothing; over the wired pooler the same loss moves the
-representation and the memory bursts. It gave the better sequence on four of five
-seeds.
+Most seeds learn the cycle to nothing on both sides. Seed 5 does not: its learned
+watcher scores 0.221 on the clean cycle while the wired one scores nothing, which
+is the one result here large enough to stand out from the spread.
 
-At two bits both have largely stopped following the sequence - the scores are in
-the same range as a surprise - and the difference shrinks to something the spread
-between seeds swallows. Learning buys tolerance to small damage, not to heavy
-damage.
+What is left is not a difference between the two watchers. At one bit of damage
+the learned pooler averages 0.131 against 0.153 and is better on three of five
+seeds; at two bits 0.250 against 0.247, which is nothing. This study used to show
+a clearer benefit - 0.051 against 0.189 at one bit - and that result came from a
+pooler whose ties were broken by column index: with a frozen pooler the same
+low-numbered columns keep winning, which is a stable representation for a memory
+to learn and not a property of learning. Give ties to a nudge instead and the
+advantage disappears into the spread.
+
+The lesson is about the study, not the code: a comparison that rests on one
+mechanism being switched off is worth re-running when the mechanism next to it
+changes.
 
 ## The same computation on actors
 

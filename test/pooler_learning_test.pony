@@ -61,7 +61,9 @@ primitive PoolerSession
     Pooler(
       PoolerShards.build(settings, seed(), 16)?,
       Grid(settings.column_dimensions)?,
-      settings)
+      settings,
+      0,
+      seed())
 
   fun _frozen(values: ReadSeq[USize]): Array[USize] val =>
     let copy: Array[USize] iso = recover iso Array[USize] end

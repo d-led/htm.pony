@@ -117,6 +117,7 @@ class SpatialPooler
   let columns: Array[Column]
   let column_grid: Grid
   let input_grid: Grid
+  let _tie_breaker: Array[F64] val
   embed _learning: ColumnLearning
 
   new create(config': SpatialPoolerConfig, seed: U64 = 42) ? =>
@@ -136,6 +137,7 @@ class SpatialPooler
     columns = wired
     column_grid = Grid(config'.column_dimensions)?
     input_grid = inputs
+    _tie_breaker = TieBreaker.of(config'.num_columns(), seed)
 
     _learning = ColumnLearning(config', column_grid, inputs.size)
 
@@ -167,13 +169,14 @@ class SpatialPooler
     """
     _learning.boost_factor(column)?
 
-  fun _inhibit(overlaps: Array[F64]): Array[USize] ? =>
+  fun _inhibit(claims: Array[F64]): Array[USize] ? =>
     let density = config.density(config.inhibition_radius)
+    let deciding = TieBreaker.nudged(claims, _tie_breaker)?
 
     if config.global_inhibition then
-      Inhibition.winners(overlaps, (density * columns.size().f64()).usize())?
+      Inhibition.winners(deciding, (density * columns.size().f64()).usize())?
     else
-      Inhibition.local(overlaps, column_grid, config.inhibition_radius, density)?
+      Inhibition.local(deciding, column_grid, config.inhibition_radius, density)?
     end
 
   fun _overlaps(input: ReadSeq[Bool]): Array[F64] ? =>

@@ -92,6 +92,22 @@ Both refuse to let a column with overlap zero win.
 
 Tests: `test/inhibition_test.pony`.
 
+### `tie_breaker.pony`
+
+`TieBreaker` — the little fixed noise per column that keeps exact ties from
+always going to the lowest index.
+
+| Member | Signature | What it does |
+| --- | --- | --- |
+| `of` | `fun of(columns: USize, seed: U64): Array[F64] val` | one value per column, each in `[0, 0.01)`; the generator is warmed up first, because a freshly seeded one gives values that track the seed |
+| `nudged` | `fun nudged(claims: Array[F64], noise: Array[F64] val): Array[F64] ?` | the claims to compete with — a copy, each real claim plus its own nudge, and a claim of nothing left alone |
+
+Both pools draw it from their seed before inhibiting, so the two paths agree
+when they are seeded alike.
+
+Tests: `test/tie_breaker_test.pony`, and the tie itself through
+`test/pooler_test.pony`.
+
 ### `spatial_pooler_config.pony`
 
 `SpatialPoolerConfig` — the shape and the competition settings. A value.
@@ -179,7 +195,7 @@ Tests: `test/column_shard_test.pony`.
 
 | Member | Signature | What it does |
 | --- | --- | --- |
-| `create` | `new create(shards: Array[Shard tag] val, grid: Grid val, config: SpatialPoolerConfig val, deadline_ms: U64 = 0)` | a deadline of 0 means the round waits for every shard; with one, a round that closed with bands missing asks those once more |
+| `create` | `new create(shards: Array[Shard tag] val, grid: Grid val, config: SpatialPoolerConfig val, deadline_ms: U64 = 0, seed: U64 = 42)` | a deadline of 0 means the round waits for every shard; with one, a round that closed with bands missing asks those once more. The seed is what `TieBreaker` is drawn from, and must match the in-process pooler's for the two paths to agree |
 | `represent` | `be represent(active: Array[Bool] val, learn: Bool, asker: Representation tag)` | queues a round and starts it if nothing is in flight |
 | `reconfigure` | `be reconfigure(shards: Array[Shard tag] val)` | hand over the bands to ask from the next round on; the round in flight keeps the bands it was asked of |
 | `tallied` | `be tallied(votes: Array[Vote] iso, silent: Array[USize] val)` | asks the silent bands again if the round may be retried, otherwise inhibits the votes, learns from the round if it was asked to, and answers the asker |

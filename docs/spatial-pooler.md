@@ -131,18 +131,28 @@ practice; it exists so that the function has no error case to leak into an actor
 Overlap alone does not choose the representation. Many columns can have the same
 overlap, and a column that matches nothing has no claim at all.
 
-Two rules hold in both modes:
+Three rules hold in both modes:
 
 - a column with overlap `0` cannot win;
+- every real claim is nudged before it competes, by up to a hundredth of its own,
+  so that columns claiming exactly as much as each other do not all lose to the
+  lowest index;
 - the number of winners comes from a density, so the same setting keeps its
   meaning as the inhibition radius grows.
+
+The nudge is `TieBreaker`. A hundredth cannot overturn a claim that is genuinely
+stronger, because an overlap is a count of matched bits, and it does not invent a
+claim: a column that matched nothing is still left claiming nothing. It is drawn
+from the pooler's seed, so the same seed gives the same answer - what changes is
+that the answer no longer turns on where the columns happen to sit. Both paths
+build it the same way, so they still agree.
 
 ### Global inhibition
 
 `Inhibition.winners(overlaps, count)` keeps the `count` strongest columns and
-returns them in ascending column order. Ties go to the earlier column. Returning
-column order rather than discovery order means the result does not depend on
-where the strongest column happened to be found.
+returns them in ascending column order. A tie that survives the nudge goes to the
+earlier column. Returning column order rather than discovery order means the
+result does not depend on where the strongest column happened to be found.
 
 ### Local inhibition
 
@@ -293,7 +303,7 @@ who wins.
 
 ### What is not ported
 
-Three pieces of the reference are deliberately absent.
+Two pieces of the reference are deliberately absent.
 
 `updateInhibitionRadius` re-derives the inhibition radius every fiftieth round
 from the average span each column connects over. Here the radius is what the
@@ -307,18 +317,6 @@ answer. It is not ported because it makes a freshly built pooler answer
 [inference-only path](examples.md#the-spatial-pooler-in-one-process) that this
 port ships. What it protects against is a column that never won winning by
 accident; the boost mechanism is the gentler half of the same idea.
-
-The tie-breaker is absent. `InhibitColumns` adds a fixed perturbation of up to
-0.01 to every column's overlap before inhibition, so a column does not lose every
-tie to a lower index. It is not ported because the reference draws it from the
-global generator rather than from the seeded one, so it is not reproducible, and
-the actor path here has no generator of its own to draw a matching one from.
-What this port does instead is give each tie to the earlier column: deterministic
-and reproducible, but biased. Once a pooler stops moving, columns frequently
-claim exactly as much as each other, and the same low-numbered ones keep winning
-- which is part of why the unboosted pooler in
-[what boosting is worth](examples.md#what-boosting-is-worth) never changes its
-winners.
 
 ## What is not here
 

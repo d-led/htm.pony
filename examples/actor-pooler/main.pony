@@ -45,7 +45,9 @@ actor Main
       let pooler = Pooler(
         PoolerShards.build(config, Session.seed(), 16)?,
         Grid(config.column_dimensions)?,
-        config)
+        config,
+        0,
+        Session.seed())
 
       pooler.represent(input, true, Listener(this, pooler, input))
     else

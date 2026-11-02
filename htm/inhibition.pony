@@ -14,12 +14,10 @@ primitive Inhibition
     The `count` strongest columns.
 
     Returned in ascending column order, so the result does not depend on the
-    order the strength happened to be discovered in.
-
-    A tie goes to the earlier column, and nothing breaks ties before this point:
-    the reference adds a small random perturbation to every column's overlap and
-    this port does not, so columns claiming exactly as much as each other are
-    separated by their index alone.
+    order the strength happened to be discovered in. A tie goes to the earlier
+    column, and the callers rarely reach this rule: they nudge every claim by
+    that column's own noise first (`TieBreaker`), so two columns claiming exactly
+    as much as each other are separated before they get here.
     """
     let strongest = Array[USize]
 

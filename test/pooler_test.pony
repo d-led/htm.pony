@@ -1,3 +1,4 @@
+use "collections"
 use "pony_test"
 use "../htm"
 
@@ -11,6 +12,7 @@ class PoolerTest is TestList
     test(_OnlyTheBandThatStayedSilentIsAskedAgain)
     test(_APoolerWithNoBandsAnswersAtOnce)
     test(_ANewBandAnswersTheNextRound)
+    test(_AColumnsTieIsBrokenByTheSeed)
 
 actor SilentShard is Shard
   """
@@ -127,6 +129,50 @@ actor SequenceListener is Representation
     end
 
     if _seen == _expected.size() then
+      _h.complete(true)
+    end
+
+actor TiedShard is Shard
+  """
+  Two columns claiming exactly as much as each other, which is the case a
+  tie-breaker exists for.
+  """
+  be observe(band: USize, active: Array[Bool] val, ballot: Ballot tag) =>
+    let votes: Array[Vote] iso = recover iso Array[Vote] end
+    votes.push(Vote(0, 5.0))
+    votes.push(Vote(1, 5.0))
+    ballot.cast(band, consume votes)
+
+  be learn(active: Array[Bool] val, winners: Array[USize] val, starving: Array[USize] val) =>
+    None
+
+actor TieWatcher is Representation
+  """
+  Several poolers over the same tied claims. Each round one column wins the tie,
+  and across the seeds both columns win at some point: that is the seed deciding
+  of the tie, not the column index.
+  """
+  let _h: TestHelper
+  let _expected: USize
+  let _winners: Set[USize] = Set[USize]
+  var _seen: USize = 0
+
+  new create(h: TestHelper, expected: USize) =>
+    _h = h
+    _expected = expected
+
+  be represented(active: Array[USize] iso, missing: USize) =>
+    let answer: Array[USize] val = consume active
+    _h.assert_eq[USize](1, answer.size(), "one column wins a tie for one place")
+    _seen = _seen + 1
+
+    try
+      _winners.set(answer(0)?)
+    end
+
+    if _seen == _expected then
+      _h.assert_eq[USize](2, _winners.size(),
+        "the seed decides the tie, not the column index")
       _h.complete(true)
     end
 
@@ -250,3 +296,22 @@ class iso _ANewBandAnswersTheNextRound is UnitTest
     pooler.reconfigure(consume replacement)
 
     pooler.represent(PoolerFixture.input()?, false, answers)
+
+class iso _AColumnsTieIsBrokenByTheSeed is UnitTest
+  fun name(): String =>
+    "a tie between columns is decided by the pooler's seed, not by the index"
+
+  fun apply(h: TestHelper) ? =>
+    h.long_test(5_000_000_000)
+
+    let config = SpatialPoolerConfig([2], [2], true, 1.0, 0.5)
+    let input: Array[Bool] val = recover val [true; true] end
+    let seeds: Array[U64] = [1; 2; 3; 4; 5; 6; 7; 8]
+    let watcher = TieWatcher(h, seeds.size())
+
+    for seed in seeds.values() do
+      let bands: Array[Shard tag] iso = recover iso Array[Shard tag] end
+      bands.push(TiedShard)
+      Pooler(consume bands, Grid([2])?, config, 0, seed)
+        .represent(input, false, watcher)
+    end

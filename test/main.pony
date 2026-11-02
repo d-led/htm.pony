@@ -16,6 +16,7 @@ actor Main is TestList
     InhibitionTest.tests(test)
     SpatialPoolerConfigTest.tests(test)
     WiringTest.tests(test)
+    TieBreakerTest.tests(test)
     SpatialPoolerTest.tests(test)
     BallotBoxTest.tests(test)
     ColumnShardTest.tests(test)
