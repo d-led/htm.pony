@@ -57,6 +57,15 @@ Two rules that keep the repository honest, both enforced by tests:
 
 ## What is left, in the order to do it
 
+Every item on this list is in as of the pooler's forecast: the CLA temporal
+pooler in seven slices, the region's deadline and retry, multi-step prediction,
+`SDRMerger`, the fixed-width category encoder, the graph encoder, and the smaller
+things item 7 diagnoses. What each slice was held to, and which parts of the
+reference were deliberately not ported, is written under it.
+
+New work starts from the [roadmap](roadmap.md) and from what is still open in
+[actors](actors.md#what-is-missing).
+
 ### 1. The CLA temporal pooler — the largest piece, the reason the port exists
 
 **Slice (a), the data model, is in** (`temporal_pooler_config.pony`,
