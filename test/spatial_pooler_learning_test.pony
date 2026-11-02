@@ -8,8 +8,8 @@ use "../htm"
 // permanences towards the input, a column that keeps losing is helped, and a
 // round without learning changes nothing. What they deliberately do not claim
 // is that a trained pooler recognises a damaged pattern better than an
-// untrained one. Measured at this population it does not, and the honest
-// statement of that belongs in the documentation, not in an assertion.
+// untrained one: that depends on the kind of damage, and
+// examples/pooler-training-value measures both kinds instead of asserting one.
 
 class SpatialPoolerLearningTest is TestList
   fun name(): String => "Spatial pooler learning"

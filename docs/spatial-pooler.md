@@ -275,11 +275,15 @@ and the representation will start to move: the columns that never won are
 helped until they do. That is what the reference does, and it is why the pooler
 wants a stream that varies rather than one repeated pattern.
 
-Learning also does not make a trained pooler measurably better at recognising a
-*damaged* version of a learned pattern than an untrained one, at least not at
-the population sizes exercised here. What it demonstrably does - and what the
-tests check - is move permanences towards what a column won with, raise the
-columns that are starving, and remember who wins.
+Whether a trained pooler does better with a *damaged* version of a pattern
+depends on the damage. A pattern that loses bits is reached far better by a
+pooler that learned it; a pattern that gains bits it never had is a wash.
+[What learning is worth](examples.md#what-learning-is-worth) measures both kinds
+and prints the tables.
+
+What learning demonstrably does - and what the tests check - is move permanences
+towards what a column won with, raise the columns that are starving, and remember
+who wins.
 
 ### What is not ported
 

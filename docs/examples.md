@@ -130,6 +130,41 @@ stops the population collapsing onto whichever columns happened to win first.
 The pooler that only watched is bit for bit unchanged, which is the property the
 last section checks: an inference does not learn.
 
+## What learning is worth
+
+`examples/pooler-training-value/main.pony` asks whether learning changes what a
+pooler does with a pattern once that pattern is damaged. It shows eight patterns
+to a pooler that learns and to one that only looks, then damages each pattern
+two ways and compares each pooler's answer with what the same pooler said about
+the clean pattern.
+
+```
+bits off    learning  looking
+0           1.000     1.000
+1           0.991     0.859
+2           0.826     0.705
+3           0.714     0.569
+
+bits on     learning  looking
+0           1.000     1.000
+1           0.915     0.917
+2           0.883     0.904
+3           0.840     0.859
+
+two different patterns share 0.221 of an answer
+```
+
+A number is the share of the clean answer that still comes back. A pattern that
+*loses* bits keeps most of its representation when the pooler learned it, and
+noticeably less when it did not: a column that learned is connected to the bits
+the pattern uses, so losing one costs it one connection out of eight, while a
+column that only looked had spread its connections over inputs the pattern never
+turns on.
+
+A pattern that *gains* bits is a wash, which is the other side of the same fact:
+those bits were never connections of a learned column. The last line is what two
+different patterns share, so a damaged pattern scoring near it has nothing left.
+
 ## The same computation on actors
 
 `examples/actor-pooler/main.pony` wires 64 columns into four shards of sixteen,
