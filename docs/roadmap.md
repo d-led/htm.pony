@@ -69,8 +69,9 @@ labels share nothing. `SDRCategoryEncoder`, in `htm.java` and in `nupic`, holds 
 fixed width `n` and turns on `w` random bits per label, so labels may share a few
 bits, the width stays put, and a label that arrives later is added as it is met.
 Both are in the references, neither is wrong, and the encoder says which one it
-is. The fixed-width one is not written here; it is the shape a stream of labels
-of unknown number wants, so it is the natural next addition if a stream needs it.
+is. The fixed-width one is written here too, as `SDRCategoryEncoder`: a stream of
+labels of unknown number is the shape it wants, and a label arrives when it
+arrives.
 
 **5. The graph encoder.** None exists in the Go reference - that was checked - so
 this is new work rather than a port. Two encoders are wanted:
@@ -92,6 +93,12 @@ The digest is this library's rather than that library's, so the bits are not
 theirs either, and the tests hold the property instead - documents sharing words
 overlap, a different sentence shares nothing, the same document always encodes
 the same way.
+
+A third encoder went beside them that no reference has: `GraphEncoder`, a node as
+a category and an edge as its two ends and a direction, with a graph as the union
+of its edges. The test states the relation rather than the bits - two graphs that
+share an edge share exactly that edge's representation, and two that share no
+node share almost nothing, because random node bits will always meet somewhere.
 
 What is still not written is a graph encoder in the literal sense: a graph - nodes
 and the edges between them - encoded as one SDR. Neither of the two above does
