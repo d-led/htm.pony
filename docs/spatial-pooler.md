@@ -275,6 +275,12 @@ and the representation will start to move: the columns that never won are
 helped until they do. That is what the reference does, and it is why the pooler
 wants a stream that varies rather than one repeated pattern.
 
+[What boosting is worth](examples.md#what-boosting-is-worth) counts the columns a
+pooler hears with and without a boost, over five seeds. Two hundred columns
+competing for twenty places, learning rate zero so that nothing else can move a
+winner: the pooler that may not boost leaves about 120 of them silent for good,
+and the one that may boost has heard every column within a hundred inputs.
+
 Whether a trained pooler does better with a *damaged* version of a pattern
 depends on the damage: a pattern that loses bits is reached far better by a
 pooler that learned it, and a pattern that gains bits it never had is reached
