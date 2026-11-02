@@ -56,7 +56,7 @@ primitive Study
 
   fun patterns(): Array[Array[Bool] val] val ? =>
     """
-    Five inputs of twenty bits that no two of which share any.
+    Five inputs of twenty bits, no two of which share any.
     """
     let drawn: Array[Array[Bool] val] iso =
       recover iso Array[Array[Bool] val] end
