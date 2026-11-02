@@ -194,11 +194,12 @@ are not it.
 
 - **Anomaly likelihood has no red/yellow filter.** Deliberate — it is a display decision —
   but a caller that wants one now has to write it.
-- **Anomaly likelihood on a flat stream reads oddly.** When every score is exactly `0.0`,
-  the fitted spread sits on its floor and a zero can come out at 0.95. The number is
-  arithmetically right and practically useless; either document it where the likelihood is
-  described or give the spread floor a better story. Relevant when a demo quotes it — the
-  `anomaly-on-actors` example prints scores only, for this reason.
+- **Anomaly likelihood on a flat stream reads oddly — documented and pinned.** Both
+  floors at work are now in [anomaly detection](anomaly-detection.md#the-likelihood)
+  with the arithmetic (mean held at 0.03, variance at 0.0003, so a zero reads about
+  0.958), and `test/anomaly_likelihood_test.pony` asserts that number so nobody
+  changes it by accident. The floors stay: they are the reference's, and without them
+  a near-zero stream would report the first hair's movement as a certainty.
 - **One pooler is one coordinator**, and its retry is one more deadline rather than a
   backoff. Both recorded in [actors](actors.md#what-is-missing); neither is a bug, both are
   limits somebody may want to lift.

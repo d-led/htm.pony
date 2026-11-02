@@ -23,6 +23,7 @@ class AnomalyLikelihoodTest is TestList
     test(_TheFittedDistributionSitsWhereTheStreamDid)
     test(_AStepFarAboveEverythingIsAnomalous)
     test(_AStepFarBelowEverythingIsAnomalous)
+    test(_AFlatStreamReadsAsOrdinaryRatherThanAverage)
 
 primitive LikelihoodFixture
   """
@@ -126,3 +127,24 @@ class iso _AStepFarBelowEverythingIsAnomalous is UnitTest
 
     h.assert_true(estimator.observe(0.1)? > 0.999,
       "being far too quiet is as unusual as being far too loud")
+
+class iso _AFlatStreamReadsAsOrdinaryRatherThanAverage is UnitTest
+  fun name(): String => "a stream that never moves reads as ordinary, not as average"
+
+  fun apply(h: TestHelper) ? =>
+    // the estimator's floors decide this one, not the data: the mean is held at
+    // 0.03 and the variance at 0.0003, so a score of exactly zero sits about
+    // 1.7 spread-widths below the fitted middle. That is an ordinary sample, and
+    // one minus its tail probability is about 0.958 - for every step, forever.
+    let watching = AnomalyLikelihood(10, 10, 200, 5, 10)?
+
+    var last: F64 = 0.5
+    var step: USize = 0
+    while step < 100 do
+      last = watching.observe(0.0)?
+      step = step + 1
+    end
+
+    h.assert_true(
+      (last - 0.958).abs() < 0.001,
+      "a flat stream reads as very ordinary: " + last.string())

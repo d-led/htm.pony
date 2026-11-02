@@ -102,10 +102,18 @@ A distribution from ten points is not a distribution. The defaults are the
 reference's: 288 to learn and 100 to estimate from, which at five-minute
 samples is about a day and a half of a stream before anything is judged.
 
-**A perfectly predicted stream is a degenerate case.** If every score is
-exactly zero, the estimator's variance floor takes over and the smallest
-movement in the raw score becomes a certainty. The reference has the same floor,
-and the same consequence: the likelihood is meant for streams that vary.
+**A perfectly predicted stream is a degenerate case.** If every score is exactly
+zero, the estimator's two floors decide the reading rather than the data: the
+mean is held at 0.03 and the variance at 0.0003, so a score of zero sits about
+1.7 spread-widths below the fitted middle and comes out at about `0.958` - very
+ordinary, for every step, forever. `test/anomaly_likelihood_test.pony` pins that
+number so it cannot drift.
+
+The floors are the reference's and are there on purpose: without them the first
+hair's movement in a near-zero stream would come out as a certainty. What they
+cost is that a stream which never varies cannot look unremarkable - and the same
+floors make the smallest real movement look enormous. The likelihood is meant for
+streams that vary.
 
 ### Using the two together
 
