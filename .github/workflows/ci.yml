@@ -45,6 +45,13 @@ jobs:
       - name: Build and run every example
         run: ./examples/run-all.sh
 
+      # Compiled, not timed. A shared CI runner is the one machine whose timings
+      # mean nothing, but a benchmark that no longer builds is rot, and nobody
+      # runs these by hand often enough to notice.
+      - name: Build the benchmarks
+        working-directory: microbenchmarks
+        run: corral run -- ponyc
+
   studies:
     name: Measure the studies
     runs-on: ubuntu-latest

@@ -20,7 +20,8 @@ Three of them measure rather than demonstrate: what learning is worth, what a
 learned pooler gives a memory, and what boosting is worth. Their numbers are the
 output of `scripts/studies.sh`, which CI runs on every push to master and
 publishes as the `studies` artifact and in the job summary; every table below is
-from such a run. The same script holds the current numbers in
+from such a run, and `gh run download --branch master --name studies` fetches the
+one that is current. The same script holds the current numbers in
 `test/fixtures/studies/`, so a change to the pooler that moves them fails CI
 until they are brought here with it. The studies are seeded and read no clock, so
 a busy machine gives the same answer - but a quoted number should be one somebody
