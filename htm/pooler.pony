@@ -7,6 +7,17 @@ interface Representation
   """
   be represented(active: Array[USize] iso)
 
+interface Shard
+  """
+  What the pooler needs from the columns that answer for it: a round to judge,
+  and a verdict to act on.
+
+  The pooler names this rather than `ColumnShard`, so any band of columns can be
+  put behind it - including one that is slow, or one that answers nothing.
+  """
+  be observe(active: Array[Bool] val, ballot: Ballot tag)
+  be learn(active: Array[Bool] val, winners: Array[USize] val, starving: Array[USize] val)
+
 class val Round
   """
   One request waiting to be run: the input to judge, whether the round teaches
@@ -40,7 +51,7 @@ actor Pooler is Tally
   One round runs at a time: a second request waits rather than overwriting a
   tally still in flight.
   """
-  let _shards: Array[ColumnShard tag] val
+  let _shards: Array[Shard tag] val
   let _grid: Grid val
   let _config: SpatialPoolerConfig val
   embed _learning: ColumnLearning
@@ -49,7 +60,7 @@ actor Pooler is Tally
   var _current: (Round | None) = None
 
   new create(
-    shards: Array[ColumnShard tag] val,
+    shards: Array[Shard tag] val,
     grid: Grid val,
     config: SpatialPoolerConfig val)
   =>
@@ -177,9 +188,9 @@ primitive PoolerShards
     config: SpatialPoolerConfig val,
     seed: U64,
     width: USize)
-    : Array[ColumnShard tag] val ?
+    : Array[Shard tag] val ?
   =>
-    let shards: Array[ColumnShard tag] iso = recover iso Array[ColumnShard tag] end
+    let shards: Array[Shard tag] iso = recover iso Array[Shard tag] end
     if width == 0 then return consume shards end
 
     let inputs = Grid(config.input_dimensions)?

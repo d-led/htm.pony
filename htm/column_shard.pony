@@ -15,7 +15,7 @@ class val ColumnWiring
     index = index'
     synapses = synapses'
 
-actor ColumnShard
+actor ColumnShard is Shard
   """
   A band of columns that share one actor.
 

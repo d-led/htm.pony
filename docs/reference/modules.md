@@ -159,16 +159,17 @@ Tests: `test/column_shard_test.pony`.
 | Type | What it is |
 | --- | --- |
 | `Representation` (interface) | `be represented(Array[USize] iso)` — whoever asked for a representation |
+| `Shard` (interface) | `be observe(Array[Bool] val, Ballot tag)` and `be learn(Array[Bool] val, Array[USize] val, Array[USize] val)` — what the pooler asks of a band of columns |
 | `Round` (value) | one queued request: the input, whether the round learns, and who to answer |
 | `Pooler` (actor) | the coordinator, and a `Tally` |
 | `PoolerShards` (primitive) | bands of columns wired as `SpatialPooler` wires its own |
 
 | Member | Signature | What it does |
 | --- | --- | --- |
-| `create` | `new create(shards: Array[ColumnShard tag] val, grid: Grid val, config: SpatialPoolerConfig val)` | |
+| `create` | `new create(shards: Array[Shard tag] val, grid: Grid val, config: SpatialPoolerConfig val)` | |
 | `represent` | `be represent(active: Array[Bool] val, learn: Bool, asker: Representation tag)` | queues a round and starts it if nothing is in flight |
 | `tallied` | `be tallied(votes: Array[Vote] iso)` | inhibits the votes, learns from the round if it was asked to, and answers the asker |
-| `PoolerShards.build` | `fun build(config: SpatialPoolerConfig val, seed: U64, width: USize): Array[ColumnShard tag] val ?` | cuts the population into bands of `width` |
+| `PoolerShards.build` | `fun build(config: SpatialPoolerConfig val, seed: U64, width: USize): Array[Shard tag] val ?` | cuts the population into bands of `width` |
 
 Tests: `test/pooler_test.pony`, `test/pooler_learning_test.pony`.
 

@@ -27,7 +27,7 @@ say who won. The input the round learned from has to be kept until then, which
 is why the pooler holds the round rather than forgetting it once the shards have
 been asked.
 
-## Three interfaces and nothing else
+## Four interfaces and nothing else
 
 The actors do not name each other's types:
 
@@ -39,17 +39,23 @@ interface Ballot
 interface Tally
   be tallied(votes: Array[Vote] iso)
 
+interface Shard
+  be observe(active: Array[Bool] val, ballot: Ballot tag)
+  be learn(active: Array[Bool] val, winners: Array[USize] val, starving: Array[USize] val)
+
 interface Representation
   be represented(active: Array[USize] iso)
 ```
 
 A column pushes into a `Ballot` and never learns what collects the votes. The
-ballot box pushes into a `Tally` and never learns what asked. An asker
-implements `Representation` and is handed the answer.
+ballot box pushes into a `Tally` and never learns what asked. The pooler asks a
+`Shard` and never learns which band of columns answers. An asker implements
+`Representation` and is handed the answer.
 
 The practical effect is that a shard can be tested against any sink, and a sink
 against any source. `test/column_shard_test.pony` and `test/ballot_box_test.pony`
-do exactly that.
+do exactly that. The same seam puts any band of columns behind the pooler,
+including one that answers nothing.
 
 ## The vote
 
@@ -102,7 +108,7 @@ once. A repeating timer would decide a round that had already been decided.
 `ColumnShard` is a band of columns sharing one actor:
 
 ```pony
-actor ColumnShard
+actor ColumnShard is Shard
   let _columns: Array[Column] ref
   let _indices: Array[USize] val
   let _positions: Map[USize, USize] ref

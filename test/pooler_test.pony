@@ -30,7 +30,7 @@ primitive PoolerFixture
   fun config(): SpatialPoolerConfig val =>
     SpatialPoolerConfig([4], [8], false, 1.0)
 
-  fun band(first: USize): ColumnShard tag =>
+  fun band(first: USize): Shard tag =>
     let wirings = recover iso Array[ColumnWiring] end
     var column = first
     while column < (first + 2) do
@@ -43,7 +43,7 @@ primitive PoolerFixture
     ColumnShard(consume wirings, config())
 
   fun pooler(): Pooler ? =>
-    let shards = recover iso Array[ColumnShard tag] end
+    let shards = recover iso Array[Shard tag] end
     shards.push(band(0))
     shards.push(band(2))
     Pooler(consume shards, Grid([4])?, config())
