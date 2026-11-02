@@ -63,6 +63,15 @@ against any source. `test/column_shard_test.pony` and `test/ballot_box_test.pony
 do exactly that. The same seam puts any band of columns behind the pooler,
 including one that answers nothing.
 
+Nothing here is locked, and nothing needs to be. An actor changes its state only
+while it is running one of its own behaviours, one at a time, and the only way in
+is a message - which Pony delivers in the order it was sent between any pair of
+actors. A round is synchronized by the messages it is made of, not by anything
+shared: the pooler asks, the shards answer, and nothing else is happening inside
+them meanwhile. That is also why what crosses an actor boundary is a value - a
+`Round` carries `Array[Bool] val`, a report carries `Array[Vote] iso` - the
+capabilities say what may still be touched by whom.
+
 ## The vote
 
 ```pony
