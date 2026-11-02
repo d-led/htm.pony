@@ -6,10 +6,14 @@ primitive AnomalyFixture
   A detector over 64-bit inputs, with six columns lighting up per input.
   """
 
+  fun pooler(): SpatialPooler ? =>
+    SpatialPooler(SpatialPoolerConfig([64], [64], true, 16.0, 0.1), 42)?
+
+  fun memory(): TemporalMemory =>
+    TemporalMemory(TemporalMemoryParams(64, 8, 1, 0.5, 0.5, 0.1, 0.02, 32, 4))
+
   fun detector(): StreamingAnomalyDetector ? =>
-    let pooler = SpatialPooler(SpatialPoolerConfig([64], [64], true, 16.0, 0.1), 42)?
-    let memory = TemporalMemory(TemporalMemoryParams(64, 8, 1, 0.5, 0.5, 0.1, 0.02, 32, 4))
-    StreamingAnomalyDetector(pooler, memory)
+    StreamingAnomalyDetector(pooler()?, memory())
 
   fun input(bits: ReadSeq[USize]): Array[Bool] =>
     let values = Array[Bool].init(false, 64)
@@ -30,6 +34,7 @@ class AnomalyTest is TestList
     test(_TheFirstInputIsEntirelySurprising)
     test(_ARepeatingSequenceStopsBeingSurprising)
     test(_AnInputOutsideTheSequenceIsSurprisingAgain)
+    test(_ADetectorLeavesThePoolerAsItFoundIt)
 
 class iso _TheFirstInputIsEntirelySurprising is UnitTest
   fun name(): String => "the first input of a stream is entirely surprising"
@@ -82,3 +87,44 @@ class iso _AnInputOutsideTheSequenceIsSurprisingAgain is UnitTest
     h.assert_true(
       surprise > 0.5,
       "a novel input should be clearly surprising, got " + surprise.string())
+
+class iso _ADetectorLeavesThePoolerAsItFoundIt is UnitTest
+  fun name(): String => "a detector does not train the pooler it was handed"
+
+  fun apply(h: TestHelper) ? =>
+    let pooler = AnomalyFixture.pooler()?
+    let detector = StreamingAnomalyDetector(pooler, AnomalyFixture.memory())
+
+    let before = _beliefs(pooler)
+    h.assert_true(before.size() > 0, "the pooler should have beliefs to leave alone")
+
+    var round: USize = 0
+    while round < 12 do
+      detector.observe(AnomalyFixture.first())?
+      detector.observe(AnomalyFixture.second())?
+      round = round + 1
+    end
+
+    // the memory learned from the stream; the pooler is where it started, so
+    // the representation the memory predicts over stays still
+    let after = _beliefs(pooler)
+    h.assert_eq[USize](before.size(), after.size())
+
+    var index: USize = 0
+    while index < before.size() do
+      h.assert_eq[F64](before(index)?, after(index)?)
+      index = index + 1
+    end
+
+  fun _beliefs(pooler: SpatialPooler): Array[F64] =>
+    """
+    Every permanence in the pooler, in order: enough to tell whether any of it
+    moved.
+    """
+    let values = Array[F64]
+    for column in pooler.columns.values() do
+      for synapse in column.synapses.values() do
+        values.push(synapse.permanence)
+      end
+    end
+    values

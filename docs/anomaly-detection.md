@@ -14,13 +14,18 @@ Zero means everything that happened was expected. One means nothing was.
 ## Online, not trained first
 
 `StreamingAnomalyDetector` folds one input at a time into the model and returns
-the score for that step. Learning and scoring happen in the same pass, so there
-is no training phase and the model is never frozen:
+the score for that step. The memory learns and scores in the same pass, so there
+is no training phase and the memory is never frozen:
 
 ```pony
 let detector = StreamingAnomalyDetector(pooler, memory)
 let score = detector.observe(input)?
 ```
+
+The pooler is the exception. It is used exactly as it was handed over and is not
+trained by the detector, because a representation that kept moving would move the
+thing the memory is trying to learn. A caller that wants the representation to
+adapt as well drives the pooler directly and hands the detector one it controls.
 
 That is what makes it work on a stream: the thing it is measuring changes as it
 learns, which is also why the first steps score badly. Nothing is expected
