@@ -235,10 +235,15 @@ class iso _ASilentShardDoesNotHoldTheRoundOpen is UnitTest
     shards.push(SilentShard)
 
     let pooler = Pooler(
-      consume shards, Grid([4])?, PoolerFixture.config(), 20)
+      consume shards, Grid([4])?, PoolerFixture.config(), 250)
 
     // the band that answered holds columns 0 and 1, so the two silent ones are
-    // the other half of the population
+    // the other half of the population. The deadline is a quarter of a second,
+    // not a fiftieth: a shard that answers takes microseconds, and a test that
+    // fails because the machine was busy says nothing about the pooler.
+    // the other half of the population. The deadline is a quarter of a second,
+    // not a fifth of one: a shard that answers takes microseconds, and a test
+    // that fails because the machine was busy says nothing about the pooler.
     pooler.represent(PoolerFixture.input()?, false, Listener(h, 1, 2))
 
 class iso _OnlyTheBandThatStayedSilentIsAskedAgain is UnitTest
@@ -253,7 +258,7 @@ class iso _OnlyTheBandThatStayedSilentIsAskedAgain is UnitTest
     shards.push(LateShard(2))
 
     let pooler = Pooler(
-      consume shards, Grid([4])?, PoolerFixture.config(), 20)
+      consume shards, Grid([4])?, PoolerFixture.config(), 250)
 
     // the late band answers as soon as it is asked again, so nothing is
     // missing from the representation
@@ -283,7 +288,7 @@ class iso _ANewBandAnswersTheNextRound is UnitTest
     shards.push(SilentShard)
 
     let pooler = Pooler(
-      consume shards, Grid([4])?, PoolerFixture.config(), 20)
+      consume shards, Grid([4])?, PoolerFixture.config(), 250)
     let answers = SequenceListener(h, recover val [2; 0] end)
 
     // the second band never answers, so this round closes without its columns

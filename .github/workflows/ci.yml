@@ -7,9 +7,8 @@ on:
 
 env:
   # The stb_image decoder is a C source beside a package, and ponyc learns to
-  # compile those in 0.65.0. The ponylang/ponyc images on Docker Hub stop at
-  # 0.58.0, so the compiler comes from ponyup here and in the Dockerfile, which
-  # is also how a developer installs it.
+  # compile those in 0.65.0, so the compiler comes from ponyup - which is also
+  # how a developer installs it. One action installs it for every job.
   PONYC_VERSION: 0.77.2
 
 jobs:
@@ -20,12 +19,9 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
-      - name: Install ponyc and corral
-        run: |
-          curl --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/ponylang/ponyup/latest-release/ponyup-init.sh | sh
-          echo "$HOME/.local/share/ponyup/bin" >> "$GITHUB_PATH"
-          "$HOME/.local/share/ponyup/bin/ponyup" update ponyc release "$PONYC_VERSION"
-          "$HOME/.local/share/ponyup/bin/ponyup" update corral release
+      - uses: ./.github/actions/ponyc
+        with:
+          version: ${{ env.PONYC_VERSION }}
 
       - name: Compile and run the test suite
         working-directory: test
@@ -38,12 +34,9 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
-      - name: Install ponyc and corral
-        run: |
-          curl --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/ponylang/ponyup/latest-release/ponyup-init.sh | sh
-          echo "$HOME/.local/share/ponyup/bin" >> "$GITHUB_PATH"
-          "$HOME/.local/share/ponyup/bin/ponyup" update ponyc release "$PONYC_VERSION"
-          "$HOME/.local/share/ponyup/bin/ponyup" update corral release
+      - uses: ./.github/actions/ponyc
+        with:
+          version: ${{ env.PONYC_VERSION }}
 
       # Each example checks its own claim and exits non-zero when it fails, so
       # running them is the check. The list is run-all.sh's, not a copy of it:
@@ -51,3 +44,41 @@ jobs:
       # without anyone noticing.
       - name: Build and run every example
         run: ./examples/run-all.sh
+
+  studies:
+    name: Measure the studies
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: ./.github/actions/ponyc
+        with:
+          version: ${{ env.PONYC_VERSION }}
+
+      # The studies are seeded and read no clock, so the numbers the
+      # documentation quotes are this job's output: run on a machine nobody is
+      # using, and published, so every table can be traced to a run.
+      - name: Run the studies
+        run: ./scripts/studies.sh
+
+      - name: Write the numbers to the job summary
+        run: |
+          {
+            echo "## Study output"
+            echo
+            echo "From \`scripts/studies.sh\` on ${GITHUB_SHA:0:7}."
+            for file in build/studies/*.txt; do
+              echo
+              echo "### $(basename "$file" .txt)"
+              echo '```'
+              cat "$file"
+              echo '```'
+            done
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Keep the numbers
+        uses: actions/upload-artifact@v7
+        with:
+          name: studies
+          path: build/studies/

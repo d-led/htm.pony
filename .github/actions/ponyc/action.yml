@@ -1,0 +1,21 @@
+name: Install ponyc
+description: >
+  Installs ponyc and corral with ponyup, which is also how a developer installs
+  them. The ponylang/ponyc images on Docker Hub stop before the compiler this
+  project targets, and they carry no pony-doc.
+
+inputs:
+  version:
+    description: The ponyc release to install, e.g. 0.77.2
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - name: Install with ponyup
+      shell: bash
+      run: |
+        curl --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/ponylang/ponyup/latest-release/ponyup-init.sh | sh
+        echo "$HOME/.local/share/ponyup/bin" >> "$GITHUB_PATH"
+        "$HOME/.local/share/ponyup/bin/ponyup" update ponyc release "${{ inputs.version }}"
+        "$HOME/.local/share/ponyup/bin/ponyup" update corral release

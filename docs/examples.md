@@ -1,6 +1,6 @@
 # Examples
 
-Ten programs live under `examples/`, each its own package with its own
+The programs under `examples/` are each their own package with its own
 `main.pony`. They print what they do and exit non-zero when a claim in them
 fails.
 
@@ -15,6 +15,14 @@ cd examples/in-process-pooler
 corral run -- ponyc --debug
 ./in-process-pooler
 ```
+
+Three of them measure rather than demonstrate: what learning is worth, what a
+learned pooler gives a memory, and what boosting is worth. Their numbers are the
+output of `scripts/studies.sh`, which CI runs on every push to master and
+publishes as the `studies` artifact and in the job summary; every table below is
+from such a run. The studies are seeded and read no clock, so a busy machine
+gives the same answer - but a quoted number should be one somebody can download,
+not one that happened on a laptop.
 
 ## The first representation
 

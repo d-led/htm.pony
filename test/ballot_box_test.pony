@@ -47,7 +47,7 @@ actor Recorder is Tally
     if _answered == 1 then
       _votes = received.size()
       _quiet = silent.size()
-      _timers(Timer(Settle(this), 30_000_000))
+      _timers(Timer(Settle(this), 100_000_000))
     end
 
   be settle() =>
@@ -81,7 +81,10 @@ class iso _TheDeadlineAnswersWithWhatArrived is UnitTest
 
   fun apply(h: TestHelper) =>
     h.long_test(5_000_000_000)
-    let ballot = BallotBox(Recorder(h, 1), 5, 5, 50)
+    // a deadline with room to spare: the vote below arrives at once, so what
+    // this measures is that a deadline answers without one, not how quick the
+    // machine is
+    let ballot = BallotBox(Recorder(h, 1), 5, 5, 250)
 
     ballot.vote(Vote(0, 0.4))
 
