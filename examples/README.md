@@ -33,6 +33,13 @@ prints how much of the clean representation each pooler still reaches. The two
 tables are the answer to "what does learning buy?", and the per-seed rows under
 them are the spread that makes the answer worth anything.
 
+## [sequence-training-value](sequence-training-value/)
+
+Runs one cycle of four symbols through two watchers - a memory over a pooler that
+learned the symbols, and a memory over a pooler that only looked - then knocks a
+bit out of every symbol and scores the sequence again. Prints the anomaly score
+for the clean cycle and for one and two bits of damage, over five seeds.
+
 ## [actor-pooler](actor-pooler/)
 
 Wires 64 columns into four `ColumnShard` actors, hands them to a `Pooler`, and

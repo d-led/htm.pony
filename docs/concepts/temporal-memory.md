@@ -75,6 +75,12 @@ anomaly = bursting columns / active columns
 
 Zero means everything that happened was expected. One means nothing was.
 
+That number is also how the value of the pooler's learning shows up. [What a
+learned pooler gives the memory](../examples.md#what-a-learned-pooler-gives-the-memory)
+runs one cycle of symbols through a memory over a pooler that learned the symbols
+and through a memory over one that only looked, then knocks a bit out of every
+symbol: the learned pooler leaves the sequence far easier to follow.
+
 ## What is not here
 
 - **A deadline on a region.** A step ends only when every shard has answered both
@@ -83,8 +89,6 @@ Zero means everything that happened was expected. One means nothing was.
 - **Segment reuse over long runs.** A column that keeps bursting and never
   matches grows a new segment until it hits `max_segments_per_cell`, and then
   stops learning.
-- **A measured improvement from learning.** The spatial pooler now moves its
-  permanences, but nothing here shows that a pooler trained alongside the memory
-  represents a sequence better than a wired one. [What learning is
-  worth](../examples.md#what-learning-is-worth) measures the pattern case and
-  not this one.
+- **More than one kind of sequence.** The study measures one cycle of symbols and
+  one way of damaging them, so the size of the effect it reports is not a
+  constant to carry to another stream.

@@ -183,6 +183,44 @@ seeds and changes sign on one kind of damage. A single run of this study gave
 otherwise. The last line of the seed table is the one to read; the rows under it
 are the spread that makes the mean worth anything.
 
+## What a learned pooler gives the memory
+
+`examples/sequence-training-value/main.pony` asks the question the pattern study
+leaves open: does a pooler that learned the symbols make a *sequence* of them
+easier to follow?
+
+It warms one pooler on a cycle of four symbols, leaves a second pooler wired as it
+was built, then lets a temporal memory learn the same cycle over each. The pooler
+is settled before the memory starts, so the comparison is about what the pooler
+ended up believing rather than about a representation that was still moving. Then
+it knocks bits out of every symbol and scores the sequence again:
+
+```
+seed    clean: L  W         1 bit: L  W         2 bits: L  W
+3       0.000     0.000     0.019     0.294     0.496      0.434
+5       0.000     0.000     0.085     0.311     0.189      0.329
+11      0.000     0.000     0.039     0.021     0.153      0.053
+23      0.000     0.067     0.068     0.149     0.441      0.588
+41      0.000     0.000     0.042     0.169     0.095      0.316
+mean    0.000     0.013     0.051     0.189     0.275      0.344
+```
+
+`L` is the watcher whose pooler learned, `W` the one whose pooler only looked, and
+a number is the mean anomaly score - the share of a step's columns the memory did
+not expect, so lower means the sequence was followed. The lines are the same on
+both sides: `0.000` clean says the cycle itself was learned.
+
+One bit of damage is where the difference lives. Losing a bit of eight leaves the
+learned pooler's symbols recognisable, so the memory still predicts them, and the
+score stays near nothing; over the wired pooler the same loss moves the
+representation and the memory bursts. It gave the better sequence on four of five
+seeds.
+
+At two bits both have largely stopped following the sequence - the scores are in
+the same range as a surprise - and the difference shrinks to something the spread
+between seeds swallows. Learning buys tolerance to small damage, not to heavy
+damage.
+
 ## The same computation on actors
 
 `examples/actor-pooler/main.pony` wires 64 columns into four shards of sixteen,

@@ -26,3 +26,5 @@ examples/temporal-memory/temporal-memory
 examples/temporal-memory-on-actors/temporal-memory-on-actors
 examples/anomaly-stream/anomaly-stream
 examples/anomaly-likelihood/anomaly-likelihood
+examples/sequence-training-value/sequence-training-value
+examples/sequence-training-value/*.dSYM/
