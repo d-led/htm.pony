@@ -27,7 +27,7 @@ say who won. The input the round learned from has to be kept until then, which
 is why the pooler holds the round rather than forgetting it once the shards have
 been asked.
 
-## Four interfaces and nothing else
+## Interfaces and nothing else
 
 The actors do not name each other's types:
 
@@ -45,6 +45,16 @@ interface Shard
 
 interface Representation
   be represented(active: Array[USize] iso, missing: USize)
+
+interface TemporalBand
+  be take(band: USize, pass: TemporalPass val, sink: TemporalSink tag)
+
+interface TemporalSink
+  be activated(band: USize, cells: Array[USize] val, bursting: Array[USize] val)
+  be predicted(band: USize, cells: Array[USize] val)
+
+interface TemporalObserver
+  be observed(output: TemporalOutput val)
 ```
 
 A column pushes into a `Ballot` and never learns what collects the votes. The
@@ -291,14 +301,38 @@ refused, and a region with no shards answers every step with nothing active. The
 example prints both paths side by side and compares them step by step; they
 agree, which is the only reason to believe the split.
 
+A step can also be **cut short**, the way a pooler round can:
+
+```pony
+let region = TemporalRegion(params, shards, 250)   // a deadline of 250 ms
+```
+
+Each pass is one `TemporalBallot`, an actor of its own, so an answer belongs to
+the pass that asked for it even if the round has moved on by the time it
+arrives. A pass closes when its bands have answered or when the deadline is up;
+if bands are still silent the ballot asks those once more, on their own and for
+one more deadline, and then reports what it has. The answer's `missing` names
+the bands that never spoke - a step computed without part of the memory, which
+is worth saying out loud rather than passing off as a complete one.
+
+The bands can be replaced while the region runs, `region.reconfigure(shards)`,
+and the new set answers from the next round on.
+
+One detail of that is load-bearing rather than incidental: the region holds the
+ballot of the pass it is waiting on. A pass that is waiting out a deadline is
+reachable only through its own timer, and a ballot nobody holds can be
+collected - with the timer for its retry inside it - leaving the round waiting
+for an answer that can no longer come.
+
 ## What is missing
 
 - A retry is one more deadline, not a backoff. A shard that is busy twice is
   given up on for that round, and nothing distinguishes busy from stuck - one is
   a matter of when it answers, the other of whether.
-- One pooler is one coordinator. Two poolers over the same shards would each
-  start their own rounds.
-- The temporal region has none of this: no deadline, so it waits for every shard
-  on both passes, and no way to hand it new shards. A prediction needs all of
-  them, so there is nothing to decide without the missing shard - which is why
-  the pooler's retry would not help it as it stands.
+- One coordinator is one round. Two poolers over the same shards would each
+  start their own rounds, and the same is true of two regions.
+- A region says *which bands* were missing, not which columns. Turning a band
+  into the columns it owed is arithmetic the caller has, not the region.
+- Nothing here survives a second machine. A shard that is busy is asked once
+  more and then given up on; a shard that is gone would be given up on forever,
+  because nothing in this design tells the two apart.

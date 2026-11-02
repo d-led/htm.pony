@@ -339,19 +339,25 @@ Tests: `test/temporal_memory_test.pony`.
 ### `temporal_output.pony`
 
 `TemporalOutput` (value) - what one step produced: the cells that fired, the cells
-it expects next, and the columns that burst. The derived forms -
-`active_columns`, `predicted_columns` and `anomaly` - are what a caller usually
-wants, since a cell number means little without the shape to read it against.
+it expects next, the columns that burst, and the bands a region never heard from.
+The derived forms - `active_columns`, `predicted_columns` and `anomaly` - are what
+a caller usually wants, since a cell number means little without the shape to read
+it against.
 
 Tests: covered through `TemporalMemory`.
 
 ### `temporal_shard.pony`
 
-`TemporalSink` (interface) - where a shard reports.
+`TemporalBand` (interface) - a band of columns as a region asks it: one pass of
+one round at a time, answering into whatever sink it was handed. The region names
+this and not the shard actor, so a band that never answers can sit behind it.
+
+`TemporalSink` (interface) - what a shard reports into. Each answer names its
+band, which is how a collector tells who answered from who stayed silent.
 
 `TemporalColumnShard` (actor) - a band of temporal columns that share one actor.
-It answers twice per round, and has to: a prediction is about a state that
-includes what every column did.
+It answers one pass per message, and a round is two: a prediction is about a
+state that includes what every column did.
 
 Tests: covered through `TemporalRegion`.
 
@@ -361,9 +367,21 @@ Tests: covered through `TemporalRegion`.
 
 `TemporalRequest` (value) - one step waiting to be run.
 
+`TemporalPass` (value) - one pass of one round as the bands are asked it: either
+the step to activate, or the state to predict from. A value, so a ballot can put
+it again without the band having to remember what it was asked.
+
 `TemporalRegion` (actor) - temporal memory arranged as actors. A round is two
 passes over the shards, activate then predict, and the asker hears back only when
-both are in.
+both are in. Each pass gets its own ballot; with a deadline a pass closes on the
+answers that arrived and the silent bands are asked once more, after which the
+answer names them in `missing`. The bands can be handed over while it runs.
+
+`TemporalBallot` (actor) - one pass: collects the bands' answers, runs its own
+deadline and one retry, and reports the cells in order with the bands that never
+spoke.
+
+`RegionDeadline` - the timer that reaches a ballot.
 
 `TemporalShards` (primitive) - cutting a population into bands of a given width.
 

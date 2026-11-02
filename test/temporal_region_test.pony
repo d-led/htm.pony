@@ -10,6 +10,87 @@ class TemporalRegionTest is TestList
   fun tag tests(test: PonyTest) =>
     test(_ARegionAnswersWhatOneProcessAnswers)
     test(_TwoRoundsAreAnsweredInOrder)
+    test(_ASilentBandIsNamedInTheAnswer)
+    test(_ABusyBandIsAskedAgain)
+    test(_AHandedOverBandAnswersTheNextRound)
+    test(_ARegionWithNoBandsAnswersAtOnce)
+
+actor SilentBand is TemporalBand
+  """
+  A band that never answers, which is what a shard stuck inside a behaviour it
+  will not leave looks like. Actors in one process cannot be gone: the region
+  holds every band, so silence means work, not death.
+  """
+  be take(band: USize, pass: TemporalPass val, sink: TemporalSink tag) => None
+
+actor LateBand is TemporalBand
+  """
+  A band that misses the first deadline and answers when it is asked again -
+  what a shard that is merely busy looks like from the region.
+  """
+  var _asked: USize = 0
+
+  be take(band: USize, pass: TemporalPass val, sink: TemporalSink tag) =>
+    _asked = _asked + 1
+    if _asked == 1 then return end
+
+    if pass.predicting then
+      sink.predicted(band, recover val Array[USize] end)
+    else
+      sink.activated(
+        band, recover val Array[USize] end, recover val Array[USize] end)
+    end
+
+actor NoCellsObserver is TemporalObserver
+  """
+  Checks that a step with no bands behind it comes back empty rather than
+  never.
+  """
+  let _h: TestHelper
+
+  new create(h: TestHelper) =>
+    _h = h
+
+  be observed(output: TemporalOutput val) =>
+    _h.assert_eq[USize](0, output.active_cells.size())
+    _h.assert_eq[USize](0, output.predictive_cells.size())
+    _h.complete(true)
+
+actor MissingObserver is TemporalObserver
+  """
+  Checks which bands an answer says never spoke.
+  """
+  let _h: TestHelper
+  let _wanted: Array[USize] val
+
+  new create(h: TestHelper, wanted: Array[USize] val) =>
+    _h = h
+    _wanted = wanted
+
+  be observed(output: TemporalOutput val) =>
+    _h.assert_array_eq[USize](
+      _wanted, output.missing, "the bands the answer is missing")
+    _h.complete(true)
+
+actor SwappingObserver is TemporalObserver
+  """
+  Checks the round before a band swap and the round after it.
+  """
+  let _h: TestHelper
+  var _seen: USize = 0
+
+  new create(h: TestHelper) =>
+    _h = h
+
+  be observed(output: TemporalOutput val) =>
+    if _seen == 0 then
+      _h.assert_eq[USize](0, output.missing.size(), "the first round has its band")
+    else
+      _h.assert_array_eq[USize]([0], output.missing, "the new band never answers")
+      _h.complete(true)
+    end
+
+    _seen = _seen + 1
 
 primitive RegionFixture
   """
@@ -133,3 +214,64 @@ class iso _TwoRoundsAreAnsweredInOrder is UnitTest
 
     region.compute(recover val [0] end, true, observer)
     region.compute(recover val [1] end, true, observer)
+
+class iso _ASilentBandIsNamedInTheAnswer is UnitTest
+  fun name(): String => "a silent band does not hold the round open, and is named"
+
+  fun apply(h: TestHelper) =>
+    h.long_test(5_000_000_000)
+
+    let shards: Array[TemporalBand tag] iso = recover iso Array[TemporalBand tag] end
+    shards.push(TemporalColumnShard(0, 2, RegionFixture.params()))
+    shards.push(SilentBand)
+
+    let region = TemporalRegion(RegionFixture.params(), consume shards, 50)
+    region.compute(recover val [0] end, true, MissingObserver(h, recover val [1] end))
+
+class iso _ABusyBandIsAskedAgain is UnitTest
+  fun name(): String => "a band that was busy is asked once more, and counts"
+
+  fun apply(h: TestHelper) =>
+    h.long_test(5_000_000_000)
+
+    let shards: Array[TemporalBand tag] iso = recover iso Array[TemporalBand tag] end
+    shards.push(TemporalColumnShard(0, 2, RegionFixture.params()))
+    shards.push(LateBand)
+
+    // the band answers on the second ask, so nothing is missing
+    let region = TemporalRegion(RegionFixture.params(), consume shards, 50)
+    region.compute(
+      recover val [0] end, true, MissingObserver(h, recover val Array[USize] end))
+
+class iso _AHandedOverBandAnswersTheNextRound is UnitTest
+  fun name(): String => "a band handed over later answers the next round"
+
+  fun apply(h: TestHelper) =>
+    h.long_test(5_000_000_000)
+
+    let first: Array[TemporalBand tag] iso = recover iso Array[TemporalBand tag] end
+    first.push(TemporalColumnShard(0, 4, RegionFixture.params()))
+
+    let region = TemporalRegion(RegionFixture.params(), consume first, 50)
+    let observer = SwappingObserver(h)
+
+    region.compute(recover val [0] end, true, observer)
+
+    // handed over while the first round is still out: the swap waits for it
+    let later: Array[TemporalBand tag] iso = recover iso Array[TemporalBand tag] end
+    later.push(SilentBand)
+    region.reconfigure(consume later)
+
+    region.compute(recover val [1] end, true, observer)
+
+class iso _ARegionWithNoBandsAnswersAtOnce is UnitTest
+  fun name(): String => "a region with no bands answers at once, with nothing"
+
+  fun apply(h: TestHelper) =>
+    h.long_test(5_000_000_000)
+
+    let none: Array[TemporalBand tag] val = recover val Array[TemporalBand tag] end
+    let region = TemporalRegion(RegionFixture.params(), none)
+
+    // no deadline: nothing to wait for, and no answer that could be late
+    region.compute(recover val [0] end, true, NoCellsObserver(h))

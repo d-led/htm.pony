@@ -9,19 +9,26 @@ class val TemporalOutput
   the next step, so they describe the future rather than the present.
   `bursting_columns` are the active columns the memory had no prediction for:
   it had to activate every cell in them, because it did not know which one.
+
+  `missing` names the bands of a region that never answered, so a step that was
+  decided without part of the memory says so. A memory in process never misses
+  anything, and a region without a deadline waits rather than deciding early.
   """
   let active_cells: Array[USize] val
   let predictive_cells: Array[USize] val
   let bursting_columns: Array[USize] val
+  let missing: Array[USize] val
 
   new val create(
     active_cells': Array[USize] val,
     predictive_cells': Array[USize] val,
-    bursting_columns': Array[USize] val)
+    bursting_columns': Array[USize] val,
+    missing': Array[USize] val = [])
   =>
     active_cells = active_cells'
     predictive_cells = predictive_cells'
     bursting_columns = bursting_columns'
+    missing = missing'
 
   fun active_columns(params: TemporalMemoryParams val): Array[USize] val =>
     """

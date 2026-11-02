@@ -4,11 +4,25 @@ interface TemporalSink
   """
   Where a shard reports. A shard never names who is listening, so it can be
   tested against any sink and the region is only one of them.
-  """
-  be activated(cells: Array[USize] val, bursting: Array[USize] val)
-  be predicted(cells: Array[USize] val)
 
-actor TemporalColumnShard
+  Each answer names the band that gave it, which is how the collector tells a
+  band that answered from one that stayed silent - and so which ones to ask
+  again.
+  """
+  be activated(band: USize, cells: Array[USize] val, bursting: Array[USize] val)
+  be predicted(band: USize, cells: Array[USize] val)
+
+interface TemporalBand
+  """
+  A band of columns, as a region asks it: one pass of one round at a time, and
+  answering into whatever sink it was handed.
+
+  The region names this and not the shard actor, so any band can sit behind it -
+  which is how a test proves the deadline with a band that never answers.
+  """
+  be take(band: USize, pass: TemporalPass val, sink: TemporalSink tag)
+
+actor TemporalColumnShard is TemporalBand
   """
   A band of temporal columns that share one actor.
 
@@ -32,39 +46,44 @@ actor TemporalColumnShard
     end
     _columns = columns
 
-  be activate(
-    previous: Array[Bool] val,
-    previous_cells: Array[USize] val,
-    incoming: Array[USize] val,
-    learn: Bool,
-    when: U64,
-    sink: TemporalSink tag)
-  =>
-    let active: Array[USize] iso = recover iso Array[USize] end
-    let bursting: Array[USize] iso = recover iso Array[USize] end
+  be take(band: USize, pass: TemporalPass val, sink: TemporalSink tag) =>
+    """
+    Answer one pass of one round: activate the step, or predict from the state
+    the last pass produced.
 
-    for column in _columns.values() do
-      let answer = column.activate(
-        previous, previous_cells, _holds(incoming, column.index), learn, when)
-
-      for cell in answer.cells.values() do
-        active.push(cell)
+    One entry point rather than two, because a pass is a value a collector can
+    hand over again - that is what the retry after a deadline does - and the
+    shard then answers the same question twice rather than having to remember
+    what it was asked the first time.
+    """
+    if pass.predicting then
+      let predictive: Array[USize] iso = recover iso Array[USize] end
+      for column in _columns.values() do
+        for cell in column.predict(pass.previous).values() do
+          predictive.push(cell)
+        end
       end
-      if answer.burst then bursting.push(column.index) end
-    end
+      sink.predicted(band, consume predictive)
+    else
+      let active: Array[USize] iso = recover iso Array[USize] end
+      let bursting: Array[USize] iso = recover iso Array[USize] end
 
-    sink.activated(consume active, consume bursting)
+      for column in _columns.values() do
+        let answer = column.activate(
+          pass.previous,
+          pass.previous_cells,
+          _holds(pass.incoming, column.index),
+          pass.learn,
+          pass.when)
 
-  be predict(state: Array[Bool] val, sink: TemporalSink tag) =>
-    let predictive: Array[USize] iso = recover iso Array[USize] end
-
-    for column in _columns.values() do
-      for cell in column.predict(state).values() do
-        predictive.push(cell)
+        for cell in answer.cells.values() do
+          active.push(cell)
+        end
+        if answer.burst then bursting.push(column.index) end
       end
-    end
 
-    sink.predicted(consume predictive)
+      sink.activated(band, consume active, consume bursting)
+    end
 
   fun _holds(columns: ReadSeq[USize], column: USize): Bool =>
     for one in columns.values() do

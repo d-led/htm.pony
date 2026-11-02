@@ -48,9 +48,10 @@ Nothing else in the plan moves forward much until it is there.
 for columns, hands them to the temporal region, and scores what comes back, one
 step in flight at a time so that a score is always a statement about the step
 before it. The test holds it to the claim the repository exists for - the same
-steps scored on actors give the scores they give in one process. What the region
-still lacks is a deadline and a way to be handed new shards, which the pooler
-learned first; see [actors](actors.md).
+steps scored on actors give the scores they give in one process. The region has
+since gained what the pooler had learned first: a deadline, one retry for the
+bands that stayed silent, `reconfigure`, and an answer that names what it missed;
+see [actors](actors.md).
 
 **3. The date encoder, upgraded.** Done: the encoder writes day of week, weekend,
 time of day and holidays beside the season, against the reference's own expected

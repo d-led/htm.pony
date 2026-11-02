@@ -128,17 +128,23 @@ test leaves `DoPooling` commented out.
 - Done looks like: the reference's own test cases translated into `test/`, the in-process
   pooler green, then an actor form with the same answers, then a page under `docs/`.
 
-### 2. Give the temporal region the two things the pooler already has
+### 2. Give the temporal region the two things the pooler already has — done
 
-Documented in [actors](actors.md#what-is-missing) and still true:
+**Landed.** The region has a deadline (`TemporalRegion(params, shards, 250)`), a
+one-retry policy for silent bands, `reconfigure`, and it says which bands it
+missed in `TemporalOutput.missing`. The answer to "what should a region with a
+missing band decide" is: the step it can compute, out loud - the cells that are
+there are real, and a prediction without a band is a narrower prediction rather
+than a wrong one.
 
-- **No deadline.** It waits for every shard on both passes, so one slow band stalls a
-  step. The pooler's deadline-and-one-retry is the worked example to copy.
-- **No `reconfigure`.** Shards cannot be replaced once the region is built.
-
-The catch that makes this less trivial than it looks is written down there: a prediction
-needs *all* the bands, so "decide without the missing shard" is not obviously meaningful.
-Decide what a region with a missing band should answer before writing it.
+Two things it taught, both worth knowing before touching it again. Each pass is
+its own `TemporalBallot` actor, because an answer must belong to the pass that
+asked for it, not to whichever pass happens to be open. And the region has to
+**hold** that ballot: a pass waiting out a deadline is reachable only through its
+own timer, so a ballot nobody holds is collected along with the timer of its
+retry, and the round waits for an answer that can no longer come. A second timer
+also needs a fresh `Timers` wheel - adding one to the wheel that is firing
+silently drops it.
 
 ### 3. Multi-step prediction
 
@@ -224,6 +230,15 @@ are not it.
 - **Example binaries are ignored one by one**, in `.gitignore`, on purpose: the pattern
   that would catch them ("everything in `examples/*` without a dot") would also silently
   ignore an extensionless source file. Adding an example means adding its binary there.
+- **A timer callback is reachable only through its own timer.** A ballot actor
+  whose pass is waiting out a deadline is held by nothing else, so it is
+  collected - together with the timer of its retry - and the round waits forever
+  for an answer that can no longer come. The region holds the ballot in flight
+  for exactly that reason.
+- **A second `Timer` on the same `Timers` wheel, created from inside a timer
+  callback, never fires.** Give each deadline a fresh `Timers` (as
+  `TemporalBallot._watch` does) or route the retry through another actor, as
+  `BallotBox` does by being created fresh for every round.
 - **Docs are part of the change.** `mkdocs build --strict` fails on a broken link or a
   warning, and `scripts/api-reference.py` regenerates `docs/reference/api/`. The
   hand-written `docs/reference/modules.md` lists every source file — a new `.pony` file
