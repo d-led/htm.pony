@@ -306,5 +306,6 @@ accident; the boost mechanism is the gentler half of the same idea.
 
 A temporal memory can be put on top of the pooler, and reading this page's
 permanences is how you would see what it learned. What is missing is a graph
-encoder, and any measurement of whether a trained pooler is better than a wired
-one at a task: that benchmark does not exist yet.
+encoder. [What learning is worth](examples.md#what-learning-is-worth) measures
+what the permanences buy on patterns that lose bits and on patterns that gain
+them.

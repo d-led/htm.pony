@@ -85,4 +85,6 @@ Zero means everything that happened was expected. One means nothing was.
   stops learning.
 - **A measured improvement from learning.** The spatial pooler now moves its
   permanences, but nothing here shows that a pooler trained alongside the memory
-  represents a sequence better than a wired one. That benchmark does not exist.
+  represents a sequence better than a wired one. [What learning is
+  worth](../examples.md#what-learning-is-worth) measures the pattern case and
+  not this one.

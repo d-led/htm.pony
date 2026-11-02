@@ -1,6 +1,7 @@
 test/test
 *.o
 microbenchmarks/microbenchmarks
+microbenchmarks/*.dSYM/
 test/test.d*
 test/test.exe
 test/test.exp

@@ -284,7 +284,14 @@ Tests: `test/array_conversions_test.pony`.
 
 ## Benchmarks, `microbenchmarks/`
 
-`main.pony` registers one benchmark, and the benchmark's `apply` calls
-`DoNotOptimise.observe()` and nothing else. **The benchmarks measure nothing
-yet.** The Go repository has a benchmark for the dense matrix that has not been
-ported.
+`main.pony` measures `row_and_sum` twice over one matrix shape - two thousand rows
+of two hundred and fifty-six columns, one cell in fifty filled - once on
+`DenseBinaryMatrix` and once on `SparseBinaryMatrix` holding the same cells. The
+dense matrix walks every cell and the sparse one walks only the cells that are
+set, so the ratio between the two numbers is what the density does to that
+operation. Both matrices are built in the benchmark's constructor, so building
+one is not inside the measurement.
+
+Run them with `cd microbenchmarks && corral run -- ponyc && ./microbenchmarks`.
+`pony_bench` reports the mean and the median per operation and adjusts both for
+its own overhead.
