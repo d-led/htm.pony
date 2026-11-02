@@ -1,0 +1,15 @@
+4 symbols of 8 bits in 64, a cycle of them: 20 passes to warm the pooler, 12 to learn the sequence
+
+an anomaly score is the share of a step's columns the
+memory did not expect: lower means the sequence was followed
+
+seed    clean: L  W         1 bit: L  W         2 bits: L  W
+3       0.000     0.019     0.033     0.142     0.072      0.245
+5       0.221     0.000     0.517     0.269     0.555      0.307
+11      0.000     0.000     0.064     0.105     0.146      0.178
+23      0.000     0.000     0.021     0.019     0.380      0.269
+41      0.000     0.000     0.019     0.227     0.096      0.236
+mean    0.044     0.004     0.131     0.153     0.250      0.247
+
+the learned pooler gave a better sequence on 3 of 5 seeds at one bit of damage,
+and on 3 of 5 at two.
