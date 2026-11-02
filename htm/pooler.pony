@@ -73,6 +73,9 @@ actor Pooler is Tally
 
   One round runs at a time: a second request waits rather than overwriting a
   tally still in flight.
+
+  A pooler with no shards has nobody to ask, so a round is answered as soon as it
+  is taken: no columns, every one of them missing.
   """
   let _shards: Array[Shard tag] val
   let _grid: Grid val
@@ -154,7 +157,13 @@ actor Pooler is Tally
       _heard = recover val Array[Vote] end
       _learning.round()
 
-      _ask(round.active, _bands(), _grid.size)
+      if _shards.size() == 0 then
+        // nobody to ask: a ballot with nothing expected of it would never
+        // close, so the round is answered on the votes it cannot have
+        _close(round, recover val Array[Vote] end)
+      else
+        _ask(round.active, _bands(), _grid.size)
+      end
     end
 
   fun ref _ask(active: Array[Bool] val, bands: Array[USize] val, expected: USize) =>

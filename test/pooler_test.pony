@@ -9,6 +9,7 @@ class PoolerTest is TestList
     test(_TwoRequestsAreAnsweredInTurn)
     test(_ASilentShardDoesNotHoldTheRoundOpen)
     test(_OnlyTheBandThatStayedSilentIsAskedAgain)
+    test(_APoolerWithNoBandsAnswersAtOnce)
 
 actor SilentShard is Shard
   """
@@ -86,6 +87,22 @@ actor Listener is Representation
     if _seen == _answers then
       _h.complete(true)
     end
+
+actor EmptyListener is Representation
+  """
+  A round with nobody to ask comes back with no columns and with every column
+  counted as missing.
+  """
+  let _h: TestHelper
+
+  new create(h: TestHelper) =>
+    _h = h
+
+  be represented(active: Array[USize] iso, missing: USize) =>
+    let answer: Array[USize] val = consume active
+    _h.assert_eq[USize](0, answer.size(), "a round with no votes names no columns")
+    _h.assert_eq[USize](4, missing, "every column was never heard from")
+    _h.complete(true)
 
 primitive PoolerFixture
   fun config(): SpatialPoolerConfig val =>
@@ -169,3 +186,15 @@ class iso _OnlyTheBandThatStayedSilentIsAskedAgain is UnitTest
     // the late band answers as soon as it is asked again, so nothing is
     // missing from the representation
     pooler.represent(PoolerFixture.input()?, false, Listener(h, 1, 0))
+
+class iso _APoolerWithNoBandsAnswersAtOnce is UnitTest
+  fun name(): String =>
+    "a pooler with no bands answers at once, with every column missing"
+
+  fun apply(h: TestHelper) ? =>
+    h.long_test(5_000_000_000)
+
+    let shards: Array[Shard tag] val = recover val Array[Shard tag] end
+    let pooler = Pooler(shards, Grid([4])?, PoolerFixture.config())
+
+    pooler.represent(PoolerFixture.input()?, false, EmptyListener(h))
