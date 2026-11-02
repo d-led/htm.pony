@@ -25,7 +25,7 @@ something the Go one does not. This library is MPL-2.0.
 | Classification: `SDRClassifier`, `PredictionClassifier` | done |
 | Streaming anomaly score and its likelihood | done, in process and on actors (`AnomalyStream`) |
 | CLA temporal pooler | **in slices** - a step with and without pooling; backtracking and the actor form are not in |
-| Graph as one SDR | not written |
+| Graph as one SDR | done, as a design - `GraphEncoder`: a node is a category, an edge is two nodes and a direction, a graph is the union |
 
 Verification at that commit: **172 tests green**, 16 examples run, `mkdocs build --strict`
 clean, CI and Pages green, `studies` artifact byte-identical to a local run.

@@ -35,7 +35,7 @@ over categories.
 | Random distributed encoder | Implemented, tested |
 | Grid cell encoder: a place becomes periodic receptive fields | Implemented, tested |
 | SimHash document encoder: a document becomes the positions its words vote for | Implemented, tested |
-| A graph as one SDR | Not written |
+| A graph as one SDR | Done - `GraphEncoder` |
 
 The [module reference](reference/modules.md) lists every file, type and public
 function, including the parts that do nothing yet. Two concept pages describe what

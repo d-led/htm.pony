@@ -31,7 +31,7 @@ pushing messages, with tests that fail when the two disagree.
 | Streaming anomaly score and its likelihood | done, in process |
 | Anomaly detection joined to the actor pipeline | done - `AnomalyStream` joins the pooler and the region |
 | **CLA temporal pooler** | **in slices** - a step with and without pooling, verified against the reference's own sequence test; backtracking and the actor form are not in |
-| A graph as one SDR | **not written** |
+| A graph as one SDR | done - a node is a category, an edge is two nodes and a direction, a graph is the union |
 | Grid cell encoder | done - a place becomes periodic receptive fields |
 | SimHash document encoder | done - a document becomes the positions its words vote for |
 | Date encoder | done - season, day of week, weekend, time of day, holidays |
