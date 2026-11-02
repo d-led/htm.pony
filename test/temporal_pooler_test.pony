@@ -14,6 +14,8 @@ class TemporalPoolerTest is TestList
     test(_TheOutputIsWhatIsActiveOrPredicted)
     test(_LearningGrowsSegments)
     test(_AnUnusedSynapseAgesAway)
+    test(_PoolingLearnsFromOneStepFurtherBack)
+    test(_APooledPoolerPredictsTwoStepsAhead)
 
 primitive Patterns
   """
@@ -60,6 +62,46 @@ primitive Patterns
       epoch = epoch + 1
     end
 
+  fun pooled(window: USize): TemporalPooler ? =>
+    """
+    The same pooler, but pooling, and with a window of its own.
+    """
+    let config = TemporalPoolerConfig(
+      50, 2,
+      8, 10, 10,
+      true,               // pooling
+      0.5, 0.5,
+      0.1, 0.0, 1.0,
+      0.0,
+      window, 10,
+      10, 5,
+      100000,
+      32,
+      0, 0)?
+    TemporalPooler(config, 7)
+
+  fun predicts_the_sequence(h: TestHelper, subject: TemporalPooler) ? =>
+    """
+    The reference's claim, and the one the pooler exists for: four steps in, the
+    next pattern's ten nodes are the ones predicted.
+    """
+    var step: USize = 0
+    while step < 4 do
+      subject.compute(of(step), false, true)?
+
+      let predicted = subject.predicted_columns()
+      h.assert_eq[USize](10, predicted.size())
+
+      let next = of(step + 1)
+      for column in predicted.values() do
+        h.assert_true(
+          next.contains(column),
+          "column " + column.string() + " belongs to the next pattern")
+      end
+
+      step = step + 1
+    end
+
 class iso _AFreshPoolerBurstsAndPredictsNothing is UnitTest
   fun name(): String => "a pooler that has learned nothing bursts every node it sees"
 
@@ -97,24 +139,7 @@ class iso _ALearnedSequenceIsPredicted is UnitTest
     let pooler = Patterns.pooler()?
     Patterns.learn_sequences(pooler, 10)?
 
-    // the reference: walk four of the five patterns and expect every one of the
-    // next pattern's nodes to be predicted
-    var step: USize = 0
-    while step < 4 do
-      pooler.compute(Patterns.of(step), false, true)?
-
-      let predicted = pooler.predicted_columns()
-      h.assert_eq[USize](10, predicted.size())
-
-      let next = Patterns.of(step + 1)
-      for column in predicted.values() do
-        h.assert_true(
-          next.contains(column),
-          "column " + column.string() + " belongs to the next pattern")
-      end
-
-      step = step + 1
-    end
+    Patterns.predicts_the_sequence(h, pooler)?
 
 class iso _TheOutputIsWhatIsActiveOrPredicted is UnitTest
   fun name(): String => "the step answers with the cells that are active or predicted"
@@ -173,3 +198,52 @@ class iso _AnUnusedSynapseAgesAway is UnitTest
     pooler.compute(Array[USize], true, false)?
 
     h.assert_eq[USize](0, pooler.segments())
+
+class iso _PoolingLearnsFromOneStepFurtherBack is UnitTest
+  fun name(): String => "a pooling pooler learns from one step further back"
+
+  fun apply(h: TestHelper) ? =>
+    let plain = Patterns.pooler()?
+    let pooled = Patterns.pooled(1)?
+
+    Patterns.learn_sequences(plain, 2)?
+    Patterns.learn_sequences(pooled, 2)?
+
+    // the pooled pooler queues a second proposal for every cell it predicts,
+    // reaching into the step before the one that predicted it
+    h.assert_true(
+      pooled.segments() > plain.segments(),
+      "pooled " + pooled.segments().string() + " segments, plain " +
+        plain.segments().string())
+
+class iso _APooledPoolerPredictsTwoStepsAhead is UnitTest
+  fun name(): String => "a pooled cell is predicted by the step before the one that predicted it"
+
+  fun apply(h: TestHelper) ? =>
+    let pooler = Patterns.pooled(1)?
+    Patterns.learn_sequences(pooler, 10)?
+
+    var step: USize = 0
+    while step < 3 do
+      pooler.compute(Patterns.of(step), false, true)?
+
+      let predicted = pooler.predicted_columns()
+
+      // Every pooled cell learns the state one step before the one that taught
+      // it, so a pattern predicts not only what followed it but what followed
+      // that. The reference's own test leaves pooling off, and this is why: the
+      // prediction is a union, twice as wide as the plain one.
+      for column in Patterns.of(step + 1).values() do
+        h.assert_true(
+          predicted.contains(column),
+          "the next pattern's column " + column.string())
+      end
+      for column in Patterns.of(step + 2).values() do
+        h.assert_true(
+          predicted.contains(column),
+          "the pattern after that, column " + column.string())
+      end
+
+      h.assert_eq[USize](20, predicted.size(), "and nothing else")
+      step = step + 1
+    end

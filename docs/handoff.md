@@ -24,7 +24,7 @@ something the Go one does not. This library is MPL-2.0.
 | Temporal memory: cells, segments, prediction, bursts | done, in process and on actors |
 | Classification: `SDRClassifier`, `PredictionClassifier` | done |
 | Streaming anomaly score and its likelihood | done, in process and on actors (`AnomalyStream`) |
-| CLA temporal pooler | **in slices** - it computes a step with pooling off; the pooling pass and backtracking are not in |
+| CLA temporal pooler | **in slices** - a step with and without pooling; backtracking and the actor form are not in |
 | Graph as one SDR | not written |
 
 Verification at that commit: **172 tests green**, 16 examples run, `mkdocs build --strict`
@@ -95,6 +95,26 @@ Two gaps, both named where they would go: **backtracking** (the reference re-pla
 a step from an earlier start cell when a sequence is lost; until it is here a lost
 sequence starts over on the start cells, which is what the reference does when
 backtracking finds nothing), and **pooling** itself, which is (c).
+
+**Slice (c), pooling, is in.** With `pooling` on, a cell that is predicted also
+learns the state one step *before* the one that taught it - on the segment of its
+node that matches that step, or on a new one - and a proposal whose node has not
+fired yet is kept while the cell is still predicted, for as long as
+`update_window` allows.
+
+The measured consequence, and the test that states it: the pooler predicts the
+next pattern **and the one after it**, because a pooled cell can be woken by a
+longer context. Ten epochs of five patterns, then a window of one: twenty nodes
+predicted, exactly the next two patterns. On the same seed and input a pooling
+pooler also grows more segments than a plain one, which is the same fact seen
+from the other side.
+
+Before anyone tunes this: with the reference's **default `update_window` of five**
+and a five-pattern cycle, a kept promise stays alive for a whole cycle and is
+then applied at the wrong phase - the prediction widens to forty nodes, two
+thirds of the population. The pooled tests use a window of one for that reason.
+Whether the reference intends that is not something this port can answer; its own
+test leaves `DoPooling` commented out.
 
 - Reference: `/Users/dmitryledentsov/src/htm/temporalPooler.go`, ~2 150 lines, with
   `temporalPooler_test.go`, `temporalPoolerPrint.go`, `temporalPoolerStats.go` beside it.

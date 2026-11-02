@@ -337,6 +337,7 @@ class TemporalPooler
     _learning.clear_predicted()
 
     let state = _learning.active_bits()
+    let before = _learning.active_bits_before()
     var column: USize = 0
 
     while column < _config.columns do
@@ -350,10 +351,33 @@ class TemporalPooler
         let reach_more = found.activity < _config.new_synapse_count
         let update = _synapses_for(column, found.offset, segment, state, reach_more)
         if update.proposed() then _updates.push(update) end
+
+        if _config.pooling then
+          _queue_pooling(column, found.offset, before)
+        end
       | None => None
       end
 
       column = column + 1
+    end
+
+  fun ref _queue_pooling(column: USize, offset: USize, before: ReadSeq[Bool]) =>
+    """
+    Queue what this cell would learn from the step *before* the one that
+    predicted it.
+
+    This is what makes the pooler a CLA rather than a sequence memory. A cell
+    that predicted also learns the situation one step further back, on the
+    segment of its node that matches that step - so the state it settles on is
+    the union of the situations that led here, rather than a single path. The
+    reference creates a segment for the older situation when no segment of the
+    node matches it.
+    """
+    match _cell_of(column, offset)
+    | let cell: ClaCell =>
+      let earlier = cell.best_segment(before, _config.min_threshold)
+      let update = _synapses_for(column, offset, earlier, before, true)
+      if update.proposed() then _updates.push(update) end
     end
 
   fun ref _process_updates(active_columns: ReadSeq[USize]) =>
@@ -361,20 +385,29 @@ class TemporalPooler
     Judge last step's proposals: apply the ones whose node received input in
     time, drop the rest.
 
-    A proposal for a node that did not fire is not wrong, it is simply not
-    evidence - unless pooling is on, where a cell that is still predicted keeps
-    its proposal for another step. Until the pooling pass is here, everything
-    that did not fire is dropped.
+    A proposal for a node that did not fire is not evidence, and is dropped -
+    unless pooling is on and the cell is still being predicted, in which case it
+    keeps its proposal for another step, as long as the window allows.
     """
     let pending = _updates
-    _updates = Array[ClaSegmentUpdate]
+    let kept = Array[ClaSegmentUpdate]
+    _updates = kept
 
     for update in pending.values() do
-      if not _holds(active_columns, update.column) then continue end
       if (_learning_iteration - update.when) > _config.update_window.u64() then
         continue
       end
-      _apply(update)
+
+      if _holds(active_columns, update.column) then
+        _apply(update)
+      elseif
+        _config.pooling
+          and _learning.predicted(_config.cell_of(update.column, update.offset))
+      then
+        // The cell is still being predicted, so what it would learn is still
+        // worth learning - that is what the update window is for.
+        kept.push(update)
+      end
     end
 
   fun ref _start_over(active_columns: ReadSeq[USize]) =>

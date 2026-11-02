@@ -41,9 +41,9 @@ class ClaCell
     segments.push(segment)
     segment
 
-  fun best_segment(
+  fun ref best_segment(
     state: ReadSeq[Bool],
-    min_threshold: USize): (ClaSegment box | None)
+    min_threshold: USize): (ClaSegment | None)
   =>
     """
     The segment that matches the state best, if any of them matches well enough
@@ -55,7 +55,7 @@ class ClaCell
     activity the later one answers, as in the reference.
     """
     var best_activity = min_threshold
-    var best: (ClaSegment box | None) = None
+    var best: (ClaSegment | None) = None
 
     for segment in segments.values() do
       let activity = segment.activity(state)

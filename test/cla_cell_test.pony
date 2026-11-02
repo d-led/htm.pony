@@ -58,7 +58,7 @@ class iso _TheBestSegmentIsTheClosestToTheState is UnitTest
     let state = ClaStates.of([0; 1; 2; 3], 8)
 
     match cell.best_segment(state, 2)
-    | let best: ClaSegment box =>
+    | let best: ClaSegment =>
       h.assert_true(best is cell.segments(1)?, "the segment that matched four")
     | None => h.fail("nothing matched, but one segment matched four synapses")
     end
@@ -71,7 +71,7 @@ class iso _NothingCloseEnoughMeansNoBestSegment is UnitTest
     let state = ClaStates.of([0; 1; 2; 3], 8)
 
     match cell.best_segment(state, 3)
-    | let best: ClaSegment box => h.fail("a segment matched less than the threshold")
+    | let best: ClaSegment => h.fail("a segment matched less than the threshold")
     | None => None
     end
 
@@ -85,7 +85,7 @@ class iso _ATieGoesToTheLaterSegment is UnitTest
     let state = ClaStates.of([0; 1; 2; 3], 8)
 
     match cell.best_segment(state, 2)
-    | let best: ClaSegment box =>
+    | let best: ClaSegment =>
       h.assert_true(best is cell.segments(1)?, "the second of the two")
     | None => h.fail("neither segment was found")
     end

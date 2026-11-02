@@ -432,10 +432,12 @@ Tests: `test/cla_state_test.pony`.
 `TemporalPooler` - the CLA pooler in one process: the nodes and their cells, the
 two passes, the proposals waiting to be judged, and the decay that ages out what
 nobody needed. One step in - the columns that received input - and the cells that
-are active or predicted out.
+are active or predicted out. With pooling on it also learns the state one step
+before the one that predicted, which is what makes the state a union of contexts
+rather than a single path.
 
 Tests: `test/temporal_pooler_test.pony`, which is the reference's `TestLearnPredict`
-translated.
+translated, plus what pooling measurably changes.
 
 ## The encoders, `htm/encoders/`
 
