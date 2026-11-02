@@ -11,11 +11,11 @@ primitive Study
   pooler that learns and to one that only looks. Then each pattern is offered
   again with one, two and three of its set bits turned off, and then with one,
   two and three bits it never had turned on, and each pooler's answer is
-  compared with what the same pooler said about the clean pattern. Everything is
-  drawn from one seed, so the numbers read the same every run.
+  compared with what the same pooler said about the clean pattern.
 
-  Both kinds of damage are measured because they pull in opposite directions,
-  and a study that measured one of them would be reporting half a result.
+  It runs over several seeds because one seed is not an experiment. The gain
+  from learning moves by a factor of two between seeds, and on one kind of
+  damage it changes sign, which a single run would have hidden.
   """
   fun rounds(): USize => 30
 
@@ -25,13 +25,13 @@ primitive Study
 
   fun width(): USize => 64
 
-  fun seed(): U64 => 11
+  fun seeds(): Array[U64] => [3; 5; 11; 23; 41]
 
   fun config(): SpatialPoolerConfig val =>
     SpatialPoolerConfig([8; 8], [64], false, 2.0)
 
-  fun patterns(): Array[Array[Bool] val] val ? =>
-    let random = Rand(seed())
+  fun patterns(seed: U64): Array[Array[Bool] val] val ? =>
+    let random = Rand(seed)
     let drawn: Array[Array[Bool] val] iso =
       recover iso Array[Array[Bool] val] end
 
@@ -177,15 +177,44 @@ primitive Study
     end
     consume copy
 
+class Trial
+  """
+  One seed's worth of the experiment, kept together so it can be printed in full
+  or folded into the summary with the others.
+  """
+  let seed: U64
+  let inputs: Array[Array[Bool] val] val
+  let learning: SpatialPooler
+  let looking: SpatialPooler
+  let learned: Array[Array[USize] val] val
+  let untouched: Array[Array[USize] val] val
+
+  new create(seed': U64) ? =>
+    let drawn = Study.patterns(seed')?
+    let trained = SpatialPooler(Study.config(), seed')?
+    let wired = SpatialPooler(Study.config(), seed')?
+
+    Study.show(trained, drawn, true)?
+    Study.show(wired, drawn, false)?
+
+    seed = seed'
+    inputs = drawn
+    learning = trained
+    looking = wired
+    learned = Study.answers(trained, drawn)?
+    untouched = Study.answers(wired, drawn)?
+
 actor Main
   """
   What a pooler gets for learning.
 
-  Runs the same stream of patterns through a pooler that learns and one that
-  only looks, then damages each pattern and prints how much of the clean
-  representation each pooler still reaches. The last two lines are the two
-  numbers a reader needs to judge the table: what two different patterns share,
-  and how much better the learning pooler did.
+  Runs one stream of patterns through a pooler that learns and one that only
+  looks, then damages each pattern two ways and compares each pooler's answer
+  with what the same pooler said about the clean pattern.
+
+  One seed is printed in full, so the shape of the damage is visible, and then
+  every seed's gain for learning, because one seed can make a fragile effect look
+  certain.
   """
   let _env: Env
 
@@ -193,70 +222,133 @@ actor Main
     _env = env
 
     try
-      let inputs = Study.patterns()?
-      let learning = SpatialPooler(Study.config(), Study.seed())?
-      let looking = SpatialPooler(Study.config(), Study.seed())?
-
-      Study.show(learning, inputs, true)?
-      Study.show(looking, inputs, false)?
-
-      let learned = Study.answers(learning, inputs)?
-      let untouched = Study.answers(looking, inputs)?
+      let trials: Array[Trial] = Array[Trial]
+      for seed in Study.seeds().values() do
+        trials.push(Trial(seed)?)
+      end
 
       _env.out.print(Study.pattern_count().string() + " patterns of "
         + Study.bits().string() + " bits in " + Study.width().string()
         + ", shown " + Study.rounds().string() + " times each")
-      _env.out.print("")
-      _env.out.print(_row("bits off", "learning", "looking"))
 
-      var off: USize = 0
-      var lost: F64 = 0.0
-      while off <= 3 do
-        let variants = Study.damaged(inputs, off)
-        let by_learning = _share(learning, learned, variants)?
-        let by_looking = _share(looking, untouched, variants)?
-
-        if off > 0 then lost = lost + (by_learning - by_looking) end
-
-        _env.out.print(_row(off.string(), _near(by_learning), _near(by_looking)))
-        off = off + 1
-      end
-
-      _env.out.print("")
-      _env.out.print(_row("bits on", "learning", "looking"))
-
-      var extra: USize = 0
-      var gained: F64 = 0.0
-      while extra <= 3 do
-        let variants = Study.grown(inputs, extra)
-        let by_learning = _share(learning, learned, variants)?
-        let by_looking = _share(looking, untouched, variants)?
-
-        if extra > 0 then gained = gained + (by_learning - by_looking) end
-
-        _env.out.print(_row(extra.string(), _near(by_learning), _near(by_looking)))
-        extra = extra + 1
-      end
-
-      _env.out.print("")
-      _env.out.print("two different patterns share "
-        + _near(_different(learned)) + " of an answer")
-      _env.out.print("")
-      _env.out.print("what learning changed, on average over 1 to 3 bits:")
-      _env.out.print(_row("  bits off", _signed(lost / 3.0), ""))
-      _env.out.print(_row("  bits on", _signed(gained / 3.0), ""))
-      _env.out.print("")
-      _env.out.print("a column that learned connected itself to the bits the")
-      _env.out.print("pattern actually uses, so a pattern missing one of them still")
-      _env.out.print("reaches most of the same columns. A pooler that only looked")
-      _env.out.print("spread its connections over inputs the pattern never turns")
-      _env.out.print("on, so the same missing bit moves its answer further.")
+      _detail(trials(0)?)?
+      _summary(trials)?
 
       _env.exitcode(0)
     else
       _env.out.print("the study failed")
       _env.exitcode(1)
     end
+
+  fun _detail(trial: Trial) ? =>
+    """
+    One seed in full: what each pooler keeps as the damage grows.
+    """
+    _env.out.print("")
+    _env.out.print("seed " + trial.seed.string() + ", in full")
+    _env.out.print(_row("bits off", "learning", "looking"))
+
+    var off: USize = 0
+    while off <= 3 do
+      let variants = Study.damaged(trial.inputs, off)
+      _env.out.print(_row(off.string(),
+        _near(_share(trial.learning, trial.learned, variants)?),
+        _near(_share(trial.looking, trial.untouched, variants)?)))
+      off = off + 1
+    end
+
+    _env.out.print("")
+    _env.out.print(_row("bits on", "learning", "looking"))
+
+    var extra: USize = 0
+    while extra <= 3 do
+      let variants = Study.grown(trial.inputs, extra)
+      _env.out.print(_row(extra.string(),
+        _near(_share(trial.learning, trial.learned, variants)?),
+        _near(_share(trial.looking, trial.untouched, variants)?)))
+      extra = extra + 1
+    end
+
+    _env.out.print("")
+    _env.out.print("two different patterns share "
+      + _near(_different(trial.learned)) + " of an answer")
+
+  fun _summary(trials: Array[Trial]) ? =>
+    """
+    Every seed's gain for learning, and how many seeds favoured it.
+    """
+    _env.out.print("")
+    _env.out.print("how much more of the answer learning kept, on 1 to 3 bits")
+    _env.out.print(_row("seed", "bits off", "bits on"))
+
+    var lost: F64 = 0.0
+    var gained: F64 = 0.0
+    var lost_seeds: USize = 0
+    var gained_seeds: USize = 0
+
+    for trial in trials.values() do
+      let off = _lost(trial)?
+      let on = _gained(trial)?
+
+      if off > 0.0 then lost_seeds = lost_seeds + 1 end
+      if on > 0.0 then gained_seeds = gained_seeds + 1 end
+
+      lost = lost + off
+      gained = gained + on
+
+      _env.out.print(_row(trial.seed.string(), _signed(off), _signed(on)))
+    end
+
+    if trials.size() == 0 then return end
+
+    let count = trials.size().f64()
+    let seeds: String val = trials.size().string()
+
+    _env.out.print(_row("mean", _signed(lost / count), _signed(gained / count)))
+    _env.out.print("")
+    _env.out.print("learning kept more of the answer on " + lost_seeds.string()
+      + " of " + seeds + " seeds when a pattern lost bits,")
+    _env.out.print("and on " + gained_seeds.string() + " of " + seeds
+      + " when it gained bits it never had.")
+
+    if (lost / count) > (gained / count) then
+      _env.out.print("Losing bits is where the learning pays most.")
+    else
+      _env.out.print("Adding bits pays the learned pooler about as well.")
+    end
+
+  fun _lost(trial: Trial): F64 ? =>
+    _gap(trial, true)?
+
+  fun _gained(trial: Trial): F64 ? =>
+    _gap(trial, false)?
+
+  fun _gap(trial: Trial, biting: Bool): F64 ? =>
+    """
+    How much more of the answer the learned pooler kept, averaged over one, two
+    and three damaged bits. `biting` takes bits away, otherwise it adds them.
+    """
+    var total: F64 = 0.0
+
+    var bits: USize = 1
+    while bits <= 3 do
+      var variants: Array[Array[Bool] val] val =
+        recover val Array[Array[Bool] val] end
+
+      if biting then
+        variants = Study.damaged(trial.inputs, bits)
+      else
+        variants = Study.grown(trial.inputs, bits)
+      end
+
+      let by_learning = _share(trial.learning, trial.learned, variants)?
+      let by_looking = _share(trial.looking, trial.untouched, variants)?
+
+      total = total + (by_learning - by_looking)
+      bits = bits + 1
+    end
+
+    total / 3.0
 
   fun _share(
     pooler: SpatialPooler,

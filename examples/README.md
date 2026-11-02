@@ -27,11 +27,11 @@ raised. Ends by checking that the pooler that only watched is unchanged.
 
 ## [pooler-training-value](pooler-training-value/)
 
-Shows eight patterns to a pooler that learns and to one that only looks, then
-damages each pattern - losing bits, and then gaining bits - and prints how much
-of the clean representation each pooler still reaches. The two tables are the
-answer to "what does learning buy?", and the prose under them says which side
-of the comparison each kind of damage lands on.
+Shows eight patterns to a pooler that learns and to one that only looks, over
+five seeds, then damages each pattern - losing bits, and then gaining bits - and
+prints how much of the clean representation each pooler still reaches. The two
+tables are the answer to "what does learning buy?", and the per-seed rows under
+them are the spread that makes the answer worth anything.
 
 ## [actor-pooler](actor-pooler/)
 

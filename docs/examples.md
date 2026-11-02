@@ -134,36 +134,54 @@ last section checks: an inference does not learn.
 
 `examples/pooler-training-value/main.pony` asks whether learning changes what a
 pooler does with a pattern once that pattern is damaged. It shows eight patterns
-to a pooler that learns and to one that only looks, then damages each pattern
-two ways and compares each pooler's answer with what the same pooler said about
-the clean pattern.
+to a pooler that learns and to one that only looks, over five seeds, then damages
+each pattern two ways and compares each pooler's answer with what the same pooler
+said about the clean pattern.
+
+One seed in full, so the shape of the damage is visible:
 
 ```
+seed 3, in full
 bits off    learning  looking
 0           1.000     1.000
-1           0.991     0.859
-2           0.826     0.705
-3           0.714     0.569
+1           0.955     0.889
+2           0.892     0.779
+3           0.799     0.632
 
 bits on     learning  looking
 0           1.000     1.000
-1           0.915     0.917
-2           0.883     0.904
-3           0.840     0.859
-
-two different patterns share 0.221 of an answer
+1           0.981     0.896
+2           0.912     0.793
+3           0.912     0.799
 ```
 
-A number is the share of the clean answer that still comes back. A pattern that
-*loses* bits keeps most of its representation when the pooler learned it, and
-noticeably less when it did not: a column that learned is connected to the bits
-the pattern uses, so losing one costs it one connection out of eight, while a
-column that only looked had spread its connections over inputs the pattern never
-turns on.
+and then what learning was worth on every seed, averaged over one, two and three
+damaged bits:
 
-A pattern that *gains* bits is a wash, which is the other side of the same fact:
-those bits were never connections of a learned column. The last line is what two
-different patterns share, so a damaged pattern scoring near it has nothing left.
+```
+seed        bits off  bits on
+3           +0.115    +0.106
+5           +0.100    +0.074
+11          +0.133    -0.014
+23          +0.054    +0.099
+41          +0.121    +0.062
+mean        +0.105    +0.065
+
+learning kept more of the answer on 5 of 5 seeds when a pattern lost bits,
+and on 4 of 5 when it gained bits it never had.
+```
+
+A number is the share of the clean answer that still comes back. Learning pays
+both ways, and pays most when the pattern loses bits: a column that learned is
+connected to the bits the pattern uses, so losing one costs it one connection out
+of eight, while a column that only looked had spread its connections over inputs
+the pattern never turns on.
+
+Five seeds rather than one, because the gain moves by a factor of two between
+seeds and changes sign on one kind of damage. A single run of this study gave
+"learning makes no difference when a pattern gains bits"; four more seeds said
+otherwise. The last line of the seed table is the one to read; the rows under it
+are the spread that makes the mean worth anything.
 
 ## The same computation on actors
 
