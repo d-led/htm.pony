@@ -293,7 +293,7 @@ who wins.
 
 ### What is not ported
 
-Two pieces of the reference are deliberately absent.
+Three pieces of the reference are deliberately absent.
 
 `updateInhibitionRadius` re-derives the inhibition radius every fiftieth round
 from the average span each column connects over. Here the radius is what the
@@ -307,6 +307,18 @@ answer. It is not ported because it makes a freshly built pooler answer
 [inference-only path](examples.md#the-spatial-pooler-in-one-process) that this
 port ships. What it protects against is a column that never won winning by
 accident; the boost mechanism is the gentler half of the same idea.
+
+The tie-breaker is absent. `InhibitColumns` adds a fixed perturbation of up to
+0.01 to every column's overlap before inhibition, so a column does not lose every
+tie to a lower index. It is not ported because the reference draws it from the
+global generator rather than from the seeded one, so it is not reproducible, and
+the actor path here has no generator of its own to draw a matching one from.
+What this port does instead is give each tie to the earlier column: deterministic
+and reproducible, but biased. Once a pooler stops moving, columns frequently
+claim exactly as much as each other, and the same low-numbered ones keep winning
+- which is part of why the unboosted pooler in
+[what boosting is worth](examples.md#what-boosting-is-worth) never changes its
+winners.
 
 ## What is not here
 
