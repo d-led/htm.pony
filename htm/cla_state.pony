@@ -1,0 +1,253 @@
+class CellState
+  """
+  Which cells are in a state, and which were before.
+
+  The pooler runs two of these side by side. One belongs to the learning pass,
+  where a state is what the pooler *thinks*; the other belongs to the inference
+  pass, where a state is what it can *show*, and which is also the one the
+  confidences are kept for. Both answer the same three questions: is this cell in
+  the state now, was it in it at the step before, and which cells of a node are in
+  it.
+  """
+  let columns: USize
+  let cells_per_column: USize
+  var _active: Array[Bool]
+  var _active_before: Array[Bool]
+  var _predicted: Array[Bool]
+  var _predicted_before: Array[Bool]
+
+  new create(columns': USize, cells_per_column': USize) =>
+    columns = columns'
+    cells_per_column = cells_per_column'
+    let cells = columns' * cells_per_column'
+    _active = Array[Bool].init(false, cells)
+    _active_before = Array[Bool].init(false, cells)
+    _predicted = Array[Bool].init(false, cells)
+    _predicted_before = Array[Bool].init(false, cells)
+
+  fun ref advance() =>
+    """
+    Everything that is true now becomes true at the step before, which is what
+    the next step's learning and prediction are read against.
+    """
+    _active_before = _active.clone()
+    _predicted_before = _predicted.clone()
+
+  fun ref clear_active() =>
+    """
+    Start a fresh active state. The pass that computes one fills it in.
+    """
+    _active = Array[Bool].init(false, _active.size())
+
+  fun ref clear_predicted() =>
+    """
+    Start a fresh prediction. The pass that computes one fills it in.
+    """
+    _predicted = Array[Bool].init(false, _predicted.size())
+
+  fun ref activate(cell: USize) =>
+    """
+    Turn a cell's active state on. A cell outside the population is ignored
+    rather than raised on: an actor cannot refuse a message and this library
+    keeps that rule everywhere.
+    """
+    try _active(cell)? = true end
+
+  fun ref predict(cell: USize) =>
+    """
+    Turn a cell's predicted state on.
+    """
+    try _predicted(cell)? = true end
+
+  fun active(cell: USize): Bool =>
+    """
+    Whether this cell is active now.
+    """
+    try _active(cell)? else false end
+
+  fun predicted(cell: USize): Bool =>
+    """
+    Whether this cell is predicted now.
+    """
+    try _predicted(cell)? else false end
+
+  fun was_active(cell: USize): Bool =>
+    """
+    Whether this cell was active at the step before.
+    """
+    try _active_before(cell)? else false end
+
+  fun was_predicted(cell: USize): Bool =>
+    """
+    Whether this cell was predicted at the step before.
+    """
+    try _predicted_before(cell)? else false end
+
+  fun active_in(node: USize): Array[USize] =>
+    """
+    The cells of one node that are active now.
+    """
+    _in(_active, node)
+
+  fun predicted_in(node: USize): Array[USize] =>
+    """
+    The cells of one node that are predicted now. In the learning pass there is
+    at most one: the best matching segment of the node settles it.
+    """
+    _in(_predicted, node)
+
+  fun count_active(): USize =>
+    """
+    How many cells are active now.
+    """
+    _count(_active)
+
+  fun count_predicted(): USize =>
+    """
+    How many cells are predicted now.
+    """
+    _count(_predicted)
+
+  fun ref copy(): CellState =>
+    """
+    A copy to carry a step into the future and back again, which is what a
+    prediction several steps out needs.
+    """
+    let carried = CellState(columns, cells_per_column)
+    carried._active = _active.clone()
+    carried._active_before = _active_before.clone()
+    carried._predicted = _predicted.clone()
+    carried._predicted_before = _predicted_before.clone()
+    carried
+
+  fun _in(states: ReadSeq[Bool], node: USize): Array[USize] =>
+    let found = Array[USize]
+    let start = node * cells_per_column
+    var offset: USize = 0
+    while offset < cells_per_column do
+      try
+        if states(start + offset)? then found.push(offset) end
+      end
+      offset = offset + 1
+    end
+    found
+
+  fun _count(states: ReadSeq[Bool]): USize =>
+    var counted: USize = 0
+    for state in states.values() do
+      if state then counted = counted + 1 end
+    end
+    counted
+
+class CellConfidence
+  """
+  How much of the pooler's confidence sits on each cell, and on the node that
+  owns it.
+
+  A cell earns confidence from every segment that matches well, whether or not
+  the segment is strong enough to predict - a weak match is still evidence - and
+  its node's confidence is the sum of its cells'. The whole set is divided by its
+  own total before it is shown, so a column answers "how sure, relative to
+  everything I am sure about", which is what a reader of a chart wants and what
+  the reference does.
+  """
+  let cells_per_column: USize
+  var _cells: Array[F64]
+  var _cells_before: Array[F64]
+  var _nodes: Array[F64]
+  var _nodes_before: Array[F64]
+
+  new create(columns: USize, cells_per_column': USize) =>
+    cells_per_column = cells_per_column'
+    _cells = Array[F64].init(0.0, columns * cells_per_column')
+    _cells_before = Array[F64].init(0.0, columns * cells_per_column')
+    _nodes = Array[F64].init(0.0, columns)
+    _nodes_before = Array[F64].init(0.0, columns)
+
+  fun ref advance() =>
+    """
+    Keep the confidences of this step as the step before's.
+    """
+    _cells_before = _cells.clone()
+    _nodes_before = _nodes.clone()
+
+  fun ref clear() =>
+    """
+    Start a fresh set. The pass that computes one fills it in.
+    """
+    _cells = Array[F64].init(0.0, _cells.size())
+    _nodes = Array[F64].init(0.0, _nodes.size())
+
+  fun ref credit(cell: USize, amount: F64) =>
+    """
+    Give a cell and its node some confidence.
+    """
+    try
+      _cells(cell)? = _cells(cell)? + amount
+      _nodes(cell / cells_per_column)? = _nodes(cell / cells_per_column)? + amount
+    end
+
+  fun cell_confidence(cell: USize): F64 =>
+    """
+    What one cell is worth.
+    """
+    try _cells(cell)? else 0.0 end
+
+  fun cell_confidence_before(cell: USize): F64 =>
+    """
+    What one cell was worth at the step before.
+    """
+    try _cells_before(cell)? else 0.0 end
+
+  fun node_confidence(node: USize): F64 =>
+    """
+    What one node is worth.
+    """
+    try _nodes(node)? else 0.0 end
+
+  fun total(): F64 =>
+    """
+    The confidence there is, added up over the nodes.
+    """
+    var summed: F64 = 0.0
+    for value in _nodes.values() do
+      summed = summed + value
+    end
+    summed
+
+  fun ref share_out() =>
+    """
+    Turn the raw credits into shares of the whole.
+
+    Nothing to share out leaves the set as it is, and that matters: an all-zero
+    set divided by zero is every cell equally confident and equally meaningless.
+    """
+    let summed = total()
+    if summed <= 0.0 then return end
+
+    var node: USize = 0
+    while node < _nodes.size() do
+      try
+        _nodes(node)? = _nodes(node)? / summed
+      end
+      node = node + 1
+    end
+
+    var cell: USize = 0
+    while cell < _cells.size() do
+      try
+        _cells(cell)? = _cells(cell)? / summed
+      end
+      cell = cell + 1
+    end
+
+  fun ref copy(): CellConfidence =>
+    """
+    A copy to carry a step into the future and back again.
+    """
+    let carried = CellConfidence(_nodes.size(), cells_per_column)
+    carried._cells = _cells.clone()
+    carried._cells_before = _cells_before.clone()
+    carried._nodes = _nodes.clone()
+    carried._nodes_before = _nodes_before.clone()
+    carried

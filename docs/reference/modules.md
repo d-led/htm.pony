@@ -369,6 +369,46 @@ both are in.
 
 Tests: `test/temporal_region_test.pony`.
 
+### `temporal_pooler_config.pony`
+
+`TemporalPoolerConfig` - the shape of a CLA temporal pooler: the thresholds that
+decide when a segment predicts and when it is worth learning on, whether pooling
+is on, the permanence steps, the two backtrack windows, and the optional bounds
+that turn the memory into one that recycles instead of growing.
+
+Tests: `test/temporal_pooler_config_test.pony`.
+
+### `cla_segment.pony`
+
+`ClaSegment` - a pooler cell's memory of what came before it. Unlike the temporal
+memory's segment it is asked two different questions - how much of the state it
+matches, and whether that is enough to predict - and it keeps the tiered estimate
+of how often it has been right.
+
+`ClaDutyCycle` (primitive) - the tiers that estimate moves between, and the step
+it takes in each.
+
+Tests: `test/cla_segment_test.pony`.
+
+### `cla_cell.pony`
+
+`ClaCell` - one cell of one node, and the segments it has grown; it can name the
+one segment that matches a state best.
+
+`ClaNode` - a node and the cells that carry its states.
+
+Tests: `test/cla_cell_test.pony`.
+
+### `cla_state.pony`
+
+`CellState` - which cells are active and which are predicted, now and at the step
+before. The pooler keeps one for the learning pass and one for the inference pass.
+
+`CellConfidence` - what each cell and each node is worth, and how to turn the
+credits into shares of the whole.
+
+Tests: `test/cla_state_test.pony`.
+
 ## The encoders, `htm/encoders/`
 
 ### `encoder_interfaces.pony`

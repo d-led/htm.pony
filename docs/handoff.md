@@ -24,7 +24,7 @@ something the Go one does not. This library is MPL-2.0.
 | Temporal memory: cells, segments, prediction, bursts | done, in process and on actors |
 | Classification: `SDRClassifier`, `PredictionClassifier` | done |
 | Streaming anomaly score and its likelihood | done, in process and on actors (`AnomalyStream`) |
-| **CLA temporal pooler** | **not ported** |
+| CLA temporal pooler | **in slices** - the node/cell data model and both pass states are in; the pooling pass is not |
 | Graph as one SDR | not written |
 
 Verification at that commit: **172 tests green**, 16 examples run, `mkdocs build --strict`
@@ -58,6 +58,28 @@ Two rules that keep the repository honest, both enforced by tests:
 ## What is left, in the order to do it
 
 ### 1. The CLA temporal pooler — the largest piece, the reason the port exists
+
+**Slice (a), the data model, is in** (`temporal_pooler_config.pony`,
+`cla_segment.pony`, `cla_cell.pony`, `cla_state.pony`, with a test file each):
+
+- `TemporalPoolerConfig` - the reference's parameters, with the validation
+  `NewTemporalPooler` did by panicking, and the fields it never read (`burnIn`) or
+  that belong to printing left out. The two fixed-size limits are `0` for
+  "unlimited" rather than `-1`.
+- `ClaSegment` - a pooler segment answers two different questions: `activity`
+  (how much of the state it reaches, however weak the synapses) and `active`
+  (enough *connected* synapses to predict). Its tiered `duty_cycle` is ported,
+  with one deliberate divergence at iteration zero where the reference divides by
+  zero and gets an infinity.
+- `ClaCell` and `ClaNode` - a cell's segments, `best_segment` with the
+  reference's tie rule (the later of the equals), and the node that owns its
+  cells.
+- `CellState` and `CellConfidence` - what the learning pass and the inference pass
+  each need: active/predicted now and at the step before, plus the cell and node
+  confidences with the normalisation that makes them shares of the whole.
+
+Nothing computes a step yet; that is (b). The reference's `isSequenceSeg` is
+absent on purpose - the only value it is ever set to is `true`.
 
 - Reference: `/Users/dmitryledentsov/src/htm/temporalPooler.go`, ~2 150 lines, with
   `temporalPooler_test.go`, `temporalPoolerPrint.go`, `temporalPoolerStats.go` beside it.

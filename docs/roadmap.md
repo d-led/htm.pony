@@ -30,7 +30,7 @@ pushing messages, with tests that fail when the two disagree.
 | Classification | done - SDR classifier and prediction classifier |
 | Streaming anomaly score and its likelihood | done, in process |
 | Anomaly detection joined to the actor pipeline | done - `AnomalyStream` joins the pooler and the region |
-| **CLA temporal pooler** | **not ported** - the largest piece left |
+| **CLA temporal pooler** | **in slices** - the node/cell data model and the two pass states are in; the pooling pass is not |
 | A graph as one SDR | **not written** |
 | Grid cell encoder | done - a place becomes periodic receptive fields |
 | SimHash document encoder | done - a document becomes the positions its words vote for |
