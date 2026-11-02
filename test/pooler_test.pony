@@ -16,8 +16,10 @@ class PoolerTest is TestList
 
 actor SilentShard is Shard
   """
-  A band that never answers, which is what a shard that is slow, stuck or gone
-  looks like to the pooler.
+  A band that never answers, which is what a shard that is busy inside a
+  behaviour it will not leave looks like to the pooler. Actors cannot be gone:
+  the pooler holds every band, so the only way one is silent is that it is still
+  working.
   """
   be observe(band: USize, active: Array[Bool] val, ballot: Ballot tag) => None
 

@@ -206,10 +206,19 @@ from one that part of it was never asked about.
 A round that closes with bands missing is then asked a second time - of those
 bands only, for one more deadline, on a ballot that expects only the votes still
 owed. The bands that answered are not asked again, so a shard that was merely
-slow costs one extra deadline and the round comes back complete. A shard that is
-gone costs the same deadline and is then counted in `missing`. It is one retry
-and not a policy: a round that waits longer than two deadlines is a round the
-caller asked to bound.
+busy costs one extra deadline and the round comes back complete. A shard that is
+still busy after both deadlines is counted in `missing`. It is one retry and not
+a policy: a round that waits longer than two deadlines is a round the caller
+asked to bound.
+
+There is no such thing here as a shard that is *gone*. A Pony actor stays alive
+while anything can reach it - the pooler holds every one of them - and it runs
+the behaviours it is given, in the order it is given them. Nothing in this
+library spans processes, so a shard that does not answer within a deadline is
+busy: inside a long behaviour, an FFI call, or a loop that does not end. The
+deadline bounds how long a round waits for it, and the retry gives it one more
+chance to be quick. Were this ever to run across machines, that would stop being
+true and the retry would stop being enough.
 
 Because the answer is held until the retry is over, the next request waits for
 both deadlines. The alternative - answering at the first deadline and folding the
@@ -273,8 +282,9 @@ agree, which is the only reason to believe the split.
 
 ## What is missing
 
-- A retry is one more deadline, not a backoff. A shard that is slow twice is
-  given up on, and nothing tells a shard that is slow from one that is gone.
+- A retry is one more deadline, not a backoff. A shard that is busy twice is
+  given up on for that round, and nothing distinguishes busy from stuck - one is
+  a matter of when it answers, the other of whether.
 - One pooler is one coordinator. Two poolers over the same shards would each
   start their own rounds.
 - The temporal region has none of this: no deadline, so it waits for every shard

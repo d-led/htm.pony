@@ -8,7 +8,8 @@ interface Representation
   `missing` is how many columns the round never heard from. Zero means every
   column the pooler expected answered, and the representation is the one they
   agreed on; more means it was decided without them, which is what a deadline
-  buys when a shard is slow or gone. A caller that has to trust the answer can
+  buys when a shard is busy for longer than the pooler was asked to wait. A
+  caller that has to trust the answer can
   look at this number and decide what the answer is worth.
   """
   be represented(active: Array[USize] iso, missing: USize)
@@ -66,9 +67,9 @@ actor Pooler is Tally
 
   A round that closes with bands missing is asked once more, and only of those
   bands, for one more deadline. A band that answered is never asked twice, so a
-  shard that was merely slow costs one extra deadline and the round still comes
-  back complete; a shard that is gone costs the same one deadline and is then
-  counted in the answer's `missing`. A second round is not started in between,
+  shard that was merely busy costs one extra deadline and the round still comes
+  back complete; a shard that is still busy after both is then counted in the
+  answer's `missing`. A second round is not started in between,
   so the retry cannot be overtaken by the next request.
 
   One round runs at a time: a second request waits rather than overwriting a
