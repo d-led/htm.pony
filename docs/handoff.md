@@ -24,7 +24,7 @@ something the Go one does not. This library is MPL-2.0.
 | Temporal memory: cells, segments, prediction, bursts | done, in process and on actors |
 | Classification: `SDRClassifier`, `PredictionClassifier` | done |
 | Streaming anomaly score and its likelihood | done, in process and on actors (`AnomalyStream`) |
-| CLA temporal pooler | **in slices** - the node/cell data model and both pass states are in; the pooling pass is not |
+| CLA temporal pooler | **in slices** - it computes a step with pooling off; the pooling pass and backtracking are not in |
 | Graph as one SDR | not written |
 
 Verification at that commit: **172 tests green**, 16 examples run, `mkdocs build --strict`
@@ -80,6 +80,21 @@ Two rules that keep the repository honest, both enforced by tests:
 
 Nothing computes a step yet; that is (b). The reference's `isSequenceSeg` is
 absent on purpose - the only value it is ever set to is `true`.
+
+**Slice (b), the step, is in** (`temporal_pooler.pony`, `cla_segment_update.pony`,
+and the learning-side methods of the segment and cell): `TemporalPooler.compute`
+runs the inference pass (activate, then predict with confidences) and the learning
+pass (judge the proposals queued last step, activate, decide whether the sequence
+held, predict ahead and queue proposals), the tiered duty-cycle review, the
+average input density, the age-based decay, and `reset`. The reference's own
+`TestLearnPredict` is translated and green: five patterns, ten epochs, then four
+steps of inference that predict the next pattern's ten nodes exactly. 211 tests
+green (39 new across the two slices).
+
+Two gaps, both named where they would go: **backtracking** (the reference re-plays
+a step from an earlier start cell when a sequence is lost; until it is here a lost
+sequence starts over on the start cells, which is what the reference does when
+backtracking finds nothing), and **pooling** itself, which is (c).
 
 - Reference: `/Users/dmitryledentsov/src/htm/temporalPooler.go`, ~2 150 lines, with
   `temporalPooler_test.go`, `temporalPoolerPrint.go`, `temporalPoolerStats.go` beside it.

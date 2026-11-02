@@ -45,6 +45,14 @@ class CellState
     """
     _predicted = Array[Bool].init(false, _predicted.size())
 
+  fun ref clear_before() =>
+    """
+    Forget what the step before looked like, which is what a reset does: after it
+    the next step is not a continuation of anything.
+    """
+    _active_before = Array[Bool].init(false, _active_before.size())
+    _predicted_before = Array[Bool].init(false, _predicted_before.size())
+
   fun ref activate(cell: USize) =>
     """
     Turn a cell's active state on. A cell outside the population is ignored
@@ -89,6 +97,47 @@ class CellState
     """
     _in(_active, node)
 
+  fun active_in_before(node: USize): Array[USize] =>
+    """
+    The cells of one node that were active at the step before.
+    """
+    _in(_active_before, node)
+
+  fun predicted_in_before(node: USize): Array[USize] =>
+    """
+    The cells of one node that were predicted at the step before, which is what
+    the current step's activity is decided against.
+    """
+    _in(_predicted_before, node)
+
+  fun cells_in_state(): Array[USize] =>
+    """
+    Every cell that is active now, by its name in the whole population.
+    """
+    _all(_active)
+
+  fun predicted_cells(): Array[USize] =>
+    """
+    Every cell that is predicted now.
+    """
+    _all(_predicted)
+
+  fun ref active_bits(): Array[Bool] ref^ =>
+    """
+    The active cells as a flat vector, as a copy.
+
+    A copy and not a view: a pass reads the state through this while it is
+    setting the predictions that follow from it, and reading through an alias of
+    the thing being written is exactly what a borrowed reference forbids.
+    """
+    _active.clone()
+
+  fun ref active_bits_before(): Array[Bool] ref^ =>
+    """
+    The cells that were active at the step before, as a flat vector.
+    """
+    _active_before.clone()
+
   fun predicted_in(node: USize): Array[USize] =>
     """
     The cells of one node that are predicted now. In the learning pass there is
@@ -129,6 +178,17 @@ class CellState
         if states(start + offset)? then found.push(offset) end
       end
       offset = offset + 1
+    end
+    found
+
+  fun _all(states: ReadSeq[Bool]): Array[USize] =>
+    let found = Array[USize]
+    var cell: USize = 0
+    while cell < states.size() do
+      try
+        if states(cell)? then found.push(cell) end
+      end
+      cell = cell + 1
     end
     found
 
@@ -177,6 +237,13 @@ class CellConfidence
     """
     _cells = Array[F64].init(0.0, _cells.size())
     _nodes = Array[F64].init(0.0, _nodes.size())
+
+  fun ref clear_before() =>
+    """
+    Forget the confidences of the step before, which is what a reset does.
+    """
+    _cells_before = Array[F64].init(0.0, _cells_before.size())
+    _nodes_before = Array[F64].init(0.0, _nodes_before.size())
 
   fun ref credit(cell: USize, amount: F64) =>
     """

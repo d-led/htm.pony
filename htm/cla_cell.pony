@@ -1,3 +1,20 @@
+class ClaCellMatch
+  """
+  What a node answers when it is asked which of its cells fits a state best.
+
+  `offset` is the cell, `segment` the segment that made it the answer - nothing
+  at all when no segment of the node reaches the threshold - and `activity` how
+  much of the state that segment reaches.
+  """
+  let offset: USize
+  let segment: (ClaSegment | None)
+  let activity: USize
+
+  new create(offset': USize, segment': (ClaSegment | None), activity': USize) =>
+    offset = offset'
+    segment = segment'
+    activity = activity'
+
 class ClaCell
   """
   One cell of one node: the segments it has grown, and how to ask them together.
@@ -49,6 +66,58 @@ class ClaCell
     end
 
     best
+
+  fun strongest(state: ReadSeq[Bool]): (USize, USize) =>
+    """
+    The best match this cell can offer, as `(activity, segment)`: how much of the
+    state its best segment reaches, and which segment that is.
+
+    The first segment to reach that much answers - a later one has to beat it,
+    not equal it. `best_segment` breaks ties the other way, because the two
+    answer different questions: this one asks whether the cell is worth learning
+    on at all, that one asks which segment to teach.
+    """
+    var best_activity: USize = 0
+    var which: USize = 0
+
+    for (index, segment) in segments.pairs() do
+      let activity = segment.activity(state)
+      if activity > best_activity then
+        best_activity = activity
+        which = index
+      end
+    end
+
+    (best_activity, which)
+
+  fun ref add(segment: ClaSegment) =>
+    """
+    Give this cell one more memory.
+    """
+    segments.push(segment)
+
+  fun ref trim(segment: ClaSegment, min_permanence: F64) =>
+    """
+    Forget a segment's weakest synapses, and the segment itself when nothing is
+    left of it.
+
+    Only the segment that asked is trimmed: going over every segment of every
+    cell each step would be the same work for a much smaller effect, since only a
+    segment that was just changed can have reached zero.
+    """
+    segment.drop_weak(min_permanence)
+    if segment.synapses.size() > 0 then return end
+
+    try
+      let index = segments.find(segment)?
+      segments.remove(index, 1)
+    end
+
+  fun ref replace(kept: Array[ClaSegment]) =>
+    """
+    Take the segments a decay pass decided are worth keeping.
+    """
+    segments = kept
 
 class ClaNode
   """

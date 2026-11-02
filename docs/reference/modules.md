@@ -383,31 +383,59 @@ Tests: `test/temporal_pooler_config_test.pony`.
 `ClaSegment` - a pooler cell's memory of what came before it. Unlike the temporal
 memory's segment it is asked two different questions - how much of the state it
 matches, and whether that is enough to predict - and it keeps the tiered estimate
-of how often it has been right.
+of how often it has been right. A learning step renews it, moves its synapses
+where a proposal says, and lets go of the ones that decayed to nothing.
 
-`ClaDutyCycle` (primitive) - the tiers that estimate moves between, and the step
-it takes in each.
+`ClaDutyCycle` (primitive) - the tiers that estimate moves between, the step it
+takes in each, and the iterations where every segment has to be brought up to
+date.
 
 Tests: `test/cla_segment_test.pony`.
 
 ### `cla_cell.pony`
 
-`ClaCell` - one cell of one node, and the segments it has grown; it can name the
-one segment that matches a state best.
+`ClaCellMatch` (value) - which cell of a node fits a state best, with the segment
+that made it so and how much of the state it reaches.
+
+`ClaCell` - one cell of one node, and the segments it has grown. Two questions
+about matching, on purpose: `best_segment` picks where to learn and breaks ties
+towards the later segment, `strongest` picks whether a cell is worth learning on
+at all and breaks them towards the first. It can be trimmed back, handed the
+segments a decay pass kept, and grown a new one.
 
 `ClaNode` - a node and the cells that carry its states.
 
 Tests: `test/cla_cell_test.pony`.
 
+### `cla_segment_update.pony`
+
+`ClaSegmentUpdate` - a proposal to change a segment, made at the step that
+predicted and applied at the step that can judge it. Two lists: the synapses to
+strengthen, and the cells to start reaching.
+
+Tests: covered through `TemporalPooler`.
+
 ### `cla_state.pony`
 
 `CellState` - which cells are active and which are predicted, now and at the step
-before. The pooler keeps one for the learning pass and one for the inference pass.
+before. The pooler keeps one for the learning pass and one for the inference
+pass. The passes read a copy of the state through `active_bits`, because they
+write predictions while they read it.
 
 `CellConfidence` - what each cell and each node is worth, and how to turn the
 credits into shares of the whole.
 
 Tests: `test/cla_state_test.pony`.
+
+### `temporal_pooler.pony`
+
+`TemporalPooler` - the CLA pooler in one process: the nodes and their cells, the
+two passes, the proposals waiting to be judged, and the decay that ages out what
+nobody needed. One step in - the columns that received input - and the cells that
+are active or predicted out.
+
+Tests: `test/temporal_pooler_test.pony`, which is the reference's `TestLearnPredict`
+translated.
 
 ## The encoders, `htm/encoders/`
 

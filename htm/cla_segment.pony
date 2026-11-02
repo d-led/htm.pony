@@ -133,6 +133,68 @@ class ClaSegment
     _duty_cycle_at = iteration
     estimate
 
+  fun ref renew(iteration: U64) =>
+    """
+    Record that this segment's prediction came true: it is fresh again, and its
+    estimate of how often it is right takes one step of good news.
+    """
+    last_active = iteration
+    positive = positive + 1
+    duty_cycle(iteration, true)
+
+  fun ref move(indices: ReadSeq[USize], delta: F64, ceiling: F64): Bool =>
+    """
+    Move the permanence of the named synapses, holding them between zero and the
+    ceiling. Answers whether any of them reached zero, which is the segment's cue
+    that it has something to forget.
+    """
+    var reached_zero = false
+
+    for index in indices.values() do
+      try
+        let synapse = synapses(index)?
+        let moved =
+          if delta >= 0.0 then
+            let risen = synapse.permanence + delta
+            if risen > ceiling then ceiling else risen end
+          else
+            let fallen = synapse.permanence + delta
+            if fallen <= 0.0 then
+              reached_zero = true
+              0.0
+            else
+              fallen
+            end
+          end
+        synapse.permanence = moved
+      end
+    end
+
+    reached_zero
+
+  fun ref drop_weak(min_permanence: F64) =>
+    """
+    Forget the synapses that have decayed below `min_permanence`. A segment that
+    loses all of them is nothing but a memory of having been wrong.
+    """
+    var kept = Array[TemporalSynapse](synapses.size())
+    for synapse in synapses.values() do
+      if synapse.permanence >= min_permanence then kept.push(synapse) end
+    end
+    synapses = kept
+
+  fun ref decay(amount: F64) =>
+    """
+    Age every synapse by `amount`, forgetting the ones that no longer reach
+    anything at all.
+    """
+    var kept = Array[TemporalSynapse](synapses.size())
+    for synapse in synapses.values() do
+      synapse.permanence = synapse.permanence - amount
+      if synapse.permanence > 0.0 then kept.push(synapse) end
+    end
+    synapses = kept
+
 primitive ClaDutyCycle
   """
   The tiers the reference moves between when it turns a segment's record into a
@@ -149,6 +211,16 @@ primitive ClaDutyCycle
     The last iteration that still uses the plain fraction.
     """
     100
+
+  fun is_a_boundary(iteration: U64): Bool =>
+    """
+    Whether this iteration is where the step changes. Every segment has to be
+    brought up to date at each of these or it keeps the step it was last asked
+    with.
+    """
+    (iteration == 100) or (iteration == 320) or (iteration == 1000) or
+      (iteration == 3200) or (iteration == 10000) or (iteration == 32000) or
+      (iteration == 100000) or (iteration == 320000)
 
   fun step(iteration: U64): F64 =>
     """

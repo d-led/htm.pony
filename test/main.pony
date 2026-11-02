@@ -31,6 +31,7 @@ actor Main is TestList
     ClaSegmentTest.tests(test)
     ClaCellTest.tests(test)
     ClaStateTest.tests(test)
+    TemporalPoolerTest.tests(test)
     AnomalyTest.tests(test)
     SDRClassifierTest.tests(test)
     PredictionClassifierTest.tests(test)
