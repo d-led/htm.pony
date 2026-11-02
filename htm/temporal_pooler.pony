@@ -17,8 +17,6 @@ class TemporalPooler
   assumption that the sequence began further back than the pooler thought. The
   learning pass keeps its own history and does the same thing when it would
   otherwise begin a sequence at the wrong place.
-
-  One thing of the reference is still missing: the pooled representation itself.
   """
   let _config: TemporalPoolerConfig val
   let _nodes: Array[ClaNode]
@@ -118,6 +116,65 @@ class TemporalPooler
     end
 
     found
+
+  fun node_confidences(): Array[F64] val =>
+    """
+    How much confidence the pooler puts on each node, as shares of the whole.
+
+    The soft counterpart of `predicted_columns` - what the state says, without
+    a threshold deciding for the reader. A node nobody's segment reaches is
+    zero.
+    """
+    _confidence.node_confidences()
+
+  fun ref predict(steps: USize): Array[Array[F64] val] val ? =>
+    """
+    What the pooler expects, step by step, if nothing arrives to correct it.
+
+    Each entry is the confidence the pooler would put on every node at that
+    step: the first is what it already predicts for the next step, and each one
+    after it is read from the state that follows, with the predicted cells
+    taken as the next step's activity and no input of its own. The state is put
+    back before this answers, so asking what comes next does not decide it.
+
+    Reading several steps ahead like this is worth what the sequences it has
+    learned are worth: where the pooler has learned only one continuation the
+    second and third steps are the ones it expects, and where it has learned
+    several it names all of them rather than choosing.
+    """
+    if steps == 0 then error end
+
+    let kept = _inference.copy()
+    let kept_confidence = _confidence.copy()
+
+    let forecast: Array[Array[F64] val] iso =
+      recover iso Array[Array[F64] val] end
+
+    var step: USize = 0
+    while step < steps do
+      forecast.push(_confidence.node_confidences())
+
+      if (step + 1) < steps then
+        _roll_forward()
+      end
+
+      step = step + 1
+    end
+
+    _inference.restore(kept)
+    _confidence.restore(kept_confidence)
+
+    forecast
+
+  fun ref _roll_forward() =>
+    """
+    One step with no input: what was predicted becomes what is active, and what
+    that makes predicted is the step after it.
+    """
+    _confidence.advance()
+    _inference.advance()
+    _inference.activate_predicted()
+    _infer_phase2()
 
   fun ref answer(): ClaOutput =>
     """

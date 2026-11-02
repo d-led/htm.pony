@@ -157,6 +157,13 @@ class CellState
     """
     _count(_predicted)
 
+  fun ref activate_predicted() =>
+    """
+    Make what was predicted the activity, which is what a step with no input of
+    its own does: the pooler carries on from what it expected.
+    """
+    _active = _predicted.clone()
+
   fun ref restore(snapshot: CellState) =>
     """
     Take a snapshot's contents back, which is what a re-played step needs: the
@@ -318,6 +325,16 @@ class CellConfidence
       end
       cell = cell + 1
     end
+
+  fun node_confidences(): Array[F64] val =>
+    """
+    What every node is worth, in node order, as a copy.
+    """
+    let shares: Array[F64] iso = recover iso Array[F64] end
+    for value in _nodes.values() do
+      shares.push(value)
+    end
+    shares
 
   fun ref restore(snapshot: CellConfidence) =>
     """

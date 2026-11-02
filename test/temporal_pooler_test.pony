@@ -18,6 +18,7 @@ class TemporalPoolerTest is TestList
     test(_APooledPoolerPredictsTwoStepsAhead)
     test(_AnInputFromASequenceBegunEarlierIsTakenAsThatSequence)
     test(_ALengthLimitCostsNothingWhenLearningLooksBack)
+    test(_AForecastNamesTheStepsAfterThisOne)
 
 primitive Patterns
   """
@@ -160,8 +161,7 @@ primitive Patterns
       step = step + 1
     end
 
-  fun predicts_the_cycle(h: TestHelper, subject: TemporalPooler) ? =>
-    """
+  fun predicts_the_cycle(h: TestHelper, subject: TemporalPooler) ? =>    """
     Every pattern of the cycle predicted when the one before it arrives, the
     fifth's successor being the first.
     """
@@ -181,6 +181,20 @@ primitive Patterns
 
       step = step + 1
     end
+
+  fun confident_nodes(confidences: ReadSeq[F64]): Array[USize] =>
+    """
+    The nodes a confidence vector says something about, in node order.
+    """
+    let found = Array[USize]
+    var node: USize = 0
+    while node < confidences.size() do
+      try
+        if confidences(node)? > 0.0 then found.push(node) end
+      end
+      node = node + 1
+    end
+    found
 
 class iso _AFreshPoolerBurstsAndPredictsNothing is UnitTest
   fun name(): String => "a pooler that has learned nothing bursts every node it sees"
@@ -388,3 +402,37 @@ class iso _ALengthLimitCostsNothingWhenLearningLooksBack is UnitTest
       looking.segments() < blind.segments(),
       looking.segments().string() + " segments against " +
         blind.segments().string())
+
+class iso _AForecastNamesTheStepsAfterThisOne is UnitTest
+  fun name(): String => "a forecast names the patterns that follow, and changes nothing"
+
+  fun apply(h: TestHelper) ? =>
+    let pooler = Patterns.pooler()?
+    Patterns.learn_cycle(pooler, 50)?
+
+    pooler.compute(Patterns.of(0), false, true)?
+    let was = pooler.predicted_columns()
+
+    let forecast = pooler.predict(3)?
+
+    // each step of the forecast is where the cycle is after that many steps
+    var step: USize = 0
+    while step < forecast.size() do
+      let confident = Patterns.confident_nodes(forecast(step)?)
+      let wanted = Patterns.of(step + 1)
+
+      h.assert_eq[USize](
+        wanted.size(), confident.size(), "step " + (step + 1).string())
+      for node in wanted.values() do
+        h.assert_true(
+          confident.contains(node),
+          "node " + node.string() + " of the pattern " +
+            (step + 1).string())
+      end
+
+      step = step + 1
+    end
+
+    // asking what comes next does not decide it
+    h.assert_array_eq[USize](
+      was, pooler.predicted_columns(), "the pooler is where it was")

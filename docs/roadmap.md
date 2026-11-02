@@ -30,7 +30,7 @@ pushing messages, with tests that fail when the two disagree.
 | Classification | done - SDR classifier and prediction classifier |
 | Streaming anomaly score and its likelihood | done, in process |
 | Anomaly detection joined to the actor pipeline | done - `AnomalyStream` joins the pooler and the region |
-| **CLA temporal pooler** | **in slices** - a step with and without pooling, inference and learning backtracking, and the actor form, verified against the reference's own sequence test; the pooled representation is not in |
+| **CLA temporal pooler** | **done** - a step with and without pooling, inference and learning backtracking, a forecast several steps ahead, and the actor form; verified against the reference's own sequence test |
 | A graph as one SDR | done - a node is a category, an edge is two nodes and a direction, a graph is the union |
 | Grid cell encoder | done - a place becomes periodic receptive fields |
 | SimHash document encoder | done - a document becomes the positions its words vote for |
@@ -42,7 +42,10 @@ pushing messages, with tests that fail when the two disagree.
 last one missing from the algorithm: the Go `temporalPooler.go` it comes from is
 about two thousand lines, and it is what turns a stream of predictions into
 stable, hierarchically pooled representations rather than a burst per step.
-Nothing else in the plan moves forward much until it is there.
+Nothing else in the plan moves forward much until it is there. **It is in**, in
+slices: the data model, the step, pooling, inference and learning backtracking,
+a forecast several steps ahead, and the actor form. What is deliberately not
+ported is written down in the [handoff](handoff.md).
 
 **2. Anomaly detection on the actor path.** Done: `AnomalyStream` asks the pooler
 for columns, hands them to the temporal region, and scores what comes back, one

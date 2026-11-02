@@ -24,7 +24,7 @@ something the Go one does not. This library is MPL-2.0.
 | Temporal memory: cells, segments, prediction, bursts | done, in process and on actors |
 | Classification: `SDRClassifier`, `PredictionClassifier` | done |
 | Streaming anomaly score and its likelihood | done, in process and on actors (`AnomalyStream`) |
-| CLA temporal pooler | **in slices** - a step with and without pooling, inference and learning backtracking, and the actor form; the pooled representation is not in |
+| CLA temporal pooler | **done** - a step with and without pooling, inference and learning backtracking, a forecast several steps ahead, and the actor form; the diagnostics are deliberately not ported |
 | Graph as one SDR | done, as a design - `GraphEncoder`: a node is a category, an edge is two nodes and a direction, a graph is the union |
 
 Verification at that commit: **172 tests green**, 16 examples run, `mkdocs build --strict`
@@ -172,8 +172,32 @@ that only asks "does the sequence hold" is read only: it activates the predicted
 cells and nothing else, which is why it can be tried from every start in the
 history before one is chosen.
 
-One thing of the reference is still missing from the pooler: the pooled
-representation itself.
+**Slice (g), a forecast several steps ahead, is in.** `predict(steps)` answers the
+confidence the pooler would put on every node at each of the next steps: the
+first from the state it is in, and each one after that by taking what was
+predicted as the next step's activity and reading what *that* predicts - the
+reference's `Predict`, which is what a CLA has instead of replaying its whole
+sequence memory. The state is put back before it answers, so asking what comes
+next does not decide it, and the test states both halves: a learned cycle is
+named three steps out, and the pooler is where it was afterwards.
+`node_confidences()` is the same soft answer for the step it is on.
+
+**That is the whole of the reference's pooler**, apart from what was left out on
+purpose, and each of those is a decision rather than a gap:
+
+- `topDownCompute` / `columnConfidences` - the confidence vector, which is here as
+  `node_confidences` and, per step, inside a forecast.
+- `outputType`, with `ActiveState` and `ActiveState1CellPerCol` - which cells a
+  step *shows*. This port answers the reference's `Normal` (active or predicted),
+  because the others are choices about what to display, and a display is not what
+  a library hands to the next region.
+- `updateAvgLearnedSeqLength`, `temporalPoolerPrint.go`, `temporalPoolerStats.go` -
+  diagnostics for a printer and a chart. The measurements they exist for are in
+  the tests and in this page, taken where they can be checked rather than printed.
+- `GetSegId`, `removeSegmentUpdate`, `cleanUpdatesList` - bookkeeping the reference
+  needs because it keeps its proposals in a map keyed by a segment id. Here the
+  proposals are one array and expiry is a step count; the same decisions, without
+  the ids.
 
 - Reference: `/Users/dmitryledentsov/src/htm/temporalPooler.go`, ~2 150 lines, with
   `temporalPooler_test.go`, `temporalPoolerPrint.go`, `temporalPoolerStats.go` beside it.

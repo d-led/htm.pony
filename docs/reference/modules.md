@@ -471,9 +471,14 @@ sequence these inputs are part of began and re-enforces that path, rather than
 beginning a fresh one at the seam. A re-play that only asks whether the sequence
 holds teaches nothing.
 
+`predict(steps)` is the soft answer several steps out: what was predicted becomes
+the next step's activity, that step's prediction the one after, and the state is
+put back before the answer is returned. `node_confidences` is the same answer for
+one step.
+
 Tests: `test/temporal_pooler_test.pony`, which is the reference's `TestLearnPredict`
-translated, plus what pooling measurably changes, what the re-play recovers, and
-what a length limit costs.
+translated, plus what pooling measurably changes, what the re-play recovers, what
+a length limit costs, and what a forecast names.
 
 ### `cla_output.pony`
 
