@@ -16,6 +16,9 @@ class TopologyTest is TestList
     test(_NeighbourhoodExcludesTheCellItself)
     test(_LargeRadiusDoesNotRepeatNeighbours)
     test(_EmptyNeighbourhoodForRadiusZero)
+    test(_EdgeCellSeesBothSidesOfItself)
+    test(_CornerReachesTwoStepsIntoTheGrid)
+    test(_WrappingReachesBothFarEdges)
     test(_GridRejectsDegenerateDimensions)
 
 primitive Neighbourhood
@@ -130,3 +133,44 @@ class iso _GridRejectsDegenerateDimensions is UnitTest
   fun apply(h: TestHelper) =>
     h.assert_error({() ? => Grid([])? })
     h.assert_error({() ? => Grid([3; 0])? })
+
+class iso _EdgeCellSeesBothSidesOfItself is UnitTest
+  fun name(): String => "an edge cell sees the cells on both sides of it"
+
+  fun apply(h: TestHelper) =>
+    try
+      // three rows of five: the top edge, one column in, has nothing above it
+      // and the whole of its own row and the next
+      let grid = Grid([3; 5])?
+      Neighbourhood.assert_is(h, [0; 2; 5; 6; 7], grid.neighbours(1, 1, false)?)
+    else
+      h.fail("an edge cell should have neighbours")
+    end
+
+class iso _CornerReachesTwoStepsIntoTheGrid is UnitTest
+  fun name(): String => "a corner reaches two steps into the grid"
+
+  fun apply(h: TestHelper) =>
+    try
+      // five by five: a radius of two from a corner is the corner's own three by
+      // three block, less the corner itself
+      let grid = Grid([5; 5])?
+      Neighbourhood.assert_is(h, [1; 2; 5; 6; 7; 10; 11; 12],
+        grid.neighbours(0, 2, false)?)
+    else
+      h.fail("a corner should have neighbours")
+    end
+
+class iso _WrappingReachesBothFarEdges is UnitTest
+  fun name(): String => "a wrapping corner reaches the far edge in both directions"
+
+  fun apply(h: TestHelper) =>
+    try
+      // three by five: from the top left corner, one step reaches the last
+      // column and the last row as well as the cells in between
+      let grid = Grid([3; 5])?
+      Neighbourhood.assert_is(h, [1; 4; 5; 6; 9; 10; 11; 14],
+        grid.neighbours(0, 1, true)?)
+    else
+      h.fail("a wrapping corner should have neighbours")
+    end
