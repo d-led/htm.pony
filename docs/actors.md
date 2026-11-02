@@ -216,6 +216,20 @@ both deadlines. The alternative - answering at the first deadline and folding th
 late votes in afterwards - would mean deciding, learning and *then* changing the
 representation the round already acted on.
 
+The bands can be replaced while the pooler is running:
+
+```pony
+pooler.reconfigure(new_bands)
+```
+
+The new set answers from the next round on. A round that is already out - and its
+retry - belongs to the bands it was asked of, so a swap never cuts a round in
+half, and nothing waits for the caller because the swap happens when that round
+closes. What a swap may change is who answers for the columns, not which columns
+the pooler expects: a band set that does not cover the population is not refused
+- an actor cannot refuse a message - and shows up in the answer's `missing`
+instead.
+
 ## Ordering and ties
 
 Votes are stored in the order they arrive, which is not the column order. The
@@ -261,10 +275,9 @@ agree, which is the only reason to believe the split.
 
 - A retry is one more deadline, not a backoff. A shard that is slow twice is
   given up on, and nothing tells a shard that is slow from one that is gone.
-- No way to add or remove a shard while the pooler is running.
 - One pooler is one coordinator. Two poolers over the same shards would each
   start their own rounds.
-- The temporal region inherits these gaps and adds one: it has no deadline at
-  all, so a region waits for every shard on both passes. A prediction needs all
-  of them, so there is nothing to decide without the missing shard - which is
-  why the retry that the pooler has would not help it as it stands.
+- The temporal region has none of this: no deadline, so it waits for every shard
+  on both passes, and no way to hand it new shards. A prediction needs all of
+  them, so there is nothing to decide without the missing shard - which is why
+  the pooler's retry would not help it as it stands.

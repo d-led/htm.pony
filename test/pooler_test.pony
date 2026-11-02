@@ -10,6 +10,7 @@ class PoolerTest is TestList
     test(_ASilentShardDoesNotHoldTheRoundOpen)
     test(_OnlyTheBandThatStayedSilentIsAskedAgain)
     test(_APoolerWithNoBandsAnswersAtOnce)
+    test(_ANewBandAnswersTheNextRound)
 
 actor SilentShard is Shard
   """
@@ -103,6 +104,31 @@ actor EmptyListener is Representation
     _h.assert_eq[USize](0, answer.size(), "a round with no votes names no columns")
     _h.assert_eq[USize](4, missing, "every column was never heard from")
     _h.complete(true)
+
+actor SequenceListener is Representation
+  """
+  Checks the columns missing from each answer, in the order they arrive.
+  """
+  let _h: TestHelper
+  let _expected: Array[USize] val
+  var _seen: USize = 0
+
+  new create(h: TestHelper, expected: Array[USize] val) =>
+    _h = h
+    _expected = expected
+
+  be represented(active: Array[USize] iso, missing: USize) =>
+    let answer: Array[USize] val = consume active
+    _seen = _seen + 1
+
+    try
+      _h.assert_eq[USize](_expected(_seen - 1)?, missing,
+        "columns missing from answer " + _seen.string())
+    end
+
+    if _seen == _expected.size() then
+      _h.complete(true)
+    end
 
 primitive PoolerFixture
   fun config(): SpatialPoolerConfig val =>
@@ -198,3 +224,29 @@ class iso _APoolerWithNoBandsAnswersAtOnce is UnitTest
     let pooler = Pooler(shards, Grid([4])?, PoolerFixture.config())
 
     pooler.represent(PoolerFixture.input()?, false, EmptyListener(h))
+
+class iso _ANewBandAnswersTheNextRound is UnitTest
+  fun name(): String =>
+    "a band handed over while a round is out answers the next one"
+
+  fun apply(h: TestHelper) ? =>
+    h.long_test(5_000_000_000)
+
+    let shards: Array[Shard tag] iso = recover iso Array[Shard tag] end
+    shards.push(PoolerFixture.band(0))
+    shards.push(SilentShard)
+
+    let pooler = Pooler(
+      consume shards, Grid([4])?, PoolerFixture.config(), 20)
+    let answers = SequenceListener(h, recover val [2; 0] end)
+
+    // the second band never answers, so this round closes without its columns
+    pooler.represent(PoolerFixture.input()?, false, answers)
+
+    // a band that does answer takes its place, and the next round is complete
+    let replacement: Array[Shard tag] iso = recover iso Array[Shard tag] end
+    replacement.push(PoolerFixture.band(0))
+    replacement.push(PoolerFixture.band(2))
+    pooler.reconfigure(consume replacement)
+
+    pooler.represent(PoolerFixture.input()?, false, answers)

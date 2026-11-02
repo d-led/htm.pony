@@ -74,10 +74,11 @@ actor Pooler is Tally
   One round runs at a time: a second request waits rather than overwriting a
   tally still in flight.
 
-  A pooler with no shards has nobody to ask, so a round is answered as soon as it
-  is taken: no columns, every one of them missing.
+  The bands can be replaced while the pooler is running; the new set answers from
+  the next round on. A pooler with no shards has nobody to ask, so a round is
+  answered as soon as it is taken: no columns, every one of them missing.
   """
-  let _shards: Array[Shard tag] val
+  var _shards: Array[Shard tag] val
   let _grid: Grid val
   let _config: SpatialPoolerConfig val
   let _deadline_ms: U64
@@ -87,6 +88,7 @@ actor Pooler is Tally
   var _current: (Round | None) = None
   var _heard: Array[Vote] val = recover val Array[Vote] end
   var _retrying: Bool = false
+  var _pending: (Array[Shard tag] val | None) = None
 
   new create(
     shards: Array[Shard tag] val,
@@ -102,6 +104,23 @@ actor Pooler is Tally
 
   be represent(active: Array[Bool] val, learn: Bool, asker: Representation tag) =>
     _queue.push(Round(active, learn, asker))
+    _pump()
+
+  be reconfigure(shards: Array[Shard tag] val) =>
+    """
+    Hand over the bands to ask from now on.
+
+    They answer from the next round, because a round that is already out - and
+    its retry - belongs to the bands it was asked of, and swapping mid-round
+    would cut it in half. Nothing waits for the caller: the swap happens when
+    the round in flight closes.
+
+    What such a swap may change is who answers for the columns, not which
+    columns the pooler expects. Band sets that do not cover the population are
+    not refused - an actor cannot refuse a message - and show up in the answer's
+    `missing` instead.
+    """
+    _pending = shards
     _pump()
 
   be tallied(votes: Array[Vote] iso, silent: Array[USize] val) =>
@@ -149,6 +168,12 @@ actor Pooler is Tally
 
   fun ref _pump() =>
     if _current isnt None then return end
+
+    match _pending
+    | let shards: Array[Shard tag] val =>
+      _shards = shards
+      _pending = None
+    end
 
     match _take()
     | let round: Round =>

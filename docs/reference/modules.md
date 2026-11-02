@@ -178,6 +178,7 @@ Tests: `test/column_shard_test.pony`.
 | --- | --- | --- |
 | `create` | `new create(shards: Array[Shard tag] val, grid: Grid val, config: SpatialPoolerConfig val, deadline_ms: U64 = 0)` | a deadline of 0 means the round waits for every shard; with one, a round that closed with bands missing asks those once more |
 | `represent` | `be represent(active: Array[Bool] val, learn: Bool, asker: Representation tag)` | queues a round and starts it if nothing is in flight |
+| `reconfigure` | `be reconfigure(shards: Array[Shard tag] val)` | hand over the bands to ask from the next round on; the round in flight keeps the bands it was asked of |
 | `tallied` | `be tallied(votes: Array[Vote] iso, silent: Array[USize] val)` | asks the silent bands again if the round may be retried, otherwise inhibits the votes, learns from the round if it was asked to, and answers the asker |
 | `PoolerShards.build` | `fun build(config: SpatialPoolerConfig val, seed: U64, width: USize): Array[Shard tag] val ?` | cuts the population into bands of `width` |
 
