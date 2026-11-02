@@ -500,11 +500,14 @@ which reads PNG, JPEG, BMP and GIF. It is the one place a file format is named,
 and the one call in this library that is not Pony.
 
 `stbi_load_from_memory` decodes inside C, on the thread that called it, and
-cannot be interrupted or abandoned. Everything it does is decided by the file:
-a small compressed image can ask for a large picture, and while that is happening
-the actor is not running a behaviour — it is inside C, waiting for it to return.
-That is a dependency trusted as it is rather than a case this library bounds; the
-deadline a caller gives a pooler is what stands on the other side of it.
+cannot be interrupted or abandoned, so the size is decided before it starts:
+`stbi_info_from_memory` reads the header, and a picture above `pixel_limit`
+(4096 by 4096, sixteen megabytes of brightness) is refused with `DecodeFailed`
+without a byte being allocated for it. A file of a few hundred bytes can name a
+picture of any size at all — that is the shape of the attack this turns aside —
+and the limit is where this library says what it is willing to make. Below it,
+everything the file asks for is stb's business, and the deadline a caller gives a
+pooler is what stands on the other side.
 
 Tests: `test/stb_decoder_test.pony`.
 
