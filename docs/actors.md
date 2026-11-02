@@ -216,9 +216,11 @@ while anything can reach it - the pooler holds every one of them - and it runs
 the behaviours it is given, in the order it is given them. Nothing in this
 library spans processes, so a shard that does not answer within a deadline is
 busy: inside a long behaviour, an FFI call, or a loop that does not end. The
-deadline bounds how long a round waits for it, and the retry gives it one more
-chance to be quick. Were this ever to run across machines, that would stop being
-true and the retry would stop being enough.
+compiler rules out the other silent failure, too: a behaviour must handle any
+potential error, so a shard cannot abandon its report halfway through. Silence
+here means time, not a missing answer. The deadline bounds how long a round waits
+for it, and the retry gives it one more chance to be quick. Were this ever to run
+across machines, that would stop being true and the retry would stop being enough.
 
 Because the answer is held until the retry is over, the next request waits for
 both deadlines. The alternative - answering at the first deadline and folding the
