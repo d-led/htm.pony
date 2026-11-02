@@ -32,6 +32,7 @@ over categories.
 | Streaming anomaly score, and its likelihood | Implemented, tested |
 | Category encoder | Implemented, tested |
 | Random distributed encoder | Implemented, tested |
+| Grid cell encoder: a place becomes periodic receptive fields | Implemented, tested |
 | Graph encoder | Not written |
 
 The [module reference](reference/modules.md) lists every file, type and public

@@ -450,6 +450,22 @@ and nowhere else.
 
 Tests: `test/random_distributed_scalar_test.pony`.
 
+### `grid_cell_encoder.pony`
+
+`GridCellEncoder` - a 2-D location into the indices of the cells a grid cell
+layer would fire: one module per spacing, a random phase per cell and a random
+orientation per module, and the closest fraction of each module firing. Written
+from the account of the algorithm in `htm.core` rather than transcribed from it,
+so the cells that fire for a seed are not that library's cells.
+
+`GridModule` (value) - one spacing: the slice of the output it owns, the
+orientation its cells share, and the phase of every cell in it. `Spacings` puts
+the periods in the order the modules take them. `HexLattice.nearest` is the node
+of a hexagonal lattice closest to a point, which is the receptive field a cell
+repeats.
+
+Tests: `test/grid_cell_encoder_test.pony`.
+
 ### `grayscale_image.pony`
 
 `GrayscaleImage` (value) - the picture both image steps work on: width, height,

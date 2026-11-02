@@ -29,3 +29,5 @@ examples/anomaly-stream/anomaly-stream
 examples/anomaly-likelihood/anomaly-likelihood
 examples/sequence-training-value/sequence-training-value
 examples/sequence-training-value/*.dSYM/
+examples/grid-cells/grid-cells
+examples/grid-cells/*.dSYM/

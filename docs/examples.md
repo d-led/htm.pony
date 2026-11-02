@@ -453,3 +453,47 @@ Each step of 0.05 is about 2.3 resolutions, so the block of set bits moves two
 positions and neighbours keep 21 of 23 bits. Move further and fewer bits are
 shared; that is what lets the spatial pooler treat a near value as a near
 representation.
+
+## A place, as a grid cell layer would fire
+
+`examples/grid-cells/main.pony` walks east from the origin one unit at a time and
+counts the cells each step still shares with where it started, then prints one
+cell's receptive field as a map.
+
+```
+200 cells, five spacings, a quarter of each module firing
+
+walking east from the origin:
+1 east   ###############        0.74 still firing
+6 east   ###                    0.16 still firing
+11 east  #####                  0.26 still firing
+16 east  ####                   0.18 still firing
+21 east  ###                    0.14 still firing
+
+one cell's receptive field, twelve units across and six tall: half a unit per mark
+. o o o o o o . . . . . . . . . . . . . o o o o .
+. . o o o o o . . . . . . . . . . . . o o o o o .
+. . . o o o . . . . . . . . . . . . . o o o o o o
+. . . . . . . . . . . . o o . . . . . . o o o o o
+. . . . . . . . . . o o o o . . . . . . . o o o .
+. . . . . . . . . . o o o o o . . . . . . . . . .
+. . . . . . . . . . o o o o o . . . . . . . . . .
+. . . o . . . . . . o o o o o . . . . . . . . . .
+. o o o o . . . . . . o o o . . . . . . . . . . .
+o o o o o . . . . . . . . . . . . . . . . . . . .
+o o o o o o . . . . . . . . . . . . . o o o . . .
+o o o o o o . . . . . . . . . . . . o o o o o . .
+. o o o o . . . . . . . . . . . . . o o o o o . .
+```
+
+A step of one unit is a fifth of the shortest spacing, and three quarters of the
+cells survive it. Past that the overlap falls under two fifths, and it does not
+keep falling: it comes back up whenever two of the spacings line up again, which
+is what the printed walk is showing. Far enough away - sixty units, off the
+right of the map - one place shares about a tenth of its cells with another,
+which is less than two unrelated sets would share by chance.
+
+The map is the other half of the idea and the title of the encoder. One cell does
+not fire in one place; it fires wherever it is near a node of its lattice, so its
+receptive field is not a blob but the repeating hexagonal pattern shown, with
+the cells of its module competing for the same nodes at other phases.

@@ -31,7 +31,7 @@ pushing messages, with tests that fail when the two disagree.
 | Streaming anomaly score and its likelihood | done, in process |
 | Anomaly detection joined to the actor pipeline | **not done** - both halves exist, nothing joins them |
 | **CLA temporal pooler** | **not ported** - the largest piece left |
-| Graph encoder | **not written** |
+| Graph encoder | **not written** - the grid cell half is done |
 | Date encoder | done - season, day of week, weekend, time of day, holidays |
 
 ## What is next, in order
@@ -58,10 +58,21 @@ vector and the test that should have caught it asserted nothing.
 question is whether it matches the `SDRCategoryEncoder` in `htm.java` and
 `neocortexapi`, rather than the older Go one.
 
-**5. The graph encoder.** None exists in any of the reference implementations -
-that was checked - so this is new work rather than a port: `GridCellEncoder`
-(location encoding, from the Thousand Brains project) and `SimHashDocumentEncoder`
-for sets of ids, rather than inventing a third scheme.
+**5. The graph encoder.** None exists in the Go reference - that was checked - so
+this is new work rather than a port. Two encoders are wanted:
+`GridCellEncoder`, location as periodic receptive fields, and
+`SimHashDocumentEncoder` for sets of ids, rather than inventing a third scheme.
+
+Grid cells are done. The implementation follows `GridCellEncoder` in `htm.core`,
+which is AGPL and is therefore written from its account of the algorithm rather
+than transcribed: the cells that fire for a seed are not that library's cells, and
+the test of the golden bits it ships is deliberately not ported, because it pins
+which numbers a numpy random stream produces rather than anything about the
+encoding. What is held to the same standard is the relation the algorithm exists
+for: a one-unit move keeps about three quarters of the cells, and beyond the
+shortest period fewer than two fifths.
+
+SimHash over document ids is still to write.
 
 ## The picture side is an experiment, not the point
 
