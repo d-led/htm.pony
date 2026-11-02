@@ -62,6 +62,7 @@ actor TemporalRegion
   let _params: TemporalMemoryParams val
   var _shards: Array[TemporalBand tag] val
   let _deadline_ms: U64
+  let _retries: USize
   var _pending: (Array[TemporalBand tag] val | None) = None
 
   var _previous: Array[Bool] val
@@ -80,11 +81,13 @@ actor TemporalRegion
   new create(
     params: TemporalMemoryParams val,
     shards: Array[TemporalBand tag] val,
-    deadline_ms: U64 = 0)
+    deadline_ms: U64 = 0,
+    retries: USize = 1)
   =>
     _params = params
     _shards = shards
     _deadline_ms = deadline_ms
+    _retries = retries
     _previous = Array[Bool].init(false, params.cells())
 
   be compute(columns: Array[USize] val, learn: Bool, asker: TemporalObserver tag) =>
@@ -150,7 +153,8 @@ actor TemporalRegion
       _previous, _active_cells_of(_previous), request.columns, request.learn, _step)
 
     _ballot =
-      TemporalBallot(this, _shards, _bands(), pass, _params.cells(), _deadline_ms)
+      TemporalBallot(
+        this, _shards, _bands(), pass, _params.cells(), _deadline_ms, _retries)
 
     match _ballot
     | let ballot: TemporalBallot => ballot.run()
@@ -169,7 +173,8 @@ actor TemporalRegion
       _bands(),
       TemporalPass.predicting_from(_previous),
       _params.cells(),
-      _deadline_ms)
+      _deadline_ms,
+      _retries)
 
     match _ballot
     | let ballot: TemporalBallot => ballot.run()
@@ -252,9 +257,10 @@ actor TemporalBallot is TemporalSink
   would be wrong.
 
   The pass closes when every band it asked has answered, or when the deadline
-  expires. A closed pass that is short of bands asks those bands once more, on
-  their own and for one more deadline, and then reports what it has: the cells
-  in ascending order, and the bands that never spoke.
+  expires. A closed pass that is short of bands asks those bands again, on their
+  own, and each retry waits longer than the one before it; after `retries` of them
+  it reports what it has: the cells in ascending order, and the bands that never
+  spoke.
   """
   let _region: TemporalRegion
   let _shards: Array[TemporalBand tag] val
@@ -262,12 +268,13 @@ actor TemporalBallot is TemporalSink
   let _pass: TemporalPass val
   let _limit: USize
   let _deadline_ms: U64
+  let _retries: USize
   var _timers: Timers = Timers
 
   let _cells: Set[USize] = Set[USize]
   let _bursting: Set[USize] = Set[USize]
   let _answered: Set[USize] = Set[USize]
-  var _retried: Bool = false
+  var _retry: USize = 0
   var _decided: Bool = false
 
   new create(
@@ -276,7 +283,8 @@ actor TemporalBallot is TemporalSink
     bands: Array[USize] val,
     pass: TemporalPass val,
     limit: USize,
-    deadline_ms: U64)
+    deadline_ms: U64,
+    retries: USize)
   =>
     _region = region
     _shards = shards
@@ -284,6 +292,7 @@ actor TemporalBallot is TemporalSink
     _pass = pass
     _limit = limit
     _deadline_ms = deadline_ms
+    _retries = retries
 
   be run() =>
     """
@@ -311,27 +320,32 @@ actor TemporalBallot is TemporalSink
     if _decided then return end
 
     let silent = _silent()
-    if (not _retried) and (_deadline_ms > 0) and (silent.size() > 0) then
-      _retried = true
-      _watch()
-      _ask(silent)
-    else
+    if
+      (_deadline_ms == 0) or (silent.size() == 0) or (_retry >= _retries)
+    then
       _decide()
+      return
     end
+
+    _retry = _retry + 1
+    _watch()
+    _ask(silent)
 
   fun ref _watch() =>
     """
-    Start a deadline - a fresh timer wheel each time, so a retry's deadline is
-    not added to a wheel that is in the middle of firing.
+    Start a deadline for this attempt - a fresh timer wheel each time, so a
+    retry's deadline is not added to a wheel that is in the middle of firing.
     """
     if _deadline_ms == 0 then return end
     _timers = Timers
-    _timers(Timer(RegionDeadline(this), _deadline_ms * 1_000_000))
+    _timers(
+      Timer(RegionDeadline(this), Retry.waited(_deadline_ms, _retry) * 1_000_000))
 
   fun ref _ask(bands: Array[USize] val) =>
     """
     Put the pass to the named bands. A band that has already answered is never
-    asked twice, so a band that was merely busy costs one more deadline.
+    asked twice, so a re-asked band costs one more deadline of the caller's
+    patience and nothing else.
     """
     for band in bands.values() do
       if _answered.contains(band) then continue end

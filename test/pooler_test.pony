@@ -10,6 +10,7 @@ class PoolerTest is TestList
     test(_TwoRequestsAreAnsweredInTurn)
     test(_ASilentShardDoesNotHoldTheRoundOpen)
     test(_OnlyTheBandThatStayedSilentIsAskedAgain)
+    test(_AShardBusyTwiceIsStillHeardFrom)
     test(_APoolerWithNoBandsAnswersAtOnce)
     test(_ANewBandAnswersTheNextRound)
     test(_AColumnsTieIsBrokenByTheSeed)
@@ -28,18 +29,20 @@ actor SilentShard is Shard
 
 actor LateShard is Shard
   """
-  A band that misses the first deadline and reports when it is asked again,
-  which is what a shard that is merely slow looks like from the pooler.
+  A band that misses the first few deadlines and reports when it is asked often
+  enough, which is what a shard that is merely slow looks like from the pooler.
   """
   let _first: USize
+  let _ignored: USize
   var _asked: USize = 0
 
-  new create(first: USize) =>
+  new create(first: USize, ignored: USize = 1) =>
     _first = first
+    _ignored = ignored
 
   be observe(band: USize, active: Array[Bool] val, ballot: Ballot tag) =>
     _asked = _asked + 1
-    if _asked == 1 then return end
+    if _asked <= _ignored then return end
 
     let votes: Array[Vote] iso = recover iso Array[Vote] end
     votes.push(Vote(_first, 2.0))
@@ -264,6 +267,24 @@ class iso _OnlyTheBandThatStayedSilentIsAskedAgain is UnitTest
 
     // the late band answers as soon as it is asked again, so nothing is
     // missing from the representation
+    pooler.represent(PoolerFixture.input()?, false, Listener(h, 1, 0))
+
+class iso _AShardBusyTwiceIsStillHeardFrom is UnitTest
+  fun name(): String =>
+    "a band that missed two deadlines is asked again, and the round is complete"
+
+  fun apply(h: TestHelper) ? =>
+    h.long_test(5_000_000_000)
+
+    let shards: Array[Shard tag] iso = recover iso Array[Shard tag] end
+    shards.push(CountingShard(PoolerFixture.band(0), h))
+    shards.push(LateShard(2, 2))
+
+    // two retries, each waiting longer than the last: the band answers on the
+    // third ask, so the round still comes back complete
+    let pooler = Pooler(
+      consume shards, Grid([4])?, PoolerFixture.config(), 20, 42, 2)
+
     pooler.represent(PoolerFixture.input()?, false, Listener(h, 1, 0))
 
 class iso _APoolerWithNoBandsAnswersAtOnce is UnitTest

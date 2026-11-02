@@ -65,12 +65,13 @@ actor Pooler is Tally
   learns from the representation those votes produce. A shard that answers after
   the deadline is dropped, so it cannot answer the round twice.
 
-  A round that closes with bands missing is asked once more, and only of those
-  bands, for one more deadline. A band that answered is never asked twice, so a
-  shard that was merely busy costs one extra deadline and the round still comes
-  back complete; a shard that is still busy after both is then counted in the
-  answer's `missing`. A second round is not started in between,
-  so the retry cannot be overtaken by the next request.
+  A round that closes with bands missing is asked again, and only of those
+  bands, and each retry waits longer than the one before it. A band that answered
+  is never asked twice, so a shard that was merely busy costs the round some of
+  the caller's patience and the round still comes back complete; a shard that is
+  still busy after `retries` of them is counted in the answer's `missing`. A
+  second round is not started in between, so the retry cannot be overtaken by the
+  next request.
 
   One round runs at a time: a second request waits rather than overwriting a
   tally still in flight.
@@ -83,13 +84,14 @@ actor Pooler is Tally
   let _grid: Grid val
   let _config: SpatialPoolerConfig val
   let _deadline_ms: U64
+  let _retries: USize
   let _tie_breaker: Array[F64] val
   embed _learning: ColumnLearning
 
   let _queue: Array[Round] = Array[Round]
   var _current: (Round | None) = None
   var _heard: Array[Vote] val = recover val Array[Vote] end
-  var _retrying: Bool = false
+  var _retried: USize = 0
   var _pending: (Array[Shard tag] val | None) = None
 
   new create(
@@ -97,12 +99,14 @@ actor Pooler is Tally
     grid: Grid val,
     config: SpatialPoolerConfig val,
     deadline_ms: U64 = 0,
-    seed: U64 = 42)
+    seed: U64 = 42,
+    retries: USize = 1)
   =>
     _shards = shards
     _grid = grid
     _config = config
     _deadline_ms = deadline_ms
+    _retries = retries
     _tie_breaker = TieBreaker.of(config.num_columns(), seed)
     _learning = ColumnLearning(config, grid, config.num_inputs())
 
@@ -135,9 +139,13 @@ actor Pooler is Tally
       let all = _joined(_heard, received)
 
       if _may_retry(silent) then
-        _retrying = true
+        _retried = _retried + 1
         _heard = all
-        _ask(round.active, silent, _unheard(all.size()))
+        _ask(
+          round.active,
+          silent,
+          _unheard(all.size()),
+          Retry.waited(_deadline_ms, _retried))
       else
         _close(round, all)
       end
@@ -150,7 +158,7 @@ actor Pooler is Tally
     Decide the round on the votes it holds and answer the asker.
     """
     _current = None
-    _retrying = false
+    _retried = 0
     _heard = recover val Array[Vote] end
 
     let winners = _decide(round, votes)
@@ -163,12 +171,12 @@ actor Pooler is Tally
 
   fun box _may_retry(silent: Array[USize] val): Bool =>
     """
-    A round is asked again only if it closed with bands missing and a deadline
-    is what closed it. Without a deadline a round waits for every vote, so there
-    is nothing left to ask, and a retry that could not close would hang the
-    pooler.
+    A round is asked again only if it closed with bands missing, there is
+    patience left for it, and a deadline is what closed it. Without a deadline a
+    round waits for every vote, so there is nothing left to ask, and a retry
+    that could not close would hang the pooler.
     """
-    (not _retrying) and (_deadline_ms > 0) and (silent.size() > 0)
+    (_retried < _retries) and (_deadline_ms > 0) and (silent.size() > 0)
 
   fun ref _pump() =>
     if _current isnt None then return end
@@ -182,7 +190,7 @@ actor Pooler is Tally
     match _take()
     | let round: Round =>
       _current = round
-      _retrying = false
+      _retried = 0
       _heard = recover val Array[Vote] end
       _learning.round()
 
@@ -191,16 +199,21 @@ actor Pooler is Tally
         // close, so the round is answered on the votes it cannot have
         _close(round, recover val Array[Vote] end)
       else
-        _ask(round.active, _bands(), _grid.size)
+        _ask(round.active, _bands(), _grid.size, _deadline_ms)
       end
     end
 
-  fun ref _ask(active: Array[Bool] val, bands: Array[USize] val, expected: USize) =>
+  fun ref _ask(
+    active: Array[Bool] val,
+    bands: Array[USize] val,
+    expected: USize,
+    deadline_ms: U64)
+  =>
     """
-    Put the input to the named bands. `expected` is in votes, so a round asked
-    again expects only the votes it has not heard.
+    Put the input to the named bands, and wait `deadline_ms` for them. `expected`
+    is in votes, so a round asked again expects only the votes it has not heard.
     """
-    let ballot = BallotBox(this, expected, expected, _deadline_ms, bands)
+    let ballot = BallotBox(this, expected, expected, deadline_ms, bands)
     for band in bands.values() do
       try _shards(band)?.observe(band, active, ballot) end
     end

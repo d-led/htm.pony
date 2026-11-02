@@ -303,9 +303,14 @@ this; they are not it.
   0.958), and `test/anomaly_likelihood_test.pony` asserts that number so nobody
   changes it by accident. The floors stay: they are the reference's, and without them
   a near-zero stream would report the first hair's movement as a certainty.
-- **One pooler is one coordinator**, and its retry is one more deadline rather than a
-  backoff. Both recorded in [actors](actors.md#what-is-missing); neither is a bug, both are
-  limits somebody may want to lift.
+- **A retry is now a backoff — done.** Both coordinators take `retries` and each
+  retry waits twice as long as the one before (`Retry.waited`), so a shard that is
+  busy twice is still heard from. What is left of the diagnosis is in
+  [actors](actors.md#what-is-missing): nothing tells a shard that is busy from one
+  that is gone, which matters only once this spans machines.
+- **One coordinator is one round.** Two poolers over the same shards would each
+  start their own rounds, and the same is true of two regions. Recorded in
+  [actors](actors.md#what-is-missing); not a bug, a limit somebody may want to lift.
 
 ## Decisions already made — do not reverse them silently
 

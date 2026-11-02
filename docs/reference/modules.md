@@ -195,13 +195,23 @@ Tests: `test/column_shard_test.pony`.
 
 | Member | Signature | What it does |
 | --- | --- | --- |
-| `create` | `new create(shards: Array[Shard tag] val, grid: Grid val, config: SpatialPoolerConfig val, deadline_ms: U64 = 0, seed: U64 = 42)` | a deadline of 0 means the round waits for every shard; with one, a round that closed with bands missing asks those once more. The seed is what `TieBreaker` is drawn from, and must match the in-process pooler's for the two paths to agree |
+| `create` | `new create(shards: Array[Shard tag] val, grid: Grid val, config: SpatialPoolerConfig val, deadline_ms: U64 = 0, seed: U64 = 42, retries: USize = 1)` | a deadline of 0 means the round waits for every shard; with one, a round that closed with bands missing asks those again, `retries` times, each waiting twice as long as the one before. The seed is what `TieBreaker` is drawn from, and must match the in-process pooler's for the two paths to agree |
 | `represent` | `be represent(active: Array[Bool] val, learn: Bool, asker: Representation tag)` | queues a round and starts it if nothing is in flight |
 | `reconfigure` | `be reconfigure(shards: Array[Shard tag] val)` | hand over the bands to ask from the next round on; the round in flight keeps the bands it was asked of |
 | `tallied` | `be tallied(votes: Array[Vote] iso, silent: Array[USize] val)` | asks the silent bands again if the round may be retried, otherwise inhibits the votes, learns from the round if it was asked to, and answers the asker |
 | `PoolerShards.build` | `fun build(config: SpatialPoolerConfig val, seed: U64, width: USize): Array[Shard tag] val ?` | cuts the population into bands of `width` |
 
 Tests: `test/pooler_test.pony`, `test/pooler_learning_test.pony`.
+
+### `retry.pony`
+
+`Retry` (primitive) - how long a retry waits. `waited(deadline_ms, retry)`
+doubles the deadline per retry, so the first deadline is the caller's own number
+and the n-th retry waits 2^n of it. Shared by `Pooler` and `TemporalRegion` so
+both coordinators are patient on the same terms.
+
+Tests: covered through both, by a band that misses two deadlines and answers on
+the third.
 
 ### `htm_types.pony`
 
@@ -376,12 +386,13 @@ it again without the band having to remember what it was asked.
 `TemporalRegion` (actor) - temporal memory arranged as actors. A round is two
 passes over the shards, activate then predict, and the asker hears back only when
 both are in. Each pass gets its own ballot; with a deadline a pass closes on the
-answers that arrived and the silent bands are asked once more, after which the
-answer names them in `missing`. The bands can be handed over while it runs.
+answers that arrived and the silent bands are asked again, each retry waiting
+longer than the last, after which the answer names them in `missing`. The
+constructor is `TemporalRegion(params, shards, deadline_ms = 0, retries = 1)`.
+The bands can be handed over while it runs.
 
 `TemporalBallot` (actor) - one pass: collects the bands' answers, runs its own
-deadline and one retry, and reports the cells in order with the bands that never
-spoke.
+deadlines, and reports the cells in order with the bands that never spoke.
 
 `RegionDeadline` - the timer that reaches a ballot.
 

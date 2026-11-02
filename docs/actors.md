@@ -222,13 +222,16 @@ applies to any straggler. The answer carries the count of columns that never
 answered, so an asker can tell a representation the whole population agreed on
 from one that part of it was never asked about.
 
-A round that closes with bands missing is then asked a second time - of those
-bands only, for one more deadline, on a ballot that expects only the votes still
-owed. The bands that answered are not asked again, so a shard that was merely
-busy costs one extra deadline and the round comes back complete. A shard that is
-still busy after both deadlines is counted in `missing`. It is one retry and not
-a policy: a round that waits longer than two deadlines is a round the caller
-asked to bound.
+A round that closes with bands missing is then asked again - of those bands only,
+on a ballot that expects only the votes still owed - and each retry waits longer
+than the one before it. `Retry.waited` doubles the deadline per retry: a band
+that took twice as long as expected is the ordinary case, and one that took four
+times as long is still worth hearing from. How many retries there are is the
+caller's patience, set at construction - `Pooler(shards, grid, config, 50, 42,
+2)` allows two - and after them the round is answered with the bands that stayed
+silent counted in `missing`. The bands that answered are never asked again, so a
+shard that was merely busy costs the round some of that patience and nothing
+else.
 
 There is no such thing here as a shard that is *gone*. A Pony actor stays alive
 while anything can reach it - the pooler holds every one of them - and it runs
@@ -238,13 +241,14 @@ busy: inside a long behaviour, an FFI call, or a loop that does not end. The
 compiler rules out the other silent failure, too: a behaviour must handle any
 potential error, so a shard cannot abandon its report halfway through. Silence
 here means time, not a missing answer. The deadline bounds how long a round waits
-for it, and the retry gives it one more chance to be quick. Were this ever to run
-across machines, that would stop being true and the retry would stop being enough.
+for it, and the retries give it longer and longer chances to be quick. Were this
+ever to run across machines, that would stop being true and no number of retries
+would be enough.
 
-Because the answer is held until the retry is over, the next request waits for
-both deadlines. The alternative - answering at the first deadline and folding the
-late votes in afterwards - would mean deciding, learning and *then* changing the
-representation the round already acted on.
+Because the answer is held until the retries are over, the next request waits for
+all of the deadlines. The alternative - answering at the first deadline and
+folding the late votes in afterwards - would mean deciding, learning and *then*
+changing the representation the round already acted on.
 
 The bands can be replaced while the pooler is running:
 
@@ -304,15 +308,16 @@ agree, which is the only reason to believe the split.
 A step can also be **cut short**, the way a pooler round can:
 
 ```pony
-let region = TemporalRegion(params, shards, 250)   // a deadline of 250 ms
+let region = TemporalRegion(params, shards, 250)      // 250 ms, one retry
+let patient = TemporalRegion(params, shards, 250, 3)  // and three retries
 ```
 
 Each pass is one `TemporalBallot`, an actor of its own, so an answer belongs to
 the pass that asked for it even if the round has moved on by the time it
 arrives. A pass closes when its bands have answered or when the deadline is up;
-if bands are still silent the ballot asks those once more, on their own and for
-one more deadline, and then reports what it has. The answer's `missing` names
-the bands that never spoke - a step computed without part of the memory, which
+if bands are still silent the ballot asks those again, on their own and for
+longer each time, and then reports what it has. The answer's `missing` names the
+bands that never spoke - a step computed without part of the memory, which
 is worth saying out loud rather than passing off as a complete one.
 
 The bands can be replaced while the region runs, `region.reconfigure(shards)`,
@@ -355,13 +360,10 @@ that ends a training sequence has to be the one that sent it.
 
 ## What is missing
 
-- A retry is one more deadline, not a backoff. A shard that is busy twice is
-  given up on for that round, and nothing distinguishes busy from stuck - one is
-  a matter of when it answers, the other of whether.
 - One coordinator is one round. Two poolers over the same shards would each
   start their own rounds, and the same is true of two regions.
 - A region says *which bands* were missing, not which columns. Turning a band
   into the columns it owed is arithmetic the caller has, not the region.
-- Nothing here survives a second machine. A shard that is busy is asked once
-  more and then given up on; a shard that is gone would be given up on forever,
-  because nothing in this design tells the two apart.
+- Nothing here survives a second machine. A shard that is busy is asked again
+  with a longer deadline and then given up on; a shard that is gone would be
+  given up on forever, because nothing in this design tells the two apart.

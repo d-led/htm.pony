@@ -12,6 +12,8 @@ class TemporalRegionTest is TestList
     test(_TwoRoundsAreAnsweredInOrder)
     test(_ASilentBandIsNamedInTheAnswer)
     test(_ABusyBandIsAskedAgain)
+    test(_ABandBusyTwiceIsStillHeardFrom)
+    test(_PatienceIsBoundedByTheRetriesItWasGiven)
     test(_AHandedOverBandAnswersTheNextRound)
     test(_ARegionWithNoBandsAnswersAtOnce)
 
@@ -25,14 +27,18 @@ actor SilentBand is TemporalBand
 
 actor LateBand is TemporalBand
   """
-  A band that misses the first deadline and answers when it is asked again -
-  what a shard that is merely busy looks like from the region.
+  A band that misses the first few deadlines and answers when it is asked often
+  enough - what a shard that is merely busy looks like from the region.
   """
+  let _ignored: USize
   var _asked: USize = 0
+
+  new create(ignored: USize = 1) =>
+    _ignored = ignored
 
   be take(band: USize, pass: TemporalPass val, sink: TemporalSink tag) =>
     _asked = _asked + 1
-    if _asked == 1 then return end
+    if _asked <= _ignored then return end
 
     if pass.predicting then
       sink.predicted(band, recover val Array[USize] end)
@@ -242,6 +248,37 @@ class iso _ABusyBandIsAskedAgain is UnitTest
     let region = TemporalRegion(RegionFixture.params(), consume shards, 50)
     region.compute(
       recover val [0] end, true, MissingObserver(h, recover val Array[USize] end))
+
+class iso _ABandBusyTwiceIsStillHeardFrom is UnitTest
+  fun name(): String =>
+    "a band that missed two deadlines is asked again and counts"
+
+  fun apply(h: TestHelper) =>
+    h.long_test(5_000_000_000)
+
+    let shards: Array[TemporalBand tag] iso = recover iso Array[TemporalBand tag] end
+    shards.push(TemporalColumnShard(0, 2, RegionFixture.params()))
+    shards.push(LateBand(2))
+
+    // two retries, each waiting longer than the last: the band answers on the
+    // third ask, so nothing is missing
+    let region = TemporalRegion(RegionFixture.params(), consume shards, 20, 2)
+    region.compute(
+      recover val [0] end, true, MissingObserver(h, recover val Array[USize] end))
+
+class iso _PatienceIsBoundedByTheRetriesItWasGiven is UnitTest
+  fun name(): String => "a band that never answers is given up on, not waited for forever"
+
+  fun apply(h: TestHelper) =>
+    h.long_test(5_000_000_000)
+
+    let shards: Array[TemporalBand tag] iso = recover iso Array[TemporalBand tag] end
+    shards.push(TemporalColumnShard(0, 2, RegionFixture.params()))
+    shards.push(SilentBand)
+
+    // more patience than one retry, and still an answer rather than a wait
+    let region = TemporalRegion(RegionFixture.params(), consume shards, 10, 3)
+    region.compute(recover val [0] end, true, MissingObserver(h, recover val [1] end))
 
 class iso _AHandedOverBandAnswersTheNextRound is UnitTest
   fun name(): String => "a band handed over later answers the next round"
