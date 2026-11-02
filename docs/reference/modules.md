@@ -457,6 +457,16 @@ rather than a single path.
 Tests: `test/temporal_pooler_test.pony`, which is the reference's `TestLearnPredict`
 translated, plus what pooling measurably changes.
 
+### `sdr_merger.pony`
+
+`SDRMerger` (primitive) - putting two sparse representations into one, and
+cutting one down to size. `concat` moves a second space to where the first ends
+and merges what lands on the same position; `subsample` keeps at most a given
+number of positions, reproducibly for a seed. The reference's third mode,
+distorting a representation, has no caller here and is not guessed at.
+
+Tests: `test/sdr_merger_test.pony`.
+
 ## The encoders, `htm/encoders/`
 
 ### `encoder_interfaces.pony`

@@ -153,13 +153,17 @@ music section) takes an array of steps, 0 meaning classify now and n meaning pre
 steps ahead. Ours has the SDR classifier underneath, so this is a small extension rather
 than new machinery: keep per-step count tables, and let a caller ask for step k.
 
-### 4. A combiner for two SDRs
+### 4. A combiner for two SDRs — done, before item 3
 
-There is no way to merge two representations — everything that composes fields either
-concatenates offsets by hand (the date encoder) or votes over the whole vector (SimHash).
-The ZDK `Merger` is the shape: concatenate, subsample to a maximum number of on bits, or
-distort. This is the missing piece for encoding "context + content" as one SDR, which is
-what the music project below needs first.
+`SDRMerger` (`concat`, `subsample`) landed ahead of multi-step prediction: it is
+additive, one new module with nothing existing touched, and the music work below
+needs it sooner. `concat(left, right, shift)` puts a second space where the first
+ends and merges positions that land on each other; `subsample(indices, most,
+seed)` keeps at most that many, reproducibly.
+
+The reference's third mode, distorting a representation, is deliberately not
+here: nothing asks for it and the account of what it should do is unclear. Write
+it when something needs to say what "distorted" means.
 
 ### 5. A fixed-width category encoder
 

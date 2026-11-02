@@ -67,8 +67,25 @@ number per row: how many of that row's set entries are also set in the input. A
 vector of the wrong width is an error rather than a partial sum, because a
 shorter one would leave part of each row unread and report a quiet zero.
 
+## Merging two representations
+
+`SDRMerger` puts two sparse representations into one. `concat` moves the second
+space to where the first ends - a context encoding followed by a content
+encoding - and answers ascending, with positions that land on each other merged
+rather than counted twice.
+
+```pony
+SDRMerger.concat(context, pattern, context_width)   // one representation
+SDRMerger.subsample(merged, 40, seed)               // at most forty bits
+```
+
+`subsample` keeps at most the number of positions asked for, chosen without
+replacement and reproducibly for a seed: a representation that keeps growing
+stops being sparse, and a pooler is tuned for a density.
+
 ## What is not here
 
-There is no rolling SDR, no union or intersection primitive, and no compressed
-bit representation. A caller that wants to combine two representations writes
-the loop, or uses `BoolArray`.
+There is no rolling SDR, no union or intersection primitive - merging
+concatenates and subsamples, which is what a caller has needed so far - and no
+compressed bit representation. A caller that wants anything else writes the
+loop, or uses `BoolArray`.
