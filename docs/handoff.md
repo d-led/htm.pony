@@ -24,7 +24,7 @@ something the Go one does not. This library is MPL-2.0.
 | Temporal memory: cells, segments, prediction, bursts | done, in process and on actors |
 | Classification: `SDRClassifier`, `PredictionClassifier` | done |
 | Streaming anomaly score and its likelihood | done, in process and on actors (`AnomalyStream`) |
-| CLA temporal pooler | **in slices** - a step with and without pooling; backtracking and the actor form are not in |
+| CLA temporal pooler | **in slices** - a step with and without pooling, inference backtracking; learning backtracking and the actor form are not in |
 | Graph as one SDR | done, as a design - `GraphEncoder`: a node is a category, an edge is two nodes and a direction, a graph is the union |
 
 Verification at that commit: **172 tests green**, 16 examples run, `mkdocs build --strict`
@@ -91,10 +91,9 @@ average input density, the age-based decay, and `reset`. The reference's own
 steps of inference that predict the next pattern's ten nodes exactly. 211 tests
 green (39 new across the two slices).
 
-Two gaps, both named where they would go: **backtracking** (the reference re-plays
-a step from an earlier start cell when a sequence is lost; until it is here a lost
-sequence starts over on the start cells, which is what the reference does when
-backtracking finds nothing), and **pooling** itself, which is (c).
+Two gaps were named here, and both are now in: **backtracking** (the reference
+re-plays a step from an earlier input when a sequence is lost, below) and
+**pooling** itself, which is (c).
 
 **Slice (c), pooling, is in.** With `pooling` on, a cell that is predicted also
 learns the state one step *before* the one that taught it - on the segment of its
@@ -115,6 +114,33 @@ then applied at the wrong phase - the prediction widens to forty nodes, two
 thirds of the population. The pooled tests use a window of one for that reason.
 Whether the reference intends that is not something this port can answer; its own
 test leaves `DoPooling` commented out.
+
+**Slice (d), inference backtracking, is in.** The last ten inputs are kept, and
+when a step arrives mostly unpredicted - or leaves too little predicted - they
+are re-played on the assumption that the sequence began further back than the
+pooler thought: the first re-played input on its start cells, the rest as they
+were. Starts are tried farthest back first and the first one that survives to
+the input that arrived wins, because context is what a prediction is made of.
+When none survives the step bursts exactly as it did before, which is what the
+reference does when backtracking finds nothing.
+
+The observable claim is the one the reference makes in prose: two sequences that
+share a pattern, `0-1-2-3-4` and `2-8-9`, following the first and then reading
+`8`, which the pooler did not predict. Without the re-play every node of `8`
+bursts - twenty cells. With it the pooler works out that `8` continues a sequence
+that began three steps ago and activates the ten cells that were predicted, and
+so predicts `9` next.
+
+Three things about the reference here. Its loop looks as if it compares the
+confidence of one start against another and its comment describes that, but as
+written it breaks after the first start that locks on, so **the farthest start
+that survives wins** - that is what this port does, and it is what the comment's
+own goal asks for. Its history buffer is popped from the wrong end when it is
+full (a bug that would throw away the newest input); this port drops the oldest.
+Its `inferPhase2` decides "enough predicted going forward" by counting *cells*
+against half the average *column* density, which is kept as it is. What is still
+missing from the pooler is the second backtracking, over the learning history,
+and the actor form.
 
 - Reference: `/Users/dmitryledentsov/src/htm/temporalPooler.go`, ~2 150 lines, with
   `temporalPooler_test.go`, `temporalPoolerPrint.go`, `temporalPoolerStats.go` beside it.

@@ -9,15 +9,15 @@ class TemporalPooler
   column into all of its cells and learns from the previous step; a pooler also
   learns from the step before *that* when a cell is still being predicted, so the
   state it settles on is a union of the situations that led here rather than one
-  path through them. That is what `TemporalPoolerConfig.pooling` turns on, and it
-  is the next slice: what is here computes the same step the reference does with
-  pooling off.
+  path through them. That is what `TemporalPoolerConfig.pooling` turns on.
 
-  Two things of the reference are not here yet, both written where they would go:
-  the backtracking that re-plays a step from an earlier starting point when a
-  sequence is lost, and the pooled representation itself. Without backtracking a
-  lost sequence starts over on its start cells, which is what the reference does
-  when backtracking finds nothing.
+  A sequence can be entered from somewhere other than its start, and the first
+  unpredictable input of it reads as the sequence being lost. So an unexpected
+  step is not simply burst: the recent inputs are kept and re-played on the
+  assumption that the sequence began further back than the pooler thought.
+
+  Two things of the reference are still missing: the pooled representation
+  itself, and the second backtracking, the one over the learning history.
   """
   let _config: TemporalPoolerConfig val
   let _nodes: Array[ClaNode]
@@ -31,6 +31,7 @@ class TemporalPooler
   var _pam_counter: USize
   var _learned_sequence_length: USize = 0
   var _reset_called: Bool = false
+  let _inputs: Array[Array[USize] val]
   var _input_density: (F64 | None) = None
 
   new create(config': TemporalPoolerConfig val, seed: U64 = 42) =>
@@ -54,6 +55,7 @@ class TemporalPooler
     _confidence = CellConfidence(config'.columns, config'.cells_per_column)
     _rand = Rand(seed)
     _updates = Array[ClaSegmentUpdate]
+    _inputs = Array[Array[USize] val]
     _pam_counter = config'.pam_length
 
     // Pony's generator is weak for the first few draws after seeding: it tracks
@@ -167,6 +169,7 @@ class TemporalPooler
     _confidence.clear_before()
 
     _updates = Array[ClaSegmentUpdate]
+    _inputs.clear()
     _reset_called = true
 
   // The inference pass ------------------------------------------------------
@@ -175,24 +178,151 @@ class TemporalPooler
   // input and what was predicted, and which cells does that make predicted next.
 
   fun ref _update_inference(active_columns: ReadSeq[USize]) =>
+    """
+    One inference step: what is active given this input, and what that predicts.
+
+    A step whose input was largely unpredicted, or that leaves too little
+    predicted for the step after it, has probably lost the sequence - the input
+    arrived from somewhere the pooler was not following. Rather than bursting
+    and starting over, the recent inputs are re-played on the assumption that
+    the sequence began further back than it thought.
+    """
     _inference.advance()
     _confidence.advance()
+    _remember(active_columns)
 
-    // The reference re-plays the step from an earlier starting point when the
-    // input was not predicted. That backtracking is not ported yet, so an
-    // unpredicted step bursts and inference carries on from there.
-    _infer_phase1(active_columns)
+    // Where this step began. A re-play writes over the state as it goes, so this
+    // is what puts the state back when none of them locks on.
+    let started = _inference.copy()
+    let started_confidence = _confidence.copy()
+
+    if _infer_phase1(active_columns, _reset_called) and _infer_phase2() then
+      return
+    end
+
+    if _replay_from_an_earlier_start(started, started_confidence) then return end
+
+    // Nothing locked on: burst on this input as if nothing had been predicted
+    // for it, and predict from there.
+    _inference.restore(started)
+    _confidence.restore(started_confidence)
+    _infer_phase1(active_columns, _reset_called)
     _infer_phase2()
 
-  fun ref _infer_phase1(active_columns: ReadSeq[USize]): Bool =>
+  fun ref _remember(active_columns: ReadSeq[USize]) =>
+    """
+    Keep the input, because a step that turns out to be unexpected is judged
+    against the steps that led to it.
+
+    One more input than the pooler may start a re-play from, because the input
+    that arrived is kept here too.
+    """
+    if _config.max_inference_backtrack == 0 then return end
+
+    _inputs.push(_as_value(active_columns))
+    while _inputs.size() > (_config.max_inference_backtrack + 1) do
+      try _inputs.shift()? end
+    end
+
+  fun _as_value(active_columns: ReadSeq[USize]): Array[USize] val =>
+    """
+    A copy of the input as a value, because the history outlives the step that
+    handed it in.
+    """
+    let kept: Array[USize] iso = recover iso Array[USize] end
+    for column in active_columns.values() do
+      kept.push(column)
+    end
+    kept
+
+  fun ref _replay_from_an_earlier_start(
+    started: CellState,
+    started_confidence: CellConfidence): Bool
+  =>
+    """
+    Assume the sequence started at each of the recent inputs in turn, farthest
+    back first, and keep the first start that stays on a sequence all the way to
+    the input that arrived.
+
+    Farthest back first because context is what a prediction is made of: if
+    starting four steps ago explains this input, that start knows more about what
+    comes after it than a start one step ago does. The last start tried is this
+    input itself, which is the sequence beginning here.
+
+    Leaves the state alone when nothing locks on, so the caller can carry on with
+    what its own phases produced.
+    """
+    if _config.max_inference_backtrack == 0 then return false end
+
+    var start: USize = 0
+    while start < _inputs.size() do
+      if _replay(start, started, started_confidence) then
+        _forget_before(start)
+        return true
+      end
+      start = start + 1
+    end
+
+    false
+
+  fun ref _replay(
+    start: USize,
+    started: CellState,
+    started_confidence: CellConfidence): Bool
+  =>
+    """
+    Play the kept inputs from `start` onwards, the first of them on its start
+    cells, and answer whether the pooler stays on a sequence throughout.
+
+    Leaves behind the state the last input produced, which is the state the
+    caller wanted when this answers true. When it answers false the state is
+    whatever the attempt got to, and the caller has to put its own back.
+    """
+    _inference.restore(started)
+    _confidence.restore(started_confidence)
+
+    for (offset, input) in _inputs.pairs() do
+      if offset < start then continue end
+
+      // the step before's prediction is what a step is read against, and the
+      // first re-played input is read against start cells instead
+      if offset > start then
+        _inference.advance()
+        _confidence.advance()
+      end
+
+      if not (_infer_phase1(input, offset == start) and _infer_phase2()) then
+        return false
+      end
+    end
+
+    true
+
+  fun ref _forget_before(start: USize) =>
+    """
+    Drop the inputs there is nothing left to learn from: the ones before the
+    start the re-play locked on, which it proved were not part of this sequence,
+    and that start itself, which is now behind the pooler rather than a place to
+    begin from.
+    """
+    var dropped: USize = 0
+    while dropped < start do
+      try _inputs.shift()? end
+      dropped = dropped + 1
+    end
+
+  fun ref _infer_phase1(
+    active_columns: ReadSeq[USize],
+    from_start_cells: Bool): Bool
+  =>
     """
     Decide the active cells: the predicted ones where there are any, the whole
-    node where there are none. After a reset nothing is predicted into the step,
-    so every node starts on its start cell.
+    node where there are none. Told to, or after a reset, nothing is predicted
+    into the step and every node starts on its start cell.
     """
     _inference.clear_active()
 
-    if _reset_called then
+    if from_start_cells then
       for column in active_columns.values() do
         _inference.activate(_config.cell_of(column, 0))
       end
@@ -220,13 +350,17 @@ class TemporalPooler
 
     matched_columns >= (active_columns.size() / 2)
 
-  fun ref _infer_phase2() =>
+  fun ref _infer_phase2(): Bool =>
     """
     Decide the prediction, and how sure the pooler is of each part of it.
 
     Every segment that reaches enough of the active state contributes its own
     record of how often it has been right, whether or not it is strong enough to
     predict: a weak match is still evidence.
+
+    Answers whether the pooler is predicting enough going forward, which is half
+    the input density it has been seeing. Below that, what comes next is mostly a
+    guess, and this is one of the steps the re-play looks at again.
     """
     _inference.clear_predicted()
     _confidence.clear()
@@ -254,6 +388,15 @@ class TemporalPooler
     end
 
     _confidence.share_out()
+
+    match _input_density
+    | let density: F64 =>
+      // what is counted is cells and what it is counted against is columns, as
+      // in the reference: a column can contribute more than one predicted cell
+      _inference.count_predicted().f64() >= (0.5 * density)
+    else
+      true
+    end
 
   // The learning pass -------------------------------------------------------
 
@@ -414,9 +557,10 @@ class TemporalPooler
     """
     Begin a new sequence on the start cells.
 
-    The reference first tries to backtrack into an earlier start cell, and only
-    falls back to this. Until backtracking is ported, every lost sequence comes
-    here.
+    The reference first tries to backtrack the *learning* state into an earlier
+    start cell, and only falls back to this. That is a second backtracking, over
+    the learning history rather than the inference one, and it is not ported:
+    every sequence the learning pass loses begins here.
     """
     _learning.clear_active()
 

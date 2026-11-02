@@ -157,6 +157,17 @@ class CellState
     """
     _count(_predicted)
 
+  fun ref restore(snapshot: CellState) =>
+    """
+    Take a snapshot's contents back, which is what a re-played step needs: the
+    state is put back where it was, rather than a new state taking its place,
+    because everything that holds it holds this one.
+    """
+    _active = snapshot._active.clone()
+    _active_before = snapshot._active_before.clone()
+    _predicted = snapshot._predicted.clone()
+    _predicted_before = snapshot._predicted_before.clone()
+
   fun ref copy(): CellState =>
     """
     A copy to carry a step into the future and back again, which is what a
@@ -307,6 +318,15 @@ class CellConfidence
       end
       cell = cell + 1
     end
+
+  fun ref restore(snapshot: CellConfidence) =>
+    """
+    Take a snapshot's confidences back.
+    """
+    _cells = snapshot._cells.clone()
+    _cells_before = snapshot._cells_before.clone()
+    _nodes = snapshot._nodes.clone()
+    _nodes_before = snapshot._nodes_before.clone()
 
   fun ref copy(): CellConfidence =>
     """

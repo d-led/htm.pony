@@ -440,10 +440,12 @@ Tests: covered through `TemporalPooler`.
 `CellState` - which cells are active and which are predicted, now and at the step
 before. The pooler keeps one for the learning pass and one for the inference
 pass. The passes read a copy of the state through `active_bits`, because they
-write predictions while they read it.
+write predictions while they read it. `copy` and `restore` carry a state into a
+re-played step and put it back when the re-play does not work out.
 
 `CellConfidence` - what each cell and each node is worth, and how to turn the
-credits into shares of the whole.
+credits into shares of the whole. Copied and restored alongside the state it
+belongs to.
 
 Tests: `test/cla_state_test.pony`.
 
@@ -456,8 +458,14 @@ are active or predicted out. With pooling on it also learns the state one step
 before the one that predicted, which is what makes the state a union of contexts
 rather than a single path.
 
+A step that arrives mostly unpredicted is not simply burst. The last
+`max_inference_backtrack` inputs are kept, and they are re-played farthest back
+first on the assumption that the sequence began earlier than the pooler thought;
+the first start that stays on a sequence to the input that arrived wins, and the
+inputs before it are dropped. When none does, the step bursts as it would have.
+
 Tests: `test/temporal_pooler_test.pony`, which is the reference's `TestLearnPredict`
-translated, plus what pooling measurably changes.
+translated, plus what pooling measurably changes and what the re-play recovers.
 
 ### `sdr_merger.pony`
 

@@ -16,6 +16,7 @@ class TemporalPoolerTest is TestList
     test(_AnUnusedSynapseAgesAway)
     test(_PoolingLearnsFromOneStepFurtherBack)
     test(_APooledPoolerPredictsTwoStepsAhead)
+    test(_AnInputFromASequenceBegunEarlierIsTakenAsThatSequence)
 
 primitive Patterns
   """
@@ -31,13 +32,13 @@ primitive Patterns
     end
     columns
 
-  fun pooler(): TemporalPooler ? =>
+  fun pooler(nodes: USize = 50): TemporalPooler ? =>
     """
-    The reference's TestLearnPredict setup: fifty nodes, two cells each, ten
-    synapses to a segment, and no pooling.
+    The reference's TestLearnPredict setup: two cells a node, ten synapses to a
+    segment, and no pooling, over fifty nodes unless more are needed.
     """
     let config = TemporalPoolerConfig(
-      50, 2,              // nodes, and cells in each
+      nodes, 2,           // nodes, and cells in each
       8, 10, 10,          // activation threshold, min threshold, synapses wanted
       false,              // no pooling
       0.5, 0.5,           // initial and connection permanence
@@ -59,6 +60,29 @@ primitive Patterns
         index = index + 1
       end
       subject.reset()
+      epoch = epoch + 1
+    end
+
+  fun learn_branches(subject: TemporalPooler, epochs: USize) ? =>
+    """
+    Two sequences that share a pattern: 0-1-2-3-4, and 2-8-9. Each is started
+    from a reset, so the first pattern of each is the one learned from start
+    cells.
+    """
+    var epoch: USize = 0
+    while epoch < epochs do
+      subject.reset()
+      var index: USize = 0
+      while index < 5 do
+        subject.compute(of(index), true, false)?
+        index = index + 1
+      end
+
+      subject.reset()
+      subject.compute(of(2), true, false)?
+      subject.compute(of(8), true, false)?
+      subject.compute(of(9), true, false)?
+
       epoch = epoch + 1
     end
 
@@ -246,4 +270,41 @@ class iso _APooledPoolerPredictsTwoStepsAhead is UnitTest
 
       h.assert_eq[USize](20, predicted.size(), "and nothing else")
       step = step + 1
+    end
+
+class iso _AnInputFromASequenceBegunEarlierIsTakenAsThatSequence is UnitTest
+  fun name(): String =>
+    "an input that continues a sequence begun earlier is taken as that sequence"
+
+  fun apply(h: TestHelper) ? =>
+    // 0-1-2-3-4 and 2-8-9, so that 8 continues a sequence that began three
+    // steps ago as well as one the pooler is not following
+    let pooler = Patterns.pooler(100)?
+    Patterns.learn_branches(pooler, 10)?
+
+    pooler.compute(Patterns.of(0), false, true)?
+    pooler.compute(Patterns.of(1), false, true)?
+    pooler.compute(Patterns.of(2), false, true)?
+
+    // 8 is not what follows the sequence being followed, so without looking
+    // further back every node of it would burst
+    pooler.compute(Patterns.of(8), false, true)?
+
+    let active = pooler.active_cells()
+    h.assert_eq[USize](
+      10, active.size(), "one cell a node, so 8 was predicted rather than burst")
+
+    let continued = Patterns.of(8)
+    for cell in active.values() do
+      let node = cell / 2
+      h.assert_true(
+        continued.contains(node),
+        "cell " + cell.string() + " belongs to the 8 pattern")
+    end
+
+    let predicted = pooler.predicted_columns()
+    h.assert_eq[USize](10, predicted.size(), "and 9 is what is predicted next")
+    for column in Patterns.of(9).values() do
+      h.assert_true(
+        predicted.contains(column), "column " + column.string() + " of 9")
     end
