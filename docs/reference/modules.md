@@ -135,16 +135,16 @@ Tests: `test/spatial_pooler_test.pony`.
 | Type | What it is |
 | --- | --- |
 | `Vote` (value) | one column's answer: `column` and `overlap` |
-| `Ballot` (interface) | `be vote(Vote)` and `be cast(Array[Vote] iso)` — where votes go |
-| `Tally` (interface) | `be tallied(Array[Vote] iso)` — where the tally goes |
+| `Ballot` (interface) | `be vote(Vote)` and `be cast(USize, Array[Vote] iso)` — where votes go, the second naming the band they came from |
+| `Tally` (interface) | `be tallied(Array[Vote] iso, Array[USize] val)` — where the tally goes, with the bands that never reported |
 | `BallotBox` (actor) | collects the votes on one question |
 | `Deadline` (class) | the timer that closes a round when time runs out |
 
 | Member | Signature | What it does |
 | --- | --- | --- |
-| `create` | `new create(tally: Tally tag, expected: USize, quorum: USize = 0, deadline_ms: U64 = 0)` | a quorum of 0 or more than `expected` becomes `expected` |
+| `create` | `new create(tally: Tally tag, expected: USize, quorum: USize = 0, deadline_ms: U64 = 0, bands: Array[USize] val = [])` | a quorum of 0 or more than `expected` becomes `expected`; the roster is what lets the box name a silent band |
 | `vote` | `be vote(vote': Vote)` | adds one vote; ignored once the round is decided |
-| `cast` | `be cast(votes: Array[Vote] iso)` | adds a whole shard's votes in one message |
+| `cast` | `be cast(band: USize, votes: Array[Vote] iso)` | adds a whole band's votes in one message, and notes that the band reported |
 | `deadline_reached` | `be deadline_reached()` | closes the round early |
 
 Tests: `test/ballot_box_test.pony`.
@@ -159,7 +159,7 @@ the population, and the `synapses` it starts with.
 | Member | Signature | What it does |
 | --- | --- | --- |
 | `create` | `new create(wirings: Array[ColumnWiring] val, config: SpatialPoolerConfig val)` | copies the synapses into columns of its own, and keeps the settings |
-| `observe` | `be observe(active: Array[Bool] val, ballot: Ballot tag)` | pushes every column's overlap in one `cast` |
+| `observe` | `be observe(band: USize, active: Array[Bool] val, ballot: Ballot tag)` | pushes every column's overlap in one `cast`, naming its own band |
 | `learn` | `be learn(active: Array[Bool] val, winners: Array[USize] val, starving: Array[USize] val)` | adapts the named winners and raises the named starving columns, ignoring indices of other bands |
 
 Tests: `test/column_shard_test.pony`.
@@ -169,16 +169,16 @@ Tests: `test/column_shard_test.pony`.
 | Type | What it is |
 | --- | --- |
 | `Representation` (interface) | `be represented(Array[USize] iso, USize)` — whoever asked for a representation, and how many columns the round never heard from |
-| `Shard` (interface) | `be observe(Array[Bool] val, Ballot tag)` and `be learn(Array[Bool] val, Array[USize] val, Array[USize] val)` — what the pooler asks of a band of columns |
+| `Shard` (interface) | `be observe(USize, Array[Bool] val, Ballot tag)` and `be learn(Array[Bool] val, Array[USize] val, Array[USize] val)` — what the pooler asks of a band of columns; the number is the band's own name, echoed back with the votes so a silent band can be asked again |
 | `Round` (value) | one queued request: the input, whether the round learns, and who to answer |
 | `Pooler` (actor) | the coordinator, and a `Tally` |
 | `PoolerShards` (primitive) | bands of columns wired as `SpatialPooler` wires its own |
 
 | Member | Signature | What it does |
 | --- | --- | --- |
-| `create` | `new create(shards: Array[Shard tag] val, grid: Grid val, config: SpatialPoolerConfig val, deadline_ms: U64 = 0)` | a deadline of 0 means the round waits for every shard |
+| `create` | `new create(shards: Array[Shard tag] val, grid: Grid val, config: SpatialPoolerConfig val, deadline_ms: U64 = 0)` | a deadline of 0 means the round waits for every shard; with one, a round that closed with bands missing asks those once more |
 | `represent` | `be represent(active: Array[Bool] val, learn: Bool, asker: Representation tag)` | queues a round and starts it if nothing is in flight |
-| `tallied` | `be tallied(votes: Array[Vote] iso)` | inhibits the votes, learns from the round if it was asked to, and answers the asker |
+| `tallied` | `be tallied(votes: Array[Vote] iso, silent: Array[USize] val)` | asks the silent bands again if the round may be retried, otherwise inhibits the votes, learns from the round if it was asked to, and answers the asker |
 | `PoolerShards.build` | `fun build(config: SpatialPoolerConfig val, seed: U64, width: USize): Array[Shard tag] val ?` | cuts the population into bands of `width` |
 
 Tests: `test/pooler_test.pony`, `test/pooler_learning_test.pony`.
