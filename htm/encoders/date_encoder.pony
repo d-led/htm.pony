@@ -1,7 +1,5 @@
 use "time"
 
-use "../../deps/sagittarius/sagittarius"
-
 class DateEncoder
     """
     Date encoder encodes a datetime to a SDR. Params allow for tuning
@@ -175,43 +173,3 @@ class DateEncoder
 
         //make year 0 based
         (date.day_of_year - 1).f64()
-
-    fun _get_holiday_scalar(date: PosixDate): F64 ? =>
-        if holiday_encoder.noop() then
-            return 0.0
-        end
-
-        // A "continuous" binary value. = 1 on the holiday itself and smooth ramp
-        // 0->1 on the day before the holiday and 1->0 on the day after the holiday.
-        // Currently the only holiday we know about is December 25
-        // holidays is a list of holidays that occur on a fixed date every year
-        var v: F64 = 0.0
-        var i: USize = 0
-        let holiday_size = params.holidays.size()
-
-        while i < holiday_size do
-            let h = params.holidays(i)?
-            // hdate is midnight on the holiday
-            let hDate = LocalDate(date.year, h._1, h._2)
-            // if date.After(hDate) {
-            //     diff := date.Sub(hDate)
-            //     if (diff/time.Hour)/24 == 0 {
-            //         val = 1
-            //         break
-            //     } else if (diff/time.Hour)/24 == 1 {
-            //         // ramp smoothly from 1 -> 0 on the next day
-            //         val = 1.0 - (float64(diff/time.Second) / (86400))
-            //         break
-            //     }
-            // } else {
-            //     diff := hDate.Sub(date)
-            //     if (diff/time.Hour)/24 == 1 {
-            //         // ramp smoothly from 0 -> 1 on the previous day
-            //         val = 1.0 - (float64(diff/time.Second) / 86400)
-            //     }
-
-            // }
-            i = i + 1
-        end
-
-        v

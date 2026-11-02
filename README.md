@@ -93,7 +93,11 @@ actually does, including the parts that are present but empty.
 
 ## Dependencies
 
-- date/time construction: [slayful/sagittarius](https://github.com/slayful/sagittarius) (license yet unspecified)
+- the standard library, and nothing else: date and time come from `time`, which
+  derives the calendar fields from a POSIX timestamp
+- the picture decoder vendors [stb_image](https://github.com/nothings/stb) (public
+  domain, or MIT where a jurisdiction does not allow that), which is compiled
+  beside the package it belongs to
 
 ## License
 
