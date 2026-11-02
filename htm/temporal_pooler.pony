@@ -14,10 +14,11 @@ class TemporalPooler
   A sequence can be entered from somewhere other than its start, and the first
   unpredictable input of it reads as the sequence being lost. So an unexpected
   step is not simply burst: the recent inputs are kept and re-played on the
-  assumption that the sequence began further back than the pooler thought.
+  assumption that the sequence began further back than the pooler thought. The
+  learning pass keeps its own history and does the same thing when it would
+  otherwise begin a sequence at the wrong place.
 
-  Two things of the reference are still missing: the pooled representation
-  itself, and the second backtracking, the one over the learning history.
+  One thing of the reference is still missing: the pooled representation itself.
   """
   let _config: TemporalPoolerConfig val
   let _nodes: Array[ClaNode]
@@ -31,7 +32,8 @@ class TemporalPooler
   var _pam_counter: USize
   var _learned_sequence_length: USize = 0
   var _reset_called: Bool = false
-  let _inputs: Array[Array[USize] val]
+  let _inference_inputs: Array[Array[USize] val]
+  let _learning_inputs: Array[Array[USize] val]
   var _input_density: (F64 | None) = None
 
   new create(config': TemporalPoolerConfig val, seed: U64 = 42) =>
@@ -55,7 +57,8 @@ class TemporalPooler
     _confidence = CellConfidence(config'.columns, config'.cells_per_column)
     _rand = Rand(seed)
     _updates = Array[ClaSegmentUpdate]
-    _inputs = Array[Array[USize] val]
+    _inference_inputs = Array[Array[USize] val]
+    _learning_inputs = Array[Array[USize] val]
     _pam_counter = config'.pam_length
 
     // Pony's generator is weak for the first few draws after seeding: it tracks
@@ -176,7 +179,8 @@ class TemporalPooler
     _confidence.clear_before()
 
     _updates = Array[ClaSegmentUpdate]
-    _inputs.clear()
+    _inference_inputs.clear()
+    _learning_inputs.clear()
     _reset_called = true
 
   // The inference pass ------------------------------------------------------
@@ -226,9 +230,9 @@ class TemporalPooler
     """
     if _config.max_inference_backtrack == 0 then return end
 
-    _inputs.push(_as_value(active_columns))
-    while _inputs.size() > (_config.max_inference_backtrack + 1) do
-      try _inputs.shift()? end
+    _inference_inputs.push(_as_value(active_columns))
+    while _inference_inputs.size() > (_config.max_inference_backtrack + 1) do
+      try _inference_inputs.shift()? end
     end
 
   fun _as_value(active_columns: ReadSeq[USize]): Array[USize] val =>
@@ -262,7 +266,7 @@ class TemporalPooler
     if _config.max_inference_backtrack == 0 then return false end
 
     var start: USize = 0
-    while start < _inputs.size() do
+    while start < _inference_inputs.size() do
       if _replay(start, started, started_confidence) then
         _forget_before(start)
         return true
@@ -288,7 +292,7 @@ class TemporalPooler
     _inference.restore(started)
     _confidence.restore(started_confidence)
 
-    for (offset, input) in _inputs.pairs() do
+    for (offset, input) in _inference_inputs.pairs() do
       if offset < start then continue end
 
       // the step before's prediction is what a step is read against, and the
@@ -314,7 +318,7 @@ class TemporalPooler
     """
     var dropped: USize = 0
     while dropped < start do
-      try _inputs.shift()? end
+      try _inference_inputs.shift()? end
       dropped = dropped + 1
     end
 
@@ -413,32 +417,164 @@ class TemporalPooler
     step's cells, decide whether the sequence held, and predict ahead.
     """
     _learning.advance()
+    _remember_learning(active_columns)
     _process_updates(active_columns)
 
     if _pam_counter > 0 then _pam_counter = _pam_counter - 1 end
     _learned_sequence_length = _learned_sequence_length + 1
 
     if not _reset_called then
-      if _learn_phase1(active_columns) then
+      if _learn_phase1(active_columns, false) then
         _pam_counter = _config.pam_length
       end
     end
 
-    if
-      _reset_called
-        or (_pam_counter == 0)
-        or ((_config.max_sequence_length != 0)
-          and (_learned_sequence_length >= _config.max_sequence_length))
-    then
-      _start_over(active_columns)
+    if _starts_over() then
+      _begin_again(active_columns)
     end
 
-    _learn_phase2()
+    _learn_phase2(false)
 
-  fun ref _learn_phase1(active_columns: ReadSeq[USize]): Bool =>
+  fun _starts_over(): Bool =>
+    """
+    Whether the learning pass has to begin a sequence: a reset, a sequence that
+    has been out of step for longer than the PAM length allows, or the longest
+    sequence worth naming.
+    """
+    _reset_called
+      or (_pam_counter == 0)
+      or ((_config.max_sequence_length != 0)
+        and (_learned_sequence_length >= _config.max_sequence_length))
+
+  fun ref _begin_again(active_columns: ReadSeq[USize]) =>
+    """
+    Begin a sequence: here on start cells, or further back where the sequence
+    these inputs are part of began.
+
+    Beginning here throws away the step before this one, so a sequence that is
+    learned in pieces never joins up - the piece ending at the seam is never
+    re-enforced against the piece beginning after it. The re-play is what joins
+    them: it finds where this sequence began, walks that path again teaching it,
+    and says how far back it locked on.
+    """
+    let steps_back =
+      if _reset_called then 0 else _backtrack_learning() end
+
+    if steps_back == 0 then
+      _start_over(active_columns)
+      return
+    end
+
+    _pam_counter = _config.pam_length
+    _learned_sequence_length = steps_back
+    _updates = Array[ClaSegmentUpdate]
+
+  fun ref _remember_learning(active_columns: ReadSeq[USize]) =>
+    """
+    Keep the input, because a sequence that has to begin again is judged against
+    the inputs that led to it.
+
+    One more input than the pass may start a re-play from, because the input
+    that arrived is kept here too.
+    """
+    if _config.max_learning_backtrack == 0 then return end
+
+    _learning_inputs.push(_as_value(active_columns))
+    while _learning_inputs.size() > (_config.max_learning_backtrack + 1) do
+      try _learning_inputs.shift()? end
+    end
+
+  fun ref _backtrack_learning(): USize =>
+    """
+    Find where the sequence the recent inputs are part of began, and walk it
+    again teaching it.
+
+    The input that arrived is not a start worth trying: this is about where the
+    sequence began, not about this step. Answers how many steps back the pass
+    locked on, or nothing at all when no earlier input leads here - in which case
+    the history goes, because none of it is worth trying again.
+    """
+    // the input that arrived is the last one, and is not a place to begin from
+    if _learning_inputs.size() < 2 then return 0 end
+
+    let explorable = _learning_inputs.size() - 1
+
+    var start: USize = 0
+    while start < explorable do
+      if _learned_backtrack_from(start, true) then break end
+      start = start + 1
+    end
+
+    if start == explorable then
+      _learning_inputs.clear()
+      return 0
+    end
+
+    // the same path again, this time teaching it
+    _learned_backtrack_from(start, false)
+    _forget_learned_before(start)
+
+    explorable - start
+
+  fun ref _learned_backtrack_from(start: USize, read_only: Bool): Bool =>
+    """
+    Re-play the kept inputs from `start` with the first of them on its start
+    cells, and answer whether the sequence holds all the way to the input that
+    arrived.
+
+    The input that arrived is re-played too - it is the one that has to be
+    explained - but what follows it is not: a prediction for the next step is the
+    caller's to make, from the state this leaves behind.
+
+    Read only, nothing is taught and nothing is queued, which is what makes the
+    attempt cheap enough to make several times. Not read only, the path is
+    re-enforced as it is walked - that is what finding it is for.
+    """
+    if not read_only then _updates = Array[ClaSegmentUpdate] end
+
+    var in_sequence = true
+
+    for (offset, input) in _learning_inputs.pairs() do
+      if offset < start then continue end
+
+      _learning.advance()
+      if not read_only then _process_updates(input) end
+
+      if offset == start then
+        _start_on_start_cells(input)
+      else
+        in_sequence = _learn_phase1(input, read_only)
+      end
+
+      if not in_sequence then break end
+
+      // what follows the input that arrived is the caller's phase two
+      if offset == (_learning_inputs.size() - 1) then break end
+
+      _learn_phase2(read_only)
+    end
+
+    in_sequence
+
+  fun ref _forget_learned_before(start: USize) =>
+    """
+    Drop the inputs before the start the re-play locked on, which it proved the
+    sequence does not begin at.
+    """
+    var dropped: USize = 0
+    while dropped < start do
+      try _learning_inputs.shift()? end
+      dropped = dropped + 1
+    end
+
+  fun ref _learn_phase1(active_columns: ReadSeq[USize], read_only: Bool): Bool =>
     """
     Activate the predicted cell of every node that received input, and teach the
     nodes that were not predicted.
+
+    Read only, from a re-play, nothing is taught, and a node with no prediction
+    keeps no active cell at all: the re-play is asking whether the sequence
+    holds, not changing what is known.
 
     Answers whether enough of the input was predicted for the sequence to count
     as unbroken - half of it, as in the reference.
@@ -459,6 +595,7 @@ class TemporalPooler
       end
 
       unpredicted = unpredicted + 1
+      if read_only then continue end
 
       let found = _best_matching_cell(column, before, _config.min_threshold)
 
@@ -475,14 +612,14 @@ class TemporalPooler
 
     unpredicted < (active_columns.size() / 2)
 
-  fun ref _learn_phase2() =>
+  fun ref _learn_phase2(read_only: Bool) =>
     """
     Predict ahead, and queue what each prediction would change.
 
     At most one cell of a node is predicted in the learning pass: the one whose
     best segment matches the active state. The proposal is queued rather than
     applied because whether it was right is only known when the next input
-    arrives.
+    arrives. Read only, the prediction is made and nothing is queued.
     """
     _learning.clear_predicted()
 
@@ -496,14 +633,17 @@ class TemporalPooler
       match found.segment
       | let segment: ClaSegment =>
         _learning.predict(_config.cell_of(column, found.offset))
-        segment.total = segment.total + 1
 
-        let reach_more = found.activity < _config.new_synapse_count
-        let update = _synapses_for(column, found.offset, segment, state, reach_more)
-        if update.proposed() then _updates.push(update) end
+        if not read_only then
+          segment.total = segment.total + 1
 
-        if _config.pooling then
-          _queue_pooling(column, found.offset, before)
+          let reach_more = found.activity < _config.new_synapse_count
+          let update = _synapses_for(column, found.offset, segment, state, reach_more)
+          if update.proposed() then _updates.push(update) end
+
+          if _config.pooling then
+            _queue_pooling(column, found.offset, before)
+          end
         end
       | None => None
       end
@@ -562,22 +702,24 @@ class TemporalPooler
 
   fun ref _start_over(active_columns: ReadSeq[USize]) =>
     """
-    Begin a new sequence on the start cells.
+    Begin a sequence here rather than further back, which is what a reset asks
+    for and what a pass that can find no earlier beginning falls back on.
+    """
+    _start_on_start_cells(active_columns)
+    _pam_counter = _config.pam_length
+    _learned_sequence_length = 0
+    _updates = Array[ClaSegmentUpdate]
 
-    The reference first tries to backtrack the *learning* state into an earlier
-    start cell, and only falls back to this. That is a second backtracking, over
-    the learning history rather than the inference one, and it is not ported:
-    every sequence the learning pass loses begins here.
+  fun ref _start_on_start_cells(active_columns: ReadSeq[USize]) =>
+    """
+    Put every node that received input on its start cell, which is what a
+    sequence beginning here looks like.
     """
     _learning.clear_active()
 
     for column in active_columns.values() do
       _learning.activate(_config.cell_of(column, 0))
     end
-
-    _pam_counter = _config.pam_length
-    _learned_sequence_length = 0
-    _updates = Array[ClaSegmentUpdate]
 
   // Applying a proposal -----------------------------------------------------
 

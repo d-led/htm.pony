@@ -17,6 +17,7 @@ class TemporalPoolerTest is TestList
     test(_PoolingLearnsFromOneStepFurtherBack)
     test(_APooledPoolerPredictsTwoStepsAhead)
     test(_AnInputFromASequenceBegunEarlierIsTakenAsThatSequence)
+    test(_ALengthLimitCostsNothingWhenLearningLooksBack)
 
 primitive Patterns
   """
@@ -42,7 +43,11 @@ primitive Patterns
     end
     columns
 
-  fun config(nodes: USize = 50): TemporalPoolerConfig val ? =>
+  fun config(
+    nodes: USize = 50,
+    longest: USize = 32,
+    learn_backtrack: USize = 5): TemporalPoolerConfig val ?
+  =>
     """
     The reference's TestLearnPredict setup: two cells a node, ten synapses to a
     segment, and no pooling, over fifty nodes unless more are needed.
@@ -55,13 +60,30 @@ primitive Patterns
       0.1, 0.0, 1.0,      // permanence increment, decrement, ceiling
       0.0,                // no global decay
       1, 10,              // update window, pam length
-      10, 5,              // the two backtrack windows
+      10, learn_backtrack, // the two backtrack windows
       100000,             // nothing is ever aged out
-      32,                 // longest sequence worth naming
+      longest,            // longest sequence worth naming
       0, 0)?              // no fixed-size limits
 
-  fun pooler(nodes: USize = 50): TemporalPooler ? =>
-    TemporalPooler(config(nodes)?, 7)
+  fun pooler(
+    nodes: USize = 50,
+    longest: USize = 32,
+    learn_backtrack: USize = 5): TemporalPooler ?
+  =>
+    TemporalPooler(config(nodes, longest, learn_backtrack)?, 7)
+
+  fun learn_cycle(subject: TemporalPooler, steps: USize) ? =>
+    """
+    Learn the five patterns as a cycle: no reset between them, so each follows
+    the one before it and the first follows the fifth.
+    """
+    subject.reset()
+    var step: USize = 0
+    while step < steps do
+      subject.compute(of(step % 5), true, false)?
+      step = step + 1
+    end
+    subject.reset()
 
   fun learn_sequences(subject: TemporalPooler, epochs: USize) ? =>
     var epoch: USize = 0
@@ -129,6 +151,28 @@ primitive Patterns
       h.assert_eq[USize](10, predicted.size())
 
       let next = of(step + 1)
+      for column in predicted.values() do
+        h.assert_true(
+          next.contains(column),
+          "column " + column.string() + " belongs to the next pattern")
+      end
+
+      step = step + 1
+    end
+
+  fun predicts_the_cycle(h: TestHelper, subject: TemporalPooler) ? =>
+    """
+    Every pattern of the cycle predicted when the one before it arrives, the
+    fifth's successor being the first.
+    """
+    var step: USize = 0
+    while step < 5 do
+      subject.compute(of(step), false, true)?
+
+      let predicted = subject.predicted_columns()
+      h.assert_eq[USize](10, predicted.size())
+
+      let next = of((step + 1) % 5)
       for column in predicted.values() do
         h.assert_true(
           next.contains(column),
@@ -320,3 +364,27 @@ class iso _AnInputFromASequenceBegunEarlierIsTakenAsThatSequence is UnitTest
       h.assert_true(
         predicted.contains(column), "column " + column.string() + " of 9")
     end
+
+class iso _ALengthLimitCostsNothingWhenLearningLooksBack is UnitTest
+  fun name(): String =>
+    "a sequence learned in pieces is one path when learning may look back"
+
+  fun apply(h: TestHelper) ? =>
+    // a cycle of five patterns, learned as a cycle, with a limit of four steps:
+    // the limit cuts the sequence every four steps, mid-way through it
+    let looking = Patterns.pooler(50, 4, 5)?
+    let blind = Patterns.pooler(50, 4, 0)?
+
+    Patterns.learn_cycle(looking, 50)?
+    Patterns.learn_cycle(blind, 50)?
+
+    // neither lost the cycle to the limit
+    Patterns.predicts_the_cycle(h, looking)?
+    Patterns.predicts_the_cycle(h, blind)?
+
+    // but the pass that could look back found where each piece began and
+    // re-enforced that path, instead of beginning a fresh one every four steps
+    h.assert_true(
+      looking.segments() < blind.segments(),
+      looking.segments().string() + " segments against " +
+        blind.segments().string())

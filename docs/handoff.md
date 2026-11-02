@@ -24,7 +24,7 @@ something the Go one does not. This library is MPL-2.0.
 | Temporal memory: cells, segments, prediction, bursts | done, in process and on actors |
 | Classification: `SDRClassifier`, `PredictionClassifier` | done |
 | Streaming anomaly score and its likelihood | done, in process and on actors (`AnomalyStream`) |
-| CLA temporal pooler | **in slices** - a step with and without pooling, inference backtracking, and the actor form; learning backtracking and the pooled representation are not in |
+| CLA temporal pooler | **in slices** - a step with and without pooling, inference and learning backtracking, and the actor form; the pooled representation is not in |
 | Graph as one SDR | done, as a design - `GraphEncoder`: a node is a category, an edge is two nodes and a direction, a graph is the union |
 
 Verification at that commit: **172 tests green**, 16 examples run, `mkdocs build --strict`
@@ -150,8 +150,30 @@ the order they arrive - and the answer is a value, `ClaOutput`, so nothing that
 crosses back points into the pooler. The test compares every answer with the
 one-process pooler's, which is the rule this repository holds every actor form to.
 
-What is still missing from the pooler: the second backtracking, over the learning
-history (`max_learning_backtrack`), and the pooled representation itself.
+**Slice (f), learning backtracking, is in.** The learning pass keeps its own
+history of inputs, and when it would begin a sequence - the PAM counter has
+expired, or the longest sequence worth naming has been reached - it first looks
+for where the sequence these inputs are part of began, walks that path again
+teaching it, and continues from there. Beginning on start cells throws away the
+step before the seam, so a sequence learned in pieces never joins up; the re-play
+is what joins them.
+
+The measured claim, and the test that states it: a five-pattern cycle learned
+with a length limit of four steps is the same cycle with either setting, but the
+pass that may look back grows **60 segments instead of 100** - it re-enforces the
+path it found rather than beginning a fresh one every four steps. Ten patterns
+with a limit of eight: 130 against 150.
+
+Two things about this one. The input that arrived *is* re-played - it is the one
+that has to be explained - but a prediction for what follows it is the caller's
+phase two, so the re-play stops after activating it; getting that wrong is worth
+20 segments and a ruined transition, which is how it was found. And the re-play
+that only asks "does the sequence hold" is read only: it activates the predicted
+cells and nothing else, which is why it can be tried from every start in the
+history before one is chosen.
+
+One thing of the reference is still missing from the pooler: the pooled
+representation itself.
 
 - Reference: `/Users/dmitryledentsov/src/htm/temporalPooler.go`, ~2 150 lines, with
   `temporalPooler_test.go`, `temporalPoolerPrint.go`, `temporalPoolerStats.go` beside it.

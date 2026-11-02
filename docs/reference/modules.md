@@ -464,8 +464,16 @@ first on the assumption that the sequence began earlier than the pooler thought;
 the first start that stays on a sequence to the input that arrived wins, and the
 inputs before it are dropped. When none does, the step bursts as it would have.
 
+The learning pass keeps its own history (`max_learning_backtrack`) and does the
+same thing for the other reason: when it would begin a sequence - the PAM counter
+expired, or the longest sequence worth naming reached - it looks for where the
+sequence these inputs are part of began and re-enforces that path, rather than
+beginning a fresh one at the seam. A re-play that only asks whether the sequence
+holds teaches nothing.
+
 Tests: `test/temporal_pooler_test.pony`, which is the reference's `TestLearnPredict`
-translated, plus what pooling measurably changes and what the re-play recovers.
+translated, plus what pooling measurably changes, what the re-play recovers, and
+what a length limit costs.
 
 ### `cla_output.pony`
 
