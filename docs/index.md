@@ -30,6 +30,7 @@ over categories.
 | SDR classifier, categories | Implemented, tested |
 | Prediction classifier: the label of the next step | Implemented, tested |
 | Streaming anomaly score, and its likelihood | Implemented, tested |
+| Anomaly score on the actor path | Implemented, tested |
 | Category encoder | Implemented, tested |
 | Random distributed encoder | Implemented, tested |
 | Grid cell encoder: a place becomes periodic receptive fields | Implemented, tested |

@@ -1,35 +1,43 @@
+# Build output
+
 test/test
-*.o
 microbenchmarks/microbenchmarks
-microbenchmarks/*.dSYM/
-test/test.d*
-test/test.exe
+*.o
+*.bc
+*.exe
+*.dSYM/
+build/
+site/
+.venv-docs/
+docs/reference/api/
+
+# Windows artefacts beside the test binary
+
 test/test.exp
 test/test.ilk
 test/test.lib
 test/test.pdb
 test/test.obj
-site/
-.venv-docs/
-*.bc
-build/
-docs/reference/api/
-examples/*/*.dSYM/
+
+# Each example builds a binary named after its own directory, beside its source,
+# so `cd examples/<name> && corral run -- ponyc --debug` leaves it there. They
+# are listed one by one rather than matched with a pattern, because the pattern
+# that would catch them - everything in an example directory without a dot in
+# its name - would also silently ignore a source file that has no extension.
+
+examples/first-representation/first-representation
 examples/in-process-pooler/in-process-pooler
 examples/pooler-learning/pooler-learning
 examples/pooler-training-value/pooler-training-value
 examples/boosting-value/boosting-value
+examples/sequence-training-value/sequence-training-value
 examples/actor-pooler/actor-pooler
 examples/scalar-encoder/scalar-encoder
-examples/first-representation/first-representation
+examples/grid-cells/grid-cells
+examples/document-similarity/document-similarity
 examples/image-similarity/image-similarity
 examples/temporal-memory/temporal-memory
 examples/temporal-memory-on-actors/temporal-memory-on-actors
 examples/anomaly-stream/anomaly-stream
 examples/anomaly-likelihood/anomaly-likelihood
-examples/sequence-training-value/sequence-training-value
-examples/sequence-training-value/*.dSYM/
-examples/grid-cells/grid-cells
-examples/grid-cells/*.dSYM/
-examples/document-similarity/document-similarity
-examples/document-similarity/*.dSYM/
+examples/anomaly-on-actors/anomaly-on-actors

@@ -81,6 +81,8 @@ examples, not a feature of the pipeline.
   the label of the next step
 - Streaming anomaly detection: the share of active columns that had to burst,
   and how unusual that share is given the scores that came before it
+- The same score on the actor path: a pooler, a temporal region, and one actor
+  that joins them into a reading
 - Runnable examples under `examples/`, described in the
   [documentation](https://d-led.github.io/htm.pony/examples/)
 - Two microbenchmarks over one matrix, comparing `row_and_sum` on the dense and

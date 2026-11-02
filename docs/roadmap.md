@@ -29,7 +29,7 @@ pushing messages, with tests that fail when the two disagree.
 | Predictions | done - cells predicting the next step |
 | Classification | done - SDR classifier and prediction classifier |
 | Streaming anomaly score and its likelihood | done, in process |
-| Anomaly detection joined to the actor pipeline | **not done** - both halves exist, nothing joins them |
+| Anomaly detection joined to the actor pipeline | done - `AnomalyStream` joins the pooler and the region |
 | **CLA temporal pooler** | **not ported** - the largest piece left |
 | A graph as one SDR | **not written** |
 | Grid cell encoder | done - a place becomes periodic receptive fields |
@@ -44,11 +44,13 @@ about two thousand lines, and it is what turns a stream of predictions into
 stable, hierarchically pooled representations rather than a burst per step.
 Nothing else in the plan moves forward much until it is there.
 
-**2. Anomaly detection on the actor path.** `StreamingAnomalyDetector` is built
-over the in-process pooler and memory. The actor path has both halves - a `Pooler`
-that learns and a `TemporalRegion` - and nothing joins them into a score. The
-temporal region also has no deadline and no way to be handed new shards, which is
-what the pooler learned first; see [actors](actors.md).
+**2. Anomaly detection on the actor path.** Done: `AnomalyStream` asks the pooler
+for columns, hands them to the temporal region, and scores what comes back, one
+step in flight at a time so that a score is always a statement about the step
+before it. The test holds it to the claim the repository exists for - the same
+steps scored on actors give the scores they give in one process. What the region
+still lacks is a deadline and a way to be handed new shards, which the pooler
+learned first; see [actors](actors.md).
 
 **3. The date encoder, upgraded.** Done: the encoder writes day of week, weekend,
 time of day and holidays beside the season, against the reference's own expected

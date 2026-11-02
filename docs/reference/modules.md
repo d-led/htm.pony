@@ -254,6 +254,17 @@ model.
 
 Tests: `test/anomaly_test.pony`.
 
+### `anomaly_stream.pony`
+
+`AnomalyStream` - the same score on the actor path: it asks a `Pooler` for the
+columns of an input, hands them to a `TemporalRegion`, and answers the caller with
+the share of them the memory did not predict, together with the likelihood of that
+score. `AnomalyObserver` is what a caller implements to be answered; `AnomalyStep`
+is one input waiting its turn. One step is in flight at a time, because a score is
+a statement about the step before it.
+
+Tests: `test/anomaly_stream_test.pony`.
+
 ### `anomaly_likelihood.pony`
 
 `AnomalyLikelihood` - a raw anomaly score read against the scores that came

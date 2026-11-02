@@ -524,3 +524,40 @@ Nothing here knows what a word means, and the encoder is not trying to learn it.
 What it knows is which words a document has, and that is enough for the two things
 this kind of encoding is for: finding near-duplicate documents, and giving a
 spatial pooler a representation whose overlap carries similarity.
+
+## The same score, on actors
+
+`examples/anomaly-on-actors/main.pony` is the `anomaly-stream` example run through
+the actor path: a pooler that turns an input into columns, a temporal region that
+learns the order they arrive in, and one actor that joins them into a reading.
+
+```
+forty rounds of a b c, then d, scored through the actors
+
+step input  score
+1    a      ############  1
+2    b      ############  1
+3    c      ############  1
+4    a      ############  1
+5    b      ............  0
+6    c      ............  0
+10   a      ............  0
+...
+120  c      ............  0
+121  d      ##########..  0.833333
+
+the score falls as the pattern is learned and jumps when the pattern breaks
+the likelihood of each score comes with it; it needs a long stream whose scores
+vary before it says anything
+```
+
+Nothing has been seen at the start, so every column bursts and every score is one.
+Four steps are enough for the pattern to be learned and the score falls to zero.
+The last step shares one column with what the memory expected, which is why it is
+five sixths rather than one.
+
+The reading arrives as a message, like every other answer on this path: the actor
+that asked is told the score and its likelihood when both halves of the pipeline
+have answered, so no caller ever sees half a step. The test beside it makes the
+claim this repository exists for - the same twenty-five steps scored on actors give
+exactly the scores they give in one process.

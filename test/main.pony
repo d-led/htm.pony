@@ -13,6 +13,7 @@ actor Main is TestList
     DateEncodingTest.tests(test)
     GridCellEncodingTest.tests(test)
     SimHashEncodingTest.tests(test)
+    AnomalyStreamTest.tests(test)
     TopologyTest.tests(test)
     ColumnTest.tests(test)
     InhibitionTest.tests(test)
