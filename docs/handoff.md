@@ -183,12 +183,23 @@ It was written for a stream of labels whose number is not known; the closed-set
 `CategoryEncoder` stays as it is, and the two encodings are deliberately not
 comparable - they disagree about whether two labels may share a bit.
 
-### 6. A graph as one SDR
+### 6. A graph as one SDR — done, as a design
 
-A graph — nodes and the edges between them — encoded as a single representation. Nothing
-does this here and nothing in the references does it either, so it is design work, not a
-port. Two encoders that were originally mistaken for it (grid cells, SimHash) are done and
-are not it.
+`GraphEncoder` in `htm/encoders/` with `GraphEdge` beside it. Three decisions,
+all written down where a reader meets them: a node is a category (open-set
+encoder, so a node met anywhere keeps its bits); an edge is its two nodes with the
+arriving one shifted past the node width, which makes direction part of the edge
+rather than a flag beside it; a graph is the union of its edges' positions,
+optionally cut to a cap.
+
+The union is the decision worth arguing about - it loses multiplicity and lets a
+dense region dominate - but keeping edges apart would be a set of
+representations, which a pooler cannot consume.
+
+Node bits are drawn at random, so two unrelated nodes may share one and unrelated
+graphs overlap by a position or two. Sharing an edge is a much larger overlap,
+and that is what the tests state. Grid cells and SimHash were once mistaken for
+this; they are not it.
 
 ### 7. Smaller, already-diagnosed
 

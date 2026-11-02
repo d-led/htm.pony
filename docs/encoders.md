@@ -1,7 +1,7 @@
 # Encoders
 
-Seven encoders are implemented: scalar, date, no-op, category, open-set
-category, random distributed scalar, and image. The scalar, date, no-op and
+Eight encoders are implemented: scalar, date, no-op, category, open-set
+category, random distributed scalar, graph, and image. The scalar, date, no-op and
 category encoders report failure as `EncodingFailed` rather than raising; the
 open-set category encoder and the other two are partial functions.
 
@@ -201,6 +201,35 @@ they do not agree on whether two categories may share a bit.
 `bits` defaults to two percent of the width, the density `htm.core` uses for the
 same encoder, and the draw is seeded, so the same labels met in the same order
 give the same encodings.
+
+## Graph encoder
+
+`GraphEncoder` turns a graph - nodes and the edges between them - into one
+representation. Nothing in the references does this, so it is a design rather
+than a port:
+
+```pony
+let encoder = GraphEncoder(256, 8, 128)?   // node width, bits per node, cap
+
+let edges = recover val [GraphEdge("a", "b"); GraphEdge("b", "c")] end
+let graph = encoder.encode(edges)
+```
+
+Three decisions make it up. A node is a category, so a node met anywhere keeps
+the bits it had. An edge is its two nodes concatenated with the arriving one
+shifted past the node width, which makes direction part of the edge: `a -> b` and
+`b -> a` are different representations. A graph is the union of its edges'
+positions, optionally cut to a cap, so the order the edges are listed in cannot
+matter and two graphs that share an edge share its bits.
+
+The union is the decision worth arguing about. It loses multiplicity, and a
+dense region of a graph can dominate the representation. Keeping the edges apart
+would be a *set* of representations, which is not one representation and not
+something a pooler can consume.
+
+Node bits are drawn at random, so two unrelated nodes may share one: a graph that
+has nothing to do with another still overlaps it by a position or two. Sharing an
+edge is a much larger overlap than that, which is what the encoder is for.
 
 ## Random distributed encoder
 

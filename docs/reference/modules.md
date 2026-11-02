@@ -570,6 +570,18 @@ constructor cannot call its own methods.
 
 Tests: `test/sdr_category_encoder_test.pony`.
 
+### `graph_encoder.pony`
+
+`GraphEdge` (value) - one edge, direction included.
+
+`GraphEncoder` - a graph as one representation: a node is a category, an edge is
+its two nodes with the arriving one shifted past the node width, and a graph is
+the union of its edges, optionally cut to a cap. Design rather than port - no
+reference does this - and the union (rather than a set of edge representations)
+is the decision it rests on.
+
+Tests: `test/graph_encoder_test.pony`.
+
 ### `random_distributed_scalar.pony`
 
 `RandomDistributedScalarEncoder` - a real number into a random-looking set of
