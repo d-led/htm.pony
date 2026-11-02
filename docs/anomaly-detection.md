@@ -139,5 +139,6 @@ the estimate, so it is not here.
 - **No classification.** The third piece of the pipeline — learning which label
   a predicted state corresponds to — is not written here, though the [SDR
   classifier](classification.md) does that part on its own.
-- **Learning on actors.** The columns learn in process, so the whole pipeline is
-  in process.
+- **A detector on actors.** `StreamingAnomalyDetector` is built over the
+  in-process pooler and memory. The actor path has both halves — a `Pooler` that
+  learns and a `TemporalRegion` — but nothing joins them into a streaming score.
