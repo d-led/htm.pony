@@ -489,9 +489,30 @@ Tests: `test/image_encoder_test.pony`.
 
 ### `image_encoder.pony`
 
-`ImageEncoder` - a picture, or a fingerprint of one, into a representation.
+`ImageEncoder` (value) — a picture, or a fingerprint of one, into a
+representation. It is a value rather than a reference so that one can be built
+once and handed to an actor; the positions it draws are its whole state and
+nothing moves them.
 
 Tests: `test/image_encoder_test.pony`.
+
+### `picture_encoder.pony`
+
+`PictureSink` (interface) and `PictureEncoder` (actor) — the picture pipeline as
+an actor: bytes in one message, and either a fingerprint with the bits it makes,
+or a refusal, in another.
+
+| Member | Signature | What it does |
+| --- | --- | --- |
+| `create` | `new create(encoder: ImageEncoder val)` | takes an encoder already drawn, because an actor constructor cannot fail and `ImageEncoder` can |
+| `picture` | `be picture(bytes: Array[U8] val, asker: PictureSink tag)` | decodes, fingerprints and encodes one picture, then answers |
+
+One of these is the minimum; more of them is a fan-out over pictures in flight.
+They are not sized to scheduler threads — Pony multiplexes many actors onto a
+thread — but each one that is inside `stb_image` occupies a thread while it is
+in there, so N at once needs N threads to run on.
+
+Tests: `test/picture_encoder_test.pony`.
 
 ### `stb/stb_decoder.pony`
 

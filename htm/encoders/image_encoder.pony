@@ -1,10 +1,13 @@
 use "random"
 use "collections"
 
-class ImageEncoder
+class val ImageEncoder
   """
   Turns a picture into a sparse representation, so that similar pictures give
   overlapping ones.
+
+  A value, so it can be built once and handed to whatever actor does the work -
+  the positions it draws are its whole state and nothing moves them.
 
   A fingerprint on its own is not a representation. It is about half set bits,
   it is far too short to fill a column population, and two fingerprints that
@@ -25,7 +28,7 @@ class ImageEncoder
   let params: ImageEncoderParams val
   let _positions: Array[USize] val
 
-  new create(params': ImageEncoderParams val) ? =>
+  new val create(params': ImageEncoderParams val) ? =>
     if params'.bits == 0 then error end
     if params'.width < params'.bits then error end
 
