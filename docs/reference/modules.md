@@ -69,6 +69,10 @@ because an actor constructor has no way to report a partial result.
 | `create` | `new create(synapses': ReadSeq[Synapse])` | copies the synapses in |
 | `synapses` | `embed synapses: Array[Synapse]` | the connections |
 | `overlap` | `fun overlap(active: ReadSeq[Bool], connection_threshold: F64): USize ?` | raises when a synapse reaches outside the input |
+| `adapt` | `fun ref adapt(active: ReadSeq[Bool], strengthen_by: F64, weaken_by: F64)` | moves every permanence towards the input it sees, or away from it |
+| `ensure_connected` | `fun ref ensure_connected(stimulus_threshold: USize, connection_threshold: F64, stride: F64)` | raises the whole receptive field until enough synapses are connected |
+| `strengthen_all` | `fun ref strengthen_all(by: F64)` | raises every permanence, staying inside 0 and 1 |
+| `trim` | `fun ref trim(below: F64)` | lets go of the connections weaker than `below`, keeping the synapse at zero |
 
 Tests: `test/column_test.pony`.
 
@@ -91,10 +95,12 @@ Tests: `test/inhibition_test.pony`.
 
 | Member | Signature | What it does |
 | --- | --- | --- |
-| `create` | `new val create(column_dimensions: Array[USize] val, input_dimensions: Array[USize] val, global_inhibition: Bool = false, num_active_columns_per_inh_area: F64 = 10.0, local_area_density: F64 = -1.0, potential_radius: USize = 16, potential_pct: F64 = 0.5, connection_threshold: F64 = 0.1, permanence_increment: F64 = 0.1, inhibition_radius: USize = 1)` | |
+| `create` | `new val create(column_dimensions: Array[USize] val, input_dimensions: Array[USize] val, global_inhibition: Bool = false, num_active_columns_per_inh_area: F64 = 10.0, local_area_density: F64 = -1.0, potential_radius: USize = 16, potential_pct: F64 = 0.5, connection_threshold: F64 = 0.1, permanence_increment: F64 = 0.1, inhibition_radius: USize = 1, permanence_decrement: F64 = 0.01, stimulus_threshold: USize = 0, duty_cycle_period: USize = 1000, max_boost: F64 = 10.0, min_overlap_duty_cycle: F64 = 0.001, min_active_duty_cycle: F64 = 0.001)` | |
 | `num_columns` | `fun num_columns(): USize` | cells in the column grid |
 | `num_inputs` | `fun num_inputs(): USize` | cells in the input |
 | `density` | `fun density(radius: USize): F64` | the share of an inhibition area that may stay active, capped at one half |
+| `trim_threshold` | `fun trim_threshold(): F64` | the permanence below which a connection is let go of |
+| `raise_stride` | `fun raise_stride(): F64` | how much a column raises its permanences when it cannot be heard |
 
 Tests: `test/spatial_pooler_config_test.pony`.
 
@@ -114,7 +120,8 @@ Tests: `test/spatial_pooler_config_test.pony`.
 | --- | --- | --- |
 | `create` | `new create(config: SpatialPoolerConfig, seed: U64 = 42) ?` | wires every column |
 | `size` | `fun size(): USize` | how many columns |
-| `compute` | `fun compute(input: ReadSeq[Bool]): Array[USize] ?` | the columns that represent the input |
+| `compute` | `fun ref compute(input: ReadSeq[Bool], learn: Bool = false): Array[USize] ?` | the columns that represent the input, and with `learn` the change that input makes |
+| `boost_factor` | `fun box boost_factor(column: USize): F64 ?` | how much the column's claim is multiplied by while learning |
 | `columns` | `let columns: Array[Column]` | the wired columns |
 | `config` | `let config: SpatialPoolerConfig` | the settings it was built with |
 
