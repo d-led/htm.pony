@@ -1,12 +1,13 @@
 # Modules
 
-Every file in the repository, with its types, its public members, and what state
-it is in. Private members, those whose names begin with an underscore, are left
-out.
+Every file in the repository and what it is for; where a test file exercises it,
+the section names that file. Where a type's surface is worth naming here as well
+- because the meanings of its fields are what a reader has to get right - a table
+follows.
 
 This page is written by hand and says what each module is *for*. The
-[API reference](api/index.md) is generated from the source and says exactly what
-each type declares.
+[API reference](api/index.md) is generated from the source and lists every
+declared member of every type, so it is the one to trust for a signature.
 
 A member that can fail to produce a value is marked with `?`, which is how Pony
 declares a partial function. A constructor marked `?` raises instead of
@@ -59,6 +60,8 @@ because an actor constructor has no way to report a partial result.
 | --- | --- | --- |
 | `overlap` | `fun overlap(synapses: ReadSeq[Synapse], active: ReadSeq[Bool], threshold: F64): USize` | active inputs seen by connected synapses, skipping any synapse outside the input |
 | `fits` | `fun fits(synapses: ReadSeq[Synapse], width: USize): Bool` | whether every synapse reaches inside an input of this width |
+
+Tests: covered through `test/column_test.pony`.
 
 ### `column.pony`
 
@@ -184,6 +187,8 @@ Tests: `test/pooler_test.pony`, `test/pooler_learning_test.pony`.
 
 `SetOk`, `SetFailed`, and `MatrixResult` — the result of writing to a matrix.
 
+Tests: covered through the two matrix test files.
+
 ### `dense_binary_matrix.pony`
 
 `DenseBinaryMatrix` — one `Bool` per cell.
@@ -211,6 +216,128 @@ matrix, with the same signatures.
 
 Tests: `test/sparse_binary_matrix_test.pony`.
 
+### `column_learning.pony`
+
+`ColumnLearning` - what a pooler remembers about how its columns have been doing:
+two moving averages per column, which columns are starving, and how hard to push
+them. None of it touches a column's synapses. It decides, and the driver does.
+
+Tests: `test/column_learning_test.pony`.
+
+### `streaming_anomaly_detector.pony`
+
+`StreamingAnomalyDetector` - one input in, one anomaly score out: the pooler turns
+the input into columns, the memory learns the order they arrive in, and the score
+is the share of this step's columns the memory did not expect. Learning and
+scoring happen in the same pass, so there is no training phase and no frozen
+model.
+
+Tests: `test/anomaly_test.pony`.
+
+### `anomaly_likelihood.pony`
+
+`AnomalyLikelihood` - a raw anomaly score read against the scores that came
+before it, as a probability. A score of 0.5 means nothing on its own; what the
+likelihood adds is whether that is ordinary for this stream.
+
+Tests: `test/anomaly_likelihood_test.pony`.
+
+### `normal.pony`
+
+`Normal` - the distribution the likelihood fits to a window of scores: a mean and
+a spread taken from samples, and the probability of seeing a value at least this
+far out.
+
+Tests: covered through `AnomalyLikelihood`.
+
+### `sdr_classifier.pony`
+
+`SDRClassifier` - probabilities over categories for a sparse set of active bits,
+learned one step at a time.
+
+Tests: `test/sdr_classifier_test.pony`.
+
+### `prediction_classifier.pony`
+
+`PredictionClassifier` - the label of the next step, learned from what a memory
+predicted and what then happened.
+
+Tests: `test/prediction_classifier_test.pony`.
+
+### `temporal_memory_params.pony`
+
+`TemporalMemoryParams` - the shape of a temporal memory and how strictly it
+predicts: columns, cells per column, the activation and connection thresholds,
+the permanence steps, and the two limits that stop a cell growing without bound.
+
+Tests: covered through `test/temporal_memory_test.pony`.
+
+### `temporal_synapse.pony`
+
+`TemporalSynapse` - one cell's connection to another, and the permanence that
+decides whether the connection counts.
+
+Tests: covered through `test/temporal_memory_test.pony`.
+
+### `temporal_segment.pony`
+
+`TemporalSegment` - the set of cells whose activity makes a segment predict. It
+matches the previous step, moves towards or away from it, takes new cells when it
+is too small to fire, and drops the connections that stopped mattering.
+
+Tests: covered through `test/temporal_memory_test.pony`.
+
+### `temporal_column.pony`
+
+`ColumnStep` (value) - which of a column's cells a step activated, and whether the
+column had to burst.
+
+`TemporalColumn` - one column's own segments, and the three things a step asks of
+it: which cells it has, which cells it predicts, and what it does with the
+columns that are active now.
+
+Tests: covered through `test/temporal_memory_test.pony`.
+
+### `temporal_memory.pony`
+
+`TemporalMemory` - the in-process driver over a population of `TemporalColumn`s.
+One step in, one `TemporalOutput` out.
+
+Tests: `test/temporal_memory_test.pony`.
+
+### `temporal_output.pony`
+
+`TemporalOutput` (value) - what one step produced: the cells that fired, the cells
+it expects next, and the columns that burst. The derived forms -
+`active_columns`, `predicted_columns` and `anomaly` - are what a caller usually
+wants, since a cell number means little without the shape to read it against.
+
+Tests: covered through `TemporalMemory`.
+
+### `temporal_shard.pony`
+
+`TemporalSink` (interface) - where a shard reports.
+
+`TemporalColumnShard` (actor) - a band of temporal columns that share one actor.
+It answers twice per round, and has to: a prediction is about a state that
+includes what every column did.
+
+Tests: covered through `TemporalRegion`.
+
+### `temporal_region.pony`
+
+`TemporalObserver` (interface) - whoever asked a region for a step.
+
+`TemporalRequest` (value) - one step waiting to be run.
+
+`TemporalRegion` (actor) - temporal memory arranged as actors. A round is two
+passes over the shards, activate then predict, and the asker hears back only when
+both are in.
+
+`TemporalShards` (primitive) - cutting a population into bands of a given width.
+
+Tests: `test/temporal_region_test.pony`.
+
 ## The encoders, `htm/encoders/`
 
 ### `encoder_interfaces.pony`
@@ -219,12 +346,16 @@ Tests: `test/sparse_binary_matrix_test.pony`.
 scalar encoder implements: `noop()`, `encode(input, learn_unused)`,
 `encode_at_pos(input, learn_unused, output, pos)`.
 
+Tests: covered through the encoders that implement it.
+
 ### `scalar_encoder_params.pony`
 
 `N`, `Radius`, `Resolution` and `ScalarOutputType` name which of the three sizes
 was given. `ScalarEncoderParams` (value) carries `width`, `min_val`, `max_val`,
 `periodic`, `output_type`, `range`, `resolution`, `name`, `radius`,
 `clip_input`, `verbosity`, `n`.
+
+Tests: `test/scalar_encoder_test.pony`.
 
 ### `scalar_encoder.pony`
 
@@ -248,12 +379,16 @@ Tests: `test/scalar_encoder_test.pony`.
 
 `ScalarRange` (value) — `left` and `right`, with `eq`, `ne` and `string`.
 
+Tests: `test/scalar_encoder_test.pony`.
+
 ### `date_encoder_params.pony`
 
 `HolidayMonthDay` — a `(month, day)` pair. `DateEncoderParams` (value) carries
 `holiday_width`, `holiday_radius`, `season_width`, `season_radius`,
 `day_of_week_width`, `day_of_week_radius`, `weekend_width`, `weekend_radius`,
 `time_of_day_width`, `time_of_day_radius`, `name`, `holidays`.
+
+Tests: `test/date_encoder_test.pony`.
 
 ### `date_encoder.pony`
 
@@ -278,6 +413,72 @@ encoding; the comparison of the full vector is commented out.
 
 `NoOpScalarEncoder` — `noop()` is true, `encode_at_pos` writes nothing, and
 `encode` returns `EncodingFailed` on purpose.
+
+### `category_encoder.pony`
+
+`CategoryEncoder` (value) - one block of bits per label, with no overlap between
+labels, and the block read back to the label it came from.
+
+Tests: `test/category_encoder_test.pony`.
+
+### `random_distributed_scalar.pony`
+
+`RandomDistributedScalarEncoder` - a real number into a random-looking set of
+bits whose overlap carries the distance, without a range having to be known first.
+The bits come from this library's generator, so an encoding is reproducible here
+and nowhere else.
+
+Tests: `test/random_distributed_scalar_test.pony`.
+
+### `grayscale_image.pony`
+
+`GrayscaleImage` (value) - the picture both image steps work on: width, height,
+and one brightness per pixel.
+
+Tests: covered through `test/image_encoder_test.pony`.
+
+### `image_decoder.pony`
+
+`ImageDecoder` (interface) and `DecodeFailed` - what a file decoder must provide,
+so that the encoder never learns a file format.
+
+Tests: covered through `test/stb_decoder_test.pony`.
+
+### `image_encoder_params.pony`
+
+`ImageEncoderParams` (value) - the shape of an image representation: how many
+positions it has, how many bits the fingerprint has, and the seed that decides
+which positions each bit owns.
+
+Tests: `test/image_encoder_test.pony`.
+
+### `difference_hash.pony`
+
+`DifferenceHash` - a picture's fingerprint: which neighbouring pixels are
+brighter than which, which is why scale and brightness leave it unchanged.
+
+Tests: covered through `test/stb_decoder_test.pony`.
+
+### `image_fingerprint.pony`
+
+`ImageFingerprint` (value) - a picture reduced to one bit per comparison, in a
+fixed order, ready to be encoded. The size is not fixed: difference hashing gives
+64 bits and a stronger hash can give more.
+
+Tests: `test/image_encoder_test.pony`.
+
+### `image_encoder.pony`
+
+`ImageEncoder` - a picture, or a fingerprint of one, into a representation.
+
+Tests: `test/image_encoder_test.pony`.
+
+### `stb/stb_decoder.pony`
+
+`StbDecoder` (primitive) - an `ImageDecoder` over [stb_image](https://github.com/nothings/stb),
+which reads PNG, JPEG, BMP and GIF. It is the one place a file format is named.
+
+Tests: `test/stb_decoder_test.pony`.
 
 ## Utilities, `htm/util/`
 
