@@ -51,9 +51,12 @@ the shared-bit count beside each.
 | You have | Use |
 | --- | --- |
 | A number in a known range | `ScalarEncoder` |
+| A number with no range to start from | `RandomDistributedScalarEncoder` |
 | A timestamp | `DateEncoder` |
-| A category, an image, a set of ids, a graph | Nothing yet |
+| A category | `CategoryEncoder` |
+| A picture | `ImageEncoder` |
+| A set of ids, a graph | Nothing yet |
 
-The category encoder, the random distributed scalar encoder, and the image and
-graph encoders are not written. [Encoders](../encoders.md) says what each
-missing one would need.
+A set of ids and a graph have no encoder here. [Encoders](../encoders.md) says
+what a graph encoder would need, and why there is no answer in the reference
+implementations.

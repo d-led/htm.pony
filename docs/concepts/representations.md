@@ -71,5 +71,4 @@ shorter one would leave part of each row unread and report a quiet zero.
 
 There is no rolling SDR, no union or intersection primitive, and no compressed
 bit representation. A caller that wants to combine two representations writes
-the loop, or uses `BoolArray`. The temporal memory, when it is written, will
-need activation state per cell, which none of these types provide yet.
+the loop, or uses `BoolArray`.

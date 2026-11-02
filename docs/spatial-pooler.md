@@ -300,8 +300,7 @@ accident; the boost mechanism is the gentler half of the same idea.
 
 ## What is not here
 
-A temporal memory can now be put on top of the pooler, and reading this page's
-permanences is how you would see what it learned. What is missing is the rest of
-the representation side - the category and RDSE encoders - and any measurement of
-whether a trained pooler is better than a wired one at a task; that is the
-benchmark that does not exist yet.
+A temporal memory can be put on top of the pooler, and reading this page's
+permanences is how you would see what it learned. What is missing is a graph
+encoder, and any measurement of whether a trained pooler is better than a wired
+one at a task: that benchmark does not exist yet.

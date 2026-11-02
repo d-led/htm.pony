@@ -227,13 +227,11 @@ agree, which is the only reason to believe the split.
 
 ## What is missing
 
-- No retry when a shard does not answer, and no way to tell a slow shard from a
-  dead one. A deadline closes the round on the votes that arrived, so a late
-  shard costs accuracy rather than the answer, but the pooler cannot report that
-  a shard is missing.
+- No supervision. A shard that has crashed and one that is merely slow look the
+  same to the pooler: with a deadline the round closes on the votes that arrived,
+  but nothing says which columns were missing, and nothing retries them.
 - No way to add or remove a shard while the pooler is running.
-- No supervision: an actor that crashes is gone, and the pooler waits.
 - One pooler is one coordinator. Two poolers over the same shards would each
   start their own rounds.
-- The temporal region inherits the same gaps: no deadline, no retry, no
-  supervision, and one region per set of shards.
+- The temporal region inherits the same gaps, and one more: a region waits for
+  every shard on both passes, because a prediction needs all of them.

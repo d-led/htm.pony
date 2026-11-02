@@ -215,8 +215,9 @@ brighter          10        0         18       18
 a different one   16        22        23       9
 ```
 
-The pictures are built in code rather than read from a file, because reading a
-file needs a decoder and Pony has none yet.
+The pictures are built in code rather than read from a file, because the example
+is about the encoder rather than the file format. `StbDecoder` covers PNG, JPEG,
+BMP and GIF when a picture comes from a file.
 
 ## Anomaly detection
 

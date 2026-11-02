@@ -1,7 +1,8 @@
 # Encoders
 
-Two encoders are implemented: scalar and date. Both produce `Array[Bool]` and
-both report failure as `EncodingFailed` rather than raising.
+Six encoders are implemented: scalar, date, no-op, category, random distributed
+scalar, and image. The scalar, date, no-op and category encoders report failure
+as `EncodingFailed` rather than raising; the other two are partial functions.
 
 ## Scalar encoder
 

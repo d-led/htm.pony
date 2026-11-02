@@ -77,8 +77,9 @@ Zero means everything that happened was expected. One means nothing was.
 
 ## What is not here
 
-- **Actors.** The memory is a plain object. Running it on actors, the way the
-  spatial pooler already does, has not been done.
+- **A deadline on a region.** A step ends only when every shard has answered both
+  passes, so a shard that never answers holds it open. A pooler's round takes a
+  deadline; a region does not.
 - **Segment reuse over long runs.** A column that keeps bursting and never
   matches grows a new segment until it hits `max_segments_per_cell`, and then
   stops learning.
