@@ -357,6 +357,31 @@ damage, where it was 0.131 against 0.153 - while the claim the study exists for
 (which of the two watchers follows the sequence better) is as weak as it was;
 `docs/examples.md` says so in place. `pooler-settings-value` did not move.
 
+### 9. What the same audit found beside the winner cells
+
+Comparing `temporalMemory.go` with the port function by function after the winner
+cell fix, three differences are left, and none of them showed a defect:
+
+- **`LearningRadius` is never read.** The reference declares it, defaults it to
+  2048, and uses it nowhere. Dropped here, the same way the pooler's `burnIn`
+  was: a field a reader would have to keep in their head for nothing.
+- **`pickCellsToLearnOn` shuffles the winners and takes a random few.** Here the
+  winners are taken in order up to `max_synapses`. Deliberate: the reference
+  shuffles with the global `rand` source, which is not seeded from `params.Seed`,
+  so its own answer is not reproducible - and this repository pins its studies to
+  exact numbers. Worth revisiting only if a stream shows the in-order choice
+  biasing which cells a segment reaches.
+- **`strengthen` increments any synapse whose source was active**, where the
+  reference's `adaptSegment` increments only the *connected* active ones and
+  decrements everything else. The two agree for a synapse that is connected, which
+  is where a fresh one starts (`initial_permanence` is the connection threshold);
+  they disagree once a punishment has pushed one below the threshold, where this
+  port lets it climb back while its source keeps firing and the reference lets it
+  decay away. **Not measured, and not changed**: a learned sequence is followed at
+  every step with the rule as it is, so there is no symptom to fix. If somebody
+  wants this port to match the reference to the letter, this is the one place it
+  does not, and the two studies will move when it does.
+
 ## Decisions already made — do not reverse them silently
 
 - **Licence: MPL-2.0.** The Go reference is MIT and is named in the README. `htm.core` and
