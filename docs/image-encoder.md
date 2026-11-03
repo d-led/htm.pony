@@ -61,6 +61,35 @@ a different one   16        22        23       9
 Size and brightness change nothing. The different picture disagrees on 22 of 64
 fingerprint bits and survives as 9 shared columns out of 23.
 
+## Measured on a corpus of real photographs
+
+Four pictures built in code say the hash does the two things it was designed to
+do. They do not say whether it can tell pictures of one thing from pictures of
+another, which is the question that decides whether it is worth keeping.
+
+[`examples/image-retrieval`](examples.md#does-the-representation-find-pictures-of-the-same-kind)
+asks it of imagenette, ten classes of real photographs. No corpus is stored in
+this repository: `scripts/fetch-images.sh` downloads one into the ignored
+`data/` directory, and the example reads whatever directory of class
+directories it is given, so a corpus of your own is measured by the same code.
+
+The answer, on 300 pictures and 300 queries:
+
+```
+                                this corpus by chance
+nearest is a classmate          17.3%       9.7%
+a classmate in the first five   60.0%       40.2%
+mean distance, own class        31.2
+mean distance, other classes    31.7
+```
+
+Nearly twice the chance rate is a real signal and not retrieval. Both mean
+distances sit near thirty-two of sixty-four bits, which is what two unrelated
+fingerprints look like, so the ranking does not come from classmates being
+close. A difference hash keeps the coarse run of brightness across nine cells
+and throws the rest away; that is why size and brightness cannot move it, and
+also why it cannot tell a golf ball from a gas pump.
+
 ## What it does not survive
 
 - **Cropping.** Moving the frame changes which cells fall in which of the nine

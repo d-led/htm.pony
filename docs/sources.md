@@ -150,6 +150,7 @@ table is the index to those paragraphs.
 | `grid-cells` | how does a place become cells? | about three quarters of the cells survive a one-unit move, fewer beyond the shortest period |
 | `document-similarity` | how does a document become bits? | sentences that share words share positions; an unrelated one shares almost none |
 | `image-similarity` | does a representation survive scale and brightness? | the first three pictures are identical, the fourth is not |
+| `image-retrieval` | does the representation find pictures of the same class? | well above chance and well short of retrieval: 17.3% against 9.7%, on imagenette, a corpus the fetch script downloads |
 | `temporal-memory` | does the memory predict what follows? | a predicted column activates one cell instead of bursting |
 | `temporal-memory-on-actors` | does the sharded memory answer the same? | every step agrees with the in-process one |
 | `temporal-pooler` | what does pooling add? | the forecast three steps out names the patterns that follow, and asking changes nothing |

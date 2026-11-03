@@ -542,6 +542,54 @@ The pictures are built in code rather than read from a file, because the example
 is about the encoder rather than the file format. `StbDecoder` covers PNG, JPEG,
 BMP and GIF when a picture comes from a file.
 
+## Does the representation find pictures of the same kind?
+
+`examples/image-retrieval/main.pony` asks the question the four-picture example
+cannot: on a corpus of real photographs, filed one directory per class, does the
+nearest neighbour of a picture share its class?
+
+No corpus is stored here. `scripts/fetch-images.sh` downloads imagenette - ten
+classes of real photographs, one directory per class, Apache-2.0, about 100 MB -
+into the ignored `data/` directory, and the example then runs in about a second:
+
+```
+../../data/imagenette2-160/train
+classes     10, up to 30 pictures each
+pictures    300, 0 refused
+read        443 pictures/s (decode + fingerprint)
+encoded     614597 pictures/s (256 positions each)
+
+                    own class   other classes
+mean distance       31.2        31.7
+
+                                this corpus by chance
+nearest is a classmate          17.3%       9.7%
+a classmate in the first five   60.0%       40.2%
+pictures before a classmate     6.1
+queries                         300
+```
+
+Read against the chance level beside it, that is the honest answer for a
+sixty-four bit difference hash: it finds the class nearly twice as often as
+guessing does, and not often enough to call it retrieval. Both mean distances
+sit near thirty-two of sixty-four bits, which is what two unrelated fingerprints
+look like - so the ranking, such as it is, does not come from the fingerprint
+being close for classmates.
+
+That is the measurement the [roadmap](roadmap.md) asked for before choosing a
+hash: a difference hash keeps the coarse run of brightness across nine cells and
+forgets everything else, which is enough to ignore size and brightness (see
+[Picture similarity](#picture-similarity)) and too little to tell a golf ball
+from a gas pump. A perceptual hash built for the job - PDQ, the 256-bit one used
+for near-duplicate detection - would replace `DifferenceHash` behind
+`ImageFingerprint` without the encoder or this benchmark noticing.
+
+Anything of your own can be measured instead by passing a directory of class
+directories, or setting `HTM_PONY_IMAGES`; the reader takes `.jpeg`, `.jpg`,
+`.png`, `.bmp` and `.gif`, counts files it cannot decode rather than stopping,
+and reads class and picture names in order so the numbers are the corpus's
+rather than the filesystem's.
+
 ## Anomaly detection
 
 `examples/anomaly-stream/main.pony` streams three repeating inputs and then one
