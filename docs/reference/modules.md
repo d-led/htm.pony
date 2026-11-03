@@ -332,8 +332,11 @@ Tests: covered through `test/temporal_memory_test.pony`.
 
 ### `temporal_column.pony`
 
-`ColumnStep` (value) - which of a column's cells a step activated, and whether the
-column had to burst.
+`ColumnStep` (value) - which of a column's cells a step activated, which of them
+won, and whether the column had to burst. The winner is one cell an active
+column: the predicted cell when the column was predicted, the cell whose segment
+came closest when it burst. The next step grows its synapses to the winners, which
+is what keeps a segment reaching the cells that will be active next time.
 
 `TemporalColumn` - one column's own segments, and the three things a step asks of
 it: which cells it has, which cells it predicts, and what it does with the
@@ -344,7 +347,9 @@ Tests: covered through `test/temporal_memory_test.pony`.
 ### `temporal_memory.pony`
 
 `TemporalMemory` - the in-process driver over a population of `TemporalColumn`s.
-One step in, one `TemporalOutput` out.
+One step in, one `TemporalOutput` out. It keeps the previous step's active cells
+and its winners, because a column learns from both: what was active decides which
+synapses are right, and who won decides which cells new synapses go to.
 
 Tests: `test/temporal_memory_test.pony`.
 
@@ -368,7 +373,10 @@ one round at a time, answering into whatever sink it was handed. The region name
 this and not the shard actor, so a band that never answers can sit behind it.
 
 `TemporalSink` (interface) - what a shard reports into. Each answer names its
-band, which is how a collector tells who answered from who stayed silent.
+band, which is how a collector tells who answered from who stayed silent. An
+activation answer carries the cells it activated, the columns that burst, and the
+winners - the second list is what the region hands back to the bands on the next
+step, since a column learns from the cells that won.
 
 `TemporalColumnShard` (actor) - a band of temporal columns that share one actor.
 It answers one pass per message, and a round is two: a prediction is about a

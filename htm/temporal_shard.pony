@@ -9,7 +9,7 @@ interface TemporalSink
   band that answered from one that stayed silent - and so which ones to ask
   again.
   """
-  be activated(band: USize, cells: Array[USize] val, bursting: Array[USize] val)
+  be activated(band: USize, cells: Array[USize] val, bursting: Array[USize] val, winners: Array[USize] val)
   be predicted(band: USize, cells: Array[USize] val)
 
 interface TemporalBand
@@ -67,11 +67,12 @@ actor TemporalColumnShard is TemporalBand
     else
       let active: Array[USize] iso = recover iso Array[USize] end
       let bursting: Array[USize] iso = recover iso Array[USize] end
+      let winners: Array[USize] iso = recover iso Array[USize] end
 
       for column in _columns.values() do
         let answer = column.activate(
           pass.previous,
-          pass.previous_cells,
+          pass.previous_winners,
           _holds(pass.incoming, column.index),
           pass.learn,
           pass.when)
@@ -79,10 +80,13 @@ actor TemporalColumnShard is TemporalBand
         for cell in answer.cells.values() do
           active.push(cell)
         end
+        for cell in answer.winners.values() do
+          winners.push(cell)
+        end
         if answer.burst then bursting.push(column.index) end
       end
 
-      sink.activated(band, consume active, consume bursting)
+      sink.activated(band, consume active, consume bursting, consume winners)
     end
 
   fun _holds(columns: ReadSeq[USize], column: USize): Bool =>

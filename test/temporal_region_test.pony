@@ -45,7 +45,10 @@ actor LateBand is TemporalBand
       sink.predicted(band, recover val Array[USize] end)
     else
       sink.activated(
-        band, recover val Array[USize] end, recover val Array[USize] end)
+        band,
+        recover val Array[USize] end,
+        recover val Array[USize] end,
+        recover val Array[USize] end)
     end
 
 actor NoCellsObserver is TemporalObserver

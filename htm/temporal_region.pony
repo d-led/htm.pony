@@ -66,6 +66,7 @@ actor TemporalRegion
   var _pending: (Array[TemporalBand tag] val | None) = None
 
   var _previous: Array[Bool] val
+  var _previous_winners: Array[USize] val = recover val Array[USize] end
   var _step: U64 = 0
 
   var _queue: Array[TemporalRequest] = Array[TemporalRequest]
@@ -109,6 +110,7 @@ actor TemporalRegion
     predicting: Bool,
     cells: Array[USize] val,
     bursting: Array[USize] val,
+    winners: Array[USize] val,
     missing: Array[USize] val)
   =>
     """
@@ -123,6 +125,7 @@ actor TemporalRegion
       _bursting = bursting
       _missing = missing
       _previous = _state_of(cells)
+      _previous_winners = winners
       _start_predicting()
     end
 
@@ -150,7 +153,11 @@ actor TemporalRegion
     _predicting = false
 
     let pass = TemporalPass.activating(
-      _previous, _active_cells_of(_previous), request.columns, request.learn, _step)
+      _previous,
+      _previous_winners,
+      request.columns,
+      request.learn,
+      _step)
 
     _ballot =
       TemporalBallot(
@@ -273,6 +280,7 @@ actor TemporalBallot is TemporalSink
 
   let _cells: Set[USize] = Set[USize]
   let _bursting: Set[USize] = Set[USize]
+  let _winners: Set[USize] = Set[USize]
   let _answered: Set[USize] = Set[USize]
   var _retry: USize = 0
   var _decided: Bool = false
@@ -303,11 +311,17 @@ actor TemporalBallot is TemporalSink
 
     if _bands.size() == 0 then _decide() end
 
-  be activated(band: USize, cells: Array[USize] val, bursting: Array[USize] val) =>
+  be activated(
+    band: USize,
+    cells: Array[USize] val,
+    bursting: Array[USize] val,
+    winners: Array[USize] val)
+  =>
     if _decided or _pass.predicting then return end
 
     for cell in cells.values() do _cells.set(cell) end
     for column in bursting.values() do _bursting.set(column) end
+    for cell in winners.values() do _winners.set(cell) end
     _heard(band)
 
   be predicted(band: USize, cells: Array[USize] val) =>
@@ -363,9 +377,11 @@ actor TemporalBallot is TemporalSink
 
     let cells: Array[USize] iso = recover iso Array[USize] end
     let bursting: Array[USize] iso = recover iso Array[USize] end
+    let winners: Array[USize] iso = recover iso Array[USize] end
     var cell: USize = 0
     while cell < _limit do
       if _cells.contains(cell) then cells.push(cell) end
+      if _winners.contains(cell) then winners.push(cell) end
       cell = cell + 1
     end
     var column: USize = 0
@@ -374,7 +390,12 @@ actor TemporalBallot is TemporalSink
       column = column + 1
     end
 
-    _region.passed(_pass.predicting, consume cells, consume bursting, _silent())
+    _region.passed(
+      _pass.predicting,
+      consume cells,
+      consume bursting,
+      consume winners,
+      _silent())
 
   fun _silent(): Array[USize] val =>
     let silent: Array[USize] iso = recover iso Array[USize] end
@@ -393,21 +414,21 @@ class val TemporalPass
   """
   let predicting: Bool
   let previous: Array[Bool] val
-  let previous_cells: Array[USize] val
+  let previous_winners: Array[USize] val
   let incoming: Array[USize] val
   let learn: Bool
   let when: U64
 
   new val activating(
     previous': Array[Bool] val,
-    previous_cells': Array[USize] val,
+    previous_winners': Array[USize] val,
     incoming': Array[USize] val,
     learn': Bool,
     when': U64)
   =>
     predicting = false
     previous = previous'
-    previous_cells = previous_cells'
+    previous_winners = previous_winners'
     incoming = incoming'
     learn = learn'
     when = when'
@@ -415,7 +436,7 @@ class val TemporalPass
   new val predicting_from(previous': Array[Bool] val) =>
     predicting = true
     previous = previous'
-    previous_cells = recover val Array[USize] end
+    previous_winners = recover val Array[USize] end
     incoming = recover val Array[USize] end
     learn = false
     when = 0

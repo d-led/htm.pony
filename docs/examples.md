@@ -246,12 +246,12 @@ it knocks bits out of every symbol and scores the sequence again:
 
 ```
 seed    clean: L  W         1 bit: L  W         2 bits: L  W
-3       0.000     0.019     0.033     0.142     0.072      0.245
-5       0.221     0.000     0.517     0.269     0.555      0.307
-11      0.000     0.000     0.064     0.105     0.146      0.178
-23      0.000     0.000     0.021     0.019     0.380      0.269
-41      0.000     0.000     0.019     0.227     0.096      0.236
-mean    0.044     0.004     0.131     0.153     0.250      0.247
+3       0.000     0.109     0.033     0.154     0.054      0.164
+5       0.221     0.000     0.267     0.073     0.326      0.114
+11      0.000     0.000     0.064     0.056     0.126      0.108
+23      0.000     0.000     0.056     0.019     0.102      0.065
+41      0.000     0.000     0.019     0.108     0.038      0.065
+mean    0.044     0.022     0.088     0.082     0.129      0.103
 ```
 
 `L` is the watcher whose pooler learned, `W` the one whose pooler only looked, and
@@ -263,13 +263,19 @@ watcher scores 0.221 on the clean cycle while the wired one scores nothing, whic
 is the one result here large enough to stand out from the spread.
 
 What is left is not a difference between the two watchers. At one bit of damage
-the learned pooler averages 0.131 against 0.153 and is better on three of five
-seeds; at two bits 0.250 against 0.247, which is nothing. This study used to show
-a clearer benefit - 0.051 against 0.189 at one bit - and that result came from a
-pooler whose ties were broken by column index: with a frozen pooler the same
-low-numbered columns keep winning, which is a stable representation for a memory
-to learn and not a property of learning. Give ties to a nudge instead and the
-advantage disappears into the spread.
+the learned pooler averages 0.088 against 0.082 and is better on two of five
+seeds; at two bits 0.129 against 0.103, which is the wired one ahead. This study
+used to show a clearer benefit - 0.051 against 0.189 at one bit - and that result
+came from a pooler whose ties were broken by column index: with a frozen pooler
+the same low-numbered columns keep winning, which is a stable representation for
+a memory to learn and not a property of learning. Give ties to a nudge instead
+and the advantage disappears into the spread.
+
+The absolute numbers have moved since: both sides now score about half what they
+did, because the memory learned from winner cells rather than from every active
+cell, and a sequence it has learned is followed rather than alternated with
+bursts. The comparison between the two watchers is what this study is for, and it
+has not changed.
 
 The lesson is about the study, not the code: a comparison that rests on one
 mechanism being switched off is worth re-running when the mechanism next to it

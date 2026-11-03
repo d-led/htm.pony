@@ -25,6 +25,7 @@ class TemporalMemory
   let params: TemporalMemoryParams val
   let _columns: Array[TemporalColumn]
   var _previous: Array[Bool]
+  var _previous_winners: Array[USize] val = recover val Array[USize] end
   var _step: U64 = 0
 
   new create(params': TemporalMemoryParams val) =>
@@ -39,7 +40,6 @@ class TemporalMemory
 
     _columns = columns
     _previous = Array[Bool].init(false, params'.cells())
-
   fun cells(): USize => params.cells()
 
   fun ref compute(active_columns: ReadSeq[USize], learn: Bool): TemporalOutput ? =>
@@ -54,7 +54,7 @@ class TemporalMemory
     _step = _step + 1
 
     let previous = _previous
-    let previous_cells = _indexes(previous)
+    let previous_winners = _previous_winners
     let incoming = Set[USize]
     for column in active_columns.values() do
       incoming.set(column)
@@ -62,18 +62,27 @@ class TemporalMemory
 
     let active = Array[Bool].init(false, cells())
     let bursting: Array[USize] iso = recover iso Array[USize] end
+    let winners: Array[USize] iso = recover iso Array[USize] end
 
     for column in _columns.values() do
       let answer = column.activate(
-        previous, previous_cells, incoming.contains(column.index), learn, _step)
+        previous,
+        previous_winners,
+        incoming.contains(column.index),
+        learn,
+        _step)
 
       for cell in answer.cells.values() do
         try active(cell)? = true end
+      end
+      for cell in answer.winners.values() do
+        winners.push(cell)
       end
       if answer.burst then bursting.push(column.index) end
     end
 
     _previous = active
+    _previous_winners = consume winners
 
     let predictive = Array[Bool].init(false, cells())
     for column in _columns.values() do

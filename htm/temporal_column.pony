@@ -2,14 +2,27 @@ use "collections"
 
 class val ColumnStep
   """
-  What one column did in one step: the cells it activated, and whether it had to
-  burst because nothing predicted it.
+  What one column did in one step: the cells it activated, which of them won,
+  and whether it had to burst because nothing predicted it.
+
+  The winner is one cell an active column, and it is a different thing from the
+  cells that are active. A prediction activates the cell whose segment reached;
+  a burst activates every cell and then picks one to be the cell the situation
+  belongs to. The next step learns from the winners, not from every cell that
+  happened to be on - that is what keeps a segment reaching the cells that will
+  be active next time rather than half of them.
   """
   let cells: Array[USize] val
+  let winners: Array[USize] val
   let burst: Bool
 
-  new val create(cells': Array[USize] val, burst': Bool) =>
+  new val create(
+    cells': Array[USize] val,
+    winners': Array[USize] val,
+    burst': Bool)
+  =>
     cells = cells'
+    winners = winners'
     burst = burst'
 
 class TemporalColumn
@@ -78,7 +91,7 @@ class TemporalColumn
 
   fun ref activate(
     previous: ReadSeq[Bool],
-    previous_cells: ReadSeq[USize],
+    previous_winners: ReadSeq[USize],
     active: Bool,
     learn: Bool,
     when: U64): ColumnStep
@@ -92,6 +105,7 @@ class TemporalColumn
     """
     let predicting = _matching(previous)
     var activated: Array[USize] val = recover val Array[USize] end
+    var winners: Array[USize] val = recover val Array[USize] end
     var burst = false
 
     if active then
@@ -99,7 +113,8 @@ class TemporalColumn
 
       if predicted.size() > 0 then
         activated = predicted
-        if learn then _reinforce_predicting(previous, previous_cells, when) end
+        winners = predicted
+        if learn then _reinforce_predicting(previous, previous_winners, when) end
       else
         burst = true
         let everywhere: Array[USize] iso = recover iso Array[USize] end
@@ -107,13 +122,47 @@ class TemporalColumn
           everywhere.push(cell)
         end
         activated = consume everywhere
-        if learn then _learn_burst(previous, previous_cells, when) end
+
+        let chosen = _win(previous, previous_winners, learn, when)
+        let one: Array[USize] iso = recover iso Array[USize] end
+        one.push(chosen)
+        winners = consume one
       end
     end
 
     if learn then _punish(predicting, activated, previous) end
 
-    ColumnStep(activated, burst)
+    ColumnStep(activated, winners, burst)
+
+  fun ref _win(
+    previous: ReadSeq[Bool],
+    previous_winners: ReadSeq[USize],
+    learn: Bool,
+    when: U64): USize
+  =>
+    """
+    Which cell a burst belongs to: the owner of the segment that came closest,
+    or the first cell, where a new segment is grown.
+
+    One cell, not every cell the burst lit up. The next step grows synapses to
+    this cell, so it has to be the cell a prediction will activate again.
+    """
+    match _best_segment(previous)
+    | let segment: TemporalSegment =>
+      if learn then _reinforce(segment, previous, previous_winners, when) end
+      segment.owner
+    | None =>
+      if
+        learn and (_first_cell.size() < _params.max_segments_per_cell)
+      then
+        let segment = TemporalSegment(_cell_at(0))
+        segment.connect_to(
+          previous_winners, _params.initial_permanence, _params.max_synapses)
+        segment.last_used = when
+        _first_cell.push(segment)
+      end
+      _cell_at(0)
+    end
 
   fun _enough(segments: ReadSeq[TemporalSegment], state: ReadSeq[Bool]): Bool =>
     """
@@ -158,7 +207,7 @@ class TemporalColumn
 
   fun ref _reinforce_predicting(
     previous: ReadSeq[Bool],
-    previous_cells: ReadSeq[USize],
+    previous_winners: ReadSeq[USize],
     when: U64)
   =>
     """
@@ -168,7 +217,7 @@ class TemporalColumn
       if _enough(segments, previous) then
         for segment in segments.values() do
           if _reaches(segment, previous) then
-            _reinforce(segment, previous, previous_cells, when)
+            _reinforce(segment, previous, previous_winners, when)
           end
         end
       end
@@ -177,36 +226,24 @@ class TemporalColumn
   fun ref _reinforce(
     segment: TemporalSegment,
     previous: ReadSeq[Bool],
-    previous_cells: ReadSeq[USize],
+    previous_winners: ReadSeq[USize],
     when: U64)
   =>
+    """
+    Keep a segment that was right, and reach towards the cells that won.
+
+    New synapses go to the previous step's winners and not to every cell that was
+    active. A burst lights up every cell of its column, so reaching all of them
+    and then being capped at `max_synapses` would wire the segment to a mix of
+    the two offsets - half of it wrong the moment the state arrives as a
+    prediction rather than a burst.
+    """
     segment.strengthen(
       previous, _params.permanence_increment, _params.permanence_decrement)
     segment.connect_to(
-      previous_cells, _params.initial_permanence, _params.max_synapses)
+      previous_winners, _params.initial_permanence, _params.max_synapses)
     segment.prune()
     segment.last_used = when
-
-  fun ref _learn_burst(
-    previous: ReadSeq[Bool],
-    previous_cells: ReadSeq[USize],
-    when: U64)
-  =>
-    """
-    A column nothing predicted learns the situation that preceded it: on the
-    segment that came closest, or on a new segment of its first cell.
-    """
-    match _best_segment(previous)
-    | let segment: TemporalSegment => _reinforce(segment, previous, previous_cells, when)
-    | None =>
-      if _first_cell.size() < _params.max_segments_per_cell then
-        let segment = TemporalSegment(_cell_at(0))
-        segment.connect_to(
-          previous_cells, _params.initial_permanence, _params.max_synapses)
-        segment.last_used = when
-        _first_cell.push(segment)
-      end
-    end
 
   fun ref _best_segment(previous: ReadSeq[Bool]): (TemporalSegment | None) =>
     var best: (TemporalSegment | None) = None

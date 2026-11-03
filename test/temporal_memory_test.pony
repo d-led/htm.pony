@@ -63,6 +63,7 @@ class TemporalMemoryTest is TestList
     test(_AnUnrelatedColumnIsNotPredicted)
     test(_ASegmentThatPredictsWronglyIsForgotten)
     test(_AColumnOutsideTheMemoryIsRefused)
+    test(_AVeriedCycleIsPredictedEveryStep)
 
 class iso _AFreshMemoryPredictsNothing is UnitTest
   fun name(): String => "a fresh memory predicts nothing"
@@ -196,3 +197,47 @@ class iso _ASegmentNeedsEnoughActiveSynapsesToPredict is UnitTest
 
     h.assert_eq[USize](0, by_patient.predictive_cells.size(),
       "one active synapse is not a prediction when two are needed")
+
+class iso _AVeriedCycleIsPredictedEveryStep is UnitTest
+  fun name(): String =>
+    "a cycle it has learned is predicted at every step, not every other one"
+
+  fun apply(h: TestHelper) ? =>
+    // five patterns of ten columns, two cells each: enough columns that a burst
+    // cannot reach them all with one segment's synapses
+    let shape = TemporalMemoryParams(50, 2, 8, 0.5, 0.5, 0.1, 0.02, 10, 5)
+    let memory = TemporalMemory(shape)
+
+    var epoch: USize = 0
+    while epoch < 10 do
+      var index: USize = 0
+      while index < 5 do
+        memory.compute(_pattern(index), true)?
+        index = index + 1
+      end
+      epoch = epoch + 1
+    end
+
+    var step: USize = 0
+    while step < 10 do
+      let index = step % 5
+      let output = memory.compute(_pattern(index), false)?
+
+      h.assert_eq[USize](0, output.bursting_columns.size(),
+        "nothing bursts at step " + step.string())
+      h.assert_array_eq[USize](
+        _pattern((index + 1) % 5),
+        output.predicted_columns(shape),
+        "step " + step.string() + " predicts what follows")
+      step = step + 1
+    end
+
+  fun _pattern(index: USize): Array[USize] =>
+    let columns = Array[USize](10)
+    let start = index * 10
+    var column: USize = start
+    while column < (start + 10) do
+      columns.push(column)
+      column = column + 1
+    end
+    columns
