@@ -80,51 +80,80 @@ class val Grid
     """
     if flat >= size then error end
 
-    let centre = coords(flat)?
-    let count = _dims.size()
+    let ranges = _ranges(coords(flat)?, radius, wrap_around)?
+    _over_the_product(ranges, flat)?
 
-    let ranges = Array[Array[USize]](count)
+  fun box _ranges(
+    centre: ReadSeq[USize],
+    radius: USize,
+    wrap_around: Bool)
+    : Array[Array[USize]] ?
+  =>
+    """
+    One range per dimension: the cells `radius` steps either side of the centre
+    along that axis, or as many as exist when there is no wrap-around.
+    """
+    let ranges = Array[Array[USize]](_dims.size())
+
     var i: USize = 0
-    while i < count do
+    while i < _dims.size() do
       ranges.push(_axis_range(centre(i)?, _dims(i)?, radius, wrap_around))
       i = i + 1
     end
 
+    ranges
+
+  fun box _over_the_product(ranges: Array[Array[USize]], flat: USize): Array[USize] ? =>
+    """
+    Every cell the ranges enclose, each once and never the centre itself.
+
+    Walked with an odometer: the last dimension advances fastest, as in the Go
+    implementation.
+    """
+    let count = ranges.size()
     let result = Array[USize]
     let seen = Set[USize]
 
-    // Walk the cartesian product of the per-dimension ranges with an odometer:
-    // the last dimension advances fastest, as in the Go implementation.
     let cursor = Array[USize].init(0, count)
     var more = true
     while more do
-      var candidate: USize = 0
-      var d: USize = 0
-      while d < count do
-        candidate = candidate + (ranges(d)?(cursor(d)?)? * _bounds(d)?)
-        d = d + 1
-      end
+      let candidate = _flattened(ranges, cursor)?
 
       if (candidate != flat) and not seen.contains(candidate) then
         seen.set(candidate)
         result.push(candidate)
       end
 
-      more = false
-      var k = count
-      while k > 0 do
-        k = k - 1
-        let next = cursor(k)? + 1
-        if next < ranges(k)?.size() then
-          cursor(k)? = next
-          more = true
-          break
-        end
-        cursor(k)? = 0
-      end
+      more = _advance(ranges, cursor)?
     end
 
     result
+
+  fun box _flattened(ranges: Array[Array[USize]], cursor: Array[USize]): USize ? =>
+    var candidate: USize = 0
+    var d: USize = 0
+    while d < ranges.size() do
+      candidate = candidate + (ranges(d)?(cursor(d)?)? * _bounds(d)?)
+      d = d + 1
+    end
+    candidate
+
+  fun box _advance(ranges: Array[Array[USize]], cursor: Array[USize]): Bool ? =>
+    """
+    Step the odometer on by one, and say whether it is still inside the ranges.
+    """
+    var k = cursor.size()
+    while k > 0 do
+      k = k - 1
+      let next = cursor(k)? + 1
+      if next < ranges(k)?.size() then
+        cursor(k)? = next
+        return true
+      end
+      cursor(k)? = 0
+    end
+
+    false
 
   fun box _axis_range(centre: USize, dimension: USize, radius: USize, wrap_around: Bool): Array[USize] =>
     let range = Array[USize]

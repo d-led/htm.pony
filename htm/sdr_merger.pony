@@ -66,14 +66,23 @@ primitive SDRMerger
     let all = _ordered(unique)
     if all.size() <= most then return all end
 
-    let candidates: Array[USize] iso = recover iso Array[USize] end
+    let shuffled = _shuffled(all, seed)
+    _first(shuffled, most)
+
+  fun _shuffled(all: ReadSeq[USize], seed: U64): Array[USize] ref =>
+    """
+    The positions in a random order, drawn from a warmed-up generator.
+
+    Pony's generator is weak over the first few draws after seeding, which would
+    make the choice follow the seed rather than chance, so it is warmed up first.
+    The shuffle itself is inside-out: every position is swapped with one of the
+    positions up to it.
+    """
+    let candidates: Array[USize] ref = Array[USize]
     for index in all.values() do
       candidates.push(index)
     end
 
-    // An inside-out shuffle, and a warmed-up generator: Pony's is weak for the
-    // first few draws after seeding, which would make the choice follow the
-    // seed rather than chance.
     let random = Rand(seed)
     var warming: USize = 0
     while warming < 16 do
@@ -81,9 +90,8 @@ primitive SDRMerger
       warming = warming + 1
     end
 
-    let count = candidates.size()
     var placed: USize = 0
-    while placed < count do
+    while placed < candidates.size() do
       let other = random.int(placed + 1)
       try
         let held = candidates(placed)?
@@ -93,6 +101,12 @@ primitive SDRMerger
       placed = placed + 1
     end
 
+    candidates
+
+  fun _first(candidates: ReadSeq[USize], most: USize): Array[USize] val =>
+    """
+    The first `most` of them, put back in ascending order.
+    """
     let kept = Set[USize]
     var taken: USize = 0
     while taken < most do

@@ -438,34 +438,50 @@ class TemporalPooler
     _inference.clear_predicted()
     _confidence.clear()
 
-    let state = _inference.active_bits()
+    _gather(_inference.active_bits())
+    _confidence.share_out()
 
+    _enough_predicted()
+
+  fun ref _gather(state: ReadSeq[Bool]) =>
+    """
+    Every segment that reaches enough of the state contributes its own record of
+    how often it has been right, and predicts if it is strong enough.
+    """
     for node in _nodes.values() do
       for cell in node.cells().values() do
-        let name = _config.cell_of(node.index, cell.offset)
-
-        for segment in cell.segments.values() do
-          if segment.activity(state) < _config.activation_threshold then
-            continue
-          end
-
-          _confidence.credit(name, segment.duty_cycle(_learning_iteration, false))
-
-          if segment.active(
-            state, _config.activation_threshold, _config.connected_threshold)
-          then
-            _inference.predict(name)
-          end
-        end
+        _gather_from(_config.cell_of(node.index, cell.offset), cell.segments, state)
       end
     end
 
-    _confidence.share_out()
+  fun ref _gather_from(
+    name: USize,
+    reaching: Array[ClaSegment],
+    state: ReadSeq[Bool])
+  =>
+    for segment in reaching.values() do
+      if segment.activity(state) < _config.activation_threshold then continue end
 
+      _confidence.credit(name, segment.duty_cycle(_learning_iteration, false))
+
+      if segment.active(
+        state, _config.activation_threshold, _config.connected_threshold)
+      then
+        _inference.predict(name)
+      end
+    end
+
+  fun _enough_predicted(): Bool =>
+    """
+    Whether the pooler is predicting enough going forward: half the input
+    density it has been seeing. Below that, what comes next is mostly a guess,
+    and this is one of the steps the re-play looks at again.
+
+    Cells are what is counted and columns are what it is counted against, as in
+    the reference: a column can contribute more than one predicted cell.
+    """
     match _input_density
     | let density: F64 =>
-      // what is counted is cells and what it is counted against is columns, as
-      // in the reference: a column can contribute more than one predicted cell
       _inference.count_predicted().f64() >= (0.5 * density)
     else
       true
@@ -888,35 +904,53 @@ class TemporalPooler
     random, or a random subset - which is what keeps two segments of the same
     cell from learning the same situation and becoming the same memory.
     """
+    if wanted == 0 then return Array[USize] end
+
+    let candidates = _reachable(segment, state)
+    if candidates.size() <= wanted then return candidates end
+
+    if wanted == 1 then return _one_of(candidates) end
+    _some_of(candidates, wanted)
+
+  fun _reachable(
+    segment: (ClaSegment | None),
+    state: ReadSeq[Bool]): Array[USize]
+  =>
+    """
+    The cells that are active now and that this segment does not already reach.
+    """
     let candidates = Array[USize]
-    if wanted == 0 then return candidates end
 
     var cell: USize = 0
     while cell < state.size() do
       try
-        if state(cell)? then
-          match segment
-          | let existing: ClaSegment =>
-            if not existing.reaches(cell) then candidates.push(cell) end
-          | None =>
-            candidates.push(cell)
-          end
+        if state(cell)? and not _reaches_nothing(segment, cell) then
+          candidates.push(cell)
         end
       end
       cell = cell + 1
     end
 
-    if candidates.size() <= wanted then return candidates end
+    candidates
 
-    if wanted == 1 then
-      let picked = Array[USize]
-      try picked.push(candidates(_rand.int(candidates.size()))?) end
-      return picked
+  fun _reaches_nothing(segment: (ClaSegment | None), cell: USize): Bool =>
+    match segment
+    | let existing: ClaSegment => existing.reaches(cell)
+    | None => false
     end
 
-    // An inside-out shuffle: each candidate is swapped with one already placed,
-    // so every permutation is equally likely and nothing beyond `wanted` is
-    // touched.
+  fun ref _one_of(candidates: Array[USize]): Array[USize] =>
+    let picked = Array[USize]
+    try picked.push(candidates(_rand.int(candidates.size()))?) end
+    picked
+
+  fun ref _some_of(candidates: Array[USize], wanted: USize): Array[USize] =>
+    """
+    A random subset of the candidates, without replacement.
+
+    An inside-out shuffle: each candidate is swapped with one already placed, so
+    every permutation is equally likely and nothing beyond `wanted` is touched.
+    """
     var placed: USize = 0
     while placed < candidates.size() do
       let other = _rand.int(placed + 1)

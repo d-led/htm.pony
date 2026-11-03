@@ -97,35 +97,56 @@ class TemporalColumn
     weakened whether or not the column was in the input.
     """
     let predicting = _matching(previous)
-    var activated: Array[USize] val = recover val Array[USize] end
-    var winners: Array[USize] val = recover val Array[USize] end
-    var burst = false
+    let step = _decide(previous, previous_winners, active, learn, when)
 
-    if active then
-      let predicted = predict(previous)
+    if learn then _punish(predicting, step.cells, previous) end
 
-      if predicted.size() > 0 then
-        activated = predicted
-        winners = predicted
-        if learn then _reinforce_predicting(previous, previous_winners, when) end
-      else
-        burst = true
-        let everywhere: Array[USize] iso = recover iso Array[USize] end
-        for cell in cells().values() do
-          everywhere.push(cell)
-        end
-        activated = consume everywhere
+    step
 
-        let chosen = _win(previous, previous_winners, learn, when)
-        let one: Array[USize] iso = recover iso Array[USize] end
-        one.push(chosen)
-        winners = consume one
-      end
+  fun ref _decide(
+    previous: ReadSeq[Bool],
+    previous_winners: ReadSeq[USize],
+    active: Bool,
+    learn: Bool,
+    when: U64): ColumnStep
+  =>
+    """
+    What the column does with this step: nothing if it is not in the input, the
+    cells its own prediction named, or a burst when nothing predicted it.
+    """
+    if not active then return ColumnStep(_nothing(), _nothing(), false) end
+
+    let predicted = predict(previous)
+    if predicted.size() > 0 then
+      if learn then _reinforce_predicting(previous, previous_winners, when) end
+      return ColumnStep(predicted, predicted, false)
     end
 
-    if learn then _punish(predicting, activated, previous) end
+    _burst(previous, previous_winners, learn, when)
 
-    ColumnStep(activated, winners, burst)
+  fun ref _burst(
+    previous: ReadSeq[Bool],
+    previous_winners: ReadSeq[USize],
+    learn: Bool,
+    when: U64): ColumnStep
+  =>
+    """
+    Every cell of the column turns on, and one of them becomes the winner.
+    """
+    let winner = _win(previous, previous_winners, learn, when)
+    let one: Array[USize] iso = recover iso Array[USize] end
+    one.push(winner)
+
+    ColumnStep(_every_cell(), consume one, true)
+
+  fun _every_cell(): Array[USize] val =>
+    let all: Array[USize] iso = recover iso Array[USize] end
+    for cell in cells().values() do
+      all.push(cell)
+    end
+    consume all
+
+  fun _nothing(): Array[USize] val => recover val Array[USize] end
 
   fun ref _win(
     previous: ReadSeq[Bool],
@@ -212,13 +233,18 @@ class TemporalColumn
     """
     let result = Array[TemporalSegment]
     for segments in _segments.values() do
-      for segment in segments.values() do
-        if _reaches(segment, state) then
-          result.push(segment)
-        end
-      end
+      _collect_reaching(segments, state, result)
     end
     result
+
+  fun ref _collect_reaching(
+    segments: Array[TemporalSegment],
+    state: ReadSeq[Bool],
+    into: Array[TemporalSegment] ref)
+  =>
+    for segment in segments.values() do
+      if _reaches(segment, state) then into.push(segment) end
+    end
 
   fun ref _punish(
     predicting: Array[TemporalSegment],
@@ -244,12 +270,18 @@ class TemporalColumn
     A cell that was predicted and did activate keeps what it predicted with.
     """
     for segments in _segments.values() do
-      if _enough(segments, previous) then
-        for segment in segments.values() do
-          if _reaches(segment, previous) then
-            _reinforce(segment, previous, previous_winners, when)
-          end
-        end
+      _reinforce_reaching(segments, previous, previous_winners, when)
+    end
+
+  fun ref _reinforce_reaching(
+    segments: Array[TemporalSegment],
+    previous: ReadSeq[Bool],
+    previous_winners: ReadSeq[USize],
+    when: U64)
+  =>
+    for segment in segments.values() do
+      if _reaches(segment, previous) then
+        _reinforce(segment, previous, previous_winners, when)
       end
     end
 
