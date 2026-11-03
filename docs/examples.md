@@ -17,7 +17,8 @@ corral run -- ponyc --debug
 ```
 
 Three of them measure rather than demonstrate: what learning is worth, what a
-learned pooler gives a memory, and what boosting is worth. Their numbers are the
+learned pooler gives a memory, what boosting is worth, and what the CLA pooler's
+settings are worth. Their numbers are the
 output of `scripts/studies.sh`, which CI runs on every push to master and
 publishes as the `studies` artifact and in the job summary; every table below is
 from such a run, and `gh run download --branch master --name studies` fetches the
@@ -395,6 +396,39 @@ a sequence that began two steps ago and carried on from there. It does that by
 re-playing the recent inputs on the assumption that the sequence began further
 back than it thought; [the handoff](handoff.md) has the rule it uses to choose a
 starting point.
+
+## What the pooler's settings are worth
+
+`examples/pooler-settings-value/main.pony` measures two things the settings
+change, on two streams, with a hundred nodes of eight cells and the same seed
+every time.
+
+```
+a cycle of ten patterns, taught sixty times
+settings            segments  named per step
+plain               290       10
+pooling, window 1   490       20
+pooling, window 5   580       28
+
+two sequences that share a pattern, followed into an input
+only the other one contains
+re-play window      active cells  named
+ten steps           10            10
+none                80            10
+```
+
+Pooling changes what the pooler *says*: it names twenty nodes a step instead of
+ten, because a pooled cell is woken by one step more context and so predicts the
+pattern after the next one too - and a longer window names more of the cycle
+again, 28 of 100. It costs segments: 490 against 290, and 580 with the window at
+five, because every pooled prediction grows a segment of its own.
+
+The re-play changes neither of the numbers it is measured against here. What it
+changes is the state: following an input that continues a sequence begun two
+steps earlier, the pooler is in ten cells rather than the eighty a burst turns
+on. That matters for what comes next, because a burst activates every cell of
+every node involved and each of them predicts - the union is what a pooling pass
+then builds on.
 
 ## Picture similarity
 

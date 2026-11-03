@@ -33,6 +33,13 @@ prints how much of the clean representation each pooler still reaches. The two
 tables are the answer to "what does learning buy?", and the per-seed rows under
 them are the spread that makes the answer worth anything.
 
+## [pooler-settings-value](pooler-settings-value/)
+
+Measures what the CLA pooler's settings are worth on two streams: a cycle of ten
+patterns, where pooling names the pattern after the next one too and costs three
+times the segments, and two sequences that share a pattern, where the re-play
+holds the state to ten cells instead of bursting eighty.
+
 ## [boosting-value](boosting-value/)
 
 Two hundred columns over two hundred inputs, five of twenty bits, through two

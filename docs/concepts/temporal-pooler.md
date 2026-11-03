@@ -53,7 +53,9 @@ the reference's default window of five over a five-pattern cycle the prediction
 widens to two thirds of the population, because a kept proposal lives for a whole
 cycle and is then applied at the wrong phase - so the pooled tests use a window
 of one, and [the handoff](../handoff.md) says why nobody should tune that
-silently.
+silently. [What the pooler's settings are worth](../examples.md#what-the-poolers-settings-are-worth)
+has the measured numbers on a ten-pattern cycle: 10, 20 and 28 nodes named a step
+for plain, window one and window five, at 290, 490 and 580 segments.
 
 ## One step
 

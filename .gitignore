@@ -29,6 +29,7 @@ examples/first-representation/first-representation
 examples/in-process-pooler/in-process-pooler
 examples/pooler-learning/pooler-learning
 examples/pooler-training-value/pooler-training-value
+examples/pooler-settings-value/pooler-settings-value
 examples/boosting-value/boosting-value
 examples/sequence-training-value/sequence-training-value
 examples/actor-pooler/actor-pooler

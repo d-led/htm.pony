@@ -1,0 +1,16 @@
+a cycle of ten patterns, taught sixty times
+settings            segments  named per step
+plain               290       10
+pooling, window 1   490       20
+pooling, window 5   580       28
+
+two sequences that share a pattern, followed into an input
+only the other one contains
+re-play window      active cells  named
+ten steps           10            10
+none                80            10
+
+the re-play does not find more of the next pattern here - the
+same ten nodes either way. What it keeps is the state: ten cells
+rather than a burst of eighty, and a precise state is what a
+pooled union is built from.
