@@ -67,6 +67,29 @@ one.
 
 What it does instead is [say how unusual the score itself is](#the-likelihood).
 
+## The same question, in the pooler's terms
+
+A temporal memory is not the only thing that can say a step was surprising. The
+pooler's answer carries the reading in its own terms:
+
+```pony
+let step = pooler.answer()
+step.anomaly(config)         // the share of active nodes that burst
+step.bursting_nodes(config)  // and which ones
+```
+
+A pooler activates the cells it predicted, and a node it had no prediction into
+gets every one of its cells. So a node that lit up all of them is a prediction
+that failed, exactly as a bursting column is in the memory - it is the same
+question, asked over nodes instead of columns.
+
+It is not the same number. The two keep different states: a memory bursts a
+column and starts again, while a pooler keeps the union of the situations that
+led there, and re-plays a lost sequence instead of bursting it. Feed the same
+stream to both and they disagree wherever one of them held the sequence and the
+other did not - which is the difference the pooler exists for, not a defect in
+either reading.
+
 ## The likelihood
 
 `AnomalyLikelihood` answers "given the scores that came before, how strange is

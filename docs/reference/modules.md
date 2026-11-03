@@ -501,6 +501,10 @@ with, the cells it activated, the cells it predicts for the next step, the nodes
 those predictions belong to, and how much confidence each node carries. What
 crosses back to whoever asked, so that nothing handed out points into the pooler.
 
+`bursting_nodes(config)` and `anomaly(config)` are the reading the temporal
+memory's output offers, in the pooler's terms: a node that lit up every one of its
+cells is a node that had no prediction into it.
+
 Tests: covered through `TemporalPooler` and its actor.
 
 ### `cla_forecast.pony`

@@ -96,6 +96,27 @@ The [recovery example](../examples.md#a-pooler-that-lost-its-sequence-and-found-
 shows the difference in one number: ten active cells, one a node, rather than the
 twenty a burst would turn on.
 
+## How surprising was that step
+
+The pooler's answer carries an anomaly reading in the same terms the memory's
+does: a node that lit up every one of its cells is a node it had no prediction
+into, so
+
+```
+anomaly = bursting nodes / active nodes
+```
+
+```pony
+pooler.answer().anomaly(config)
+pooler.answer().bursting_nodes(config)
+```
+
+Zero means everything that happened was expected and one means nothing was. It
+is [the same question asked over nodes rather than
+columns](../anomaly-detection.md#the-same-question-in-the-poolers-terms), and not
+the same number: the two keep different states, which is what the pooler exists
+for.
+
 ## What it says about the future
 
 `predict(steps)` answers a `ClaForecast`: the confidence the pooler would put on

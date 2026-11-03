@@ -18,6 +18,7 @@ class TemporalPoolerTest is TestList
     test(_APooledPoolerPredictsTwoStepsAhead)
     test(_AnInputFromASequenceBegunEarlierIsTakenAsThatSequence)
     test(_ALengthLimitCostsNothingWhenLearningLooksBack)
+    test(_AStepNothingPredictedIsAnAnomaly)
     test(_AForecastNamesTheStepsAfterThisOne)
 
 primitive Patterns
@@ -388,6 +389,32 @@ class iso _ALengthLimitCostsNothingWhenLearningLooksBack is UnitTest
       looking.segments() < blind.segments(),
       looking.segments().string() + " segments against " +
         blind.segments().string())
+
+class iso _AStepNothingPredictedIsAnAnomaly is UnitTest
+  fun name(): String => "a step the pooler had no prediction for reads as an anomaly"
+
+  fun apply(h: TestHelper) ? =>
+    let config = Patterns.config()?
+    let pooler = TemporalPooler(config, 7)
+
+    // nothing has been learned, so every node of the pattern bursts
+    pooler.compute(Patterns.of(0), false, true)?
+
+    h.assert_eq[F64](1.0, pooler.answer().anomaly(config))
+    h.assert_array_eq[USize](
+      Patterns.of(0),
+      pooler.answer().bursting_nodes(config),
+      "the nodes that had to light up every cell")
+
+    // once the cycle is learned, a step it expects is ordinary
+    Patterns.learn_cycle(pooler, 50)?
+
+    pooler.compute(Patterns.of(0), false, true)?
+    pooler.compute(Patterns.of(1), false, true)?
+
+    h.assert_eq[F64](0.0, pooler.answer().anomaly(config))
+    h.assert_eq[USize](
+      0, pooler.answer().bursting_nodes(config).size(), "and nothing bursts")
 
 class iso _AForecastNamesTheStepsAfterThisOne is UnitTest
   fun name(): String => "a forecast names the patterns that follow, and changes nothing"
