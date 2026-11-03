@@ -38,6 +38,8 @@ examples/document-similarity/document-similarity
 examples/image-similarity/image-similarity
 examples/temporal-memory/temporal-memory
 examples/temporal-memory-on-actors/temporal-memory-on-actors
+examples/temporal-pooler/temporal-pooler
+examples/temporal-pooler-recovery/temporal-pooler-recovery
 examples/anomaly-stream/anomaly-stream
 examples/anomaly-likelihood/anomaly-likelihood
 examples/anomaly-on-actors/anomaly-on-actors

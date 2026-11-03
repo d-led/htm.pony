@@ -87,6 +87,20 @@ Runs a sequence of two columns through the in-process memory and then through a
 passes over the shards - activate, then predict - because a prediction is about a
 state that includes what every column did.
 
+## [temporal-pooler](temporal-pooler/)
+
+Teaches a `TemporalPooler` five patterns in order, ten times, then shows the
+first alone and asks what follows. Prints the nodes it predicts, then a forecast
+three steps out - the third step read from a state that follows from the first
+two rather than from input - and shows that asking left the pooler where it was.
+
+## [temporal-pooler-recovery](temporal-pooler-recovery/)
+
+Teaches two sequences that share a pattern, follows one of them into an input
+only the other contains, and prints the active cells: ten, one a node, rather
+than the twenty a burst would turn on. That is the pooler re-playing the recent
+inputs and finding the earlier start instead of giving up on the sequence.
+
 ## [anomaly-stream](anomaly-stream/)
 
 Streams three repeating inputs followed by one that breaks the pattern, printing

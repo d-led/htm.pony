@@ -30,6 +30,9 @@ something the Go one does not. This library is MPL-2.0.
 Verification at that commit: **172 tests green**, 16 examples run, `mkdocs build --strict`
 clean, CI and Pages green, `studies` artifact byte-identical to a local run.
 
+As of the pooler being finished it is **249 tests and 18 examples**, the two new
+ones being the pooler teaching a sequence and the pooler recovering one it lost.
+
 ## How to verify a change
 
 ```sh

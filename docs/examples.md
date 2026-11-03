@@ -345,6 +345,57 @@ prediction is about a state that includes what every column did. [Actors
 explains](actors.md#the-temporal-memory-on-actors) why the second pass cannot
 be folded into the first.
 
+## The CLA temporal pooler
+
+`examples/temporal-pooler/main.pony` teaches five patterns in order, ten times,
+then shows the first one alone and asks what follows.
+
+```
+taught five patterns, in order, ten times
+  segments grown:  50
+
+showing pattern 0 alone
+  active cells:    [0, 2, 4, 6, 8, 10, 12, 14, 16, 18]
+  predicts nodes:  [10, 11, 12, 13, 14, 15, 16, 17, 18, 19]
+
+asking what follows, three steps out
+  step 1:  [10, 11, 12, 13, 14, 15, 16, 17, 18, 19]
+  step 2:  [20, 21, 22, 23, 24, 25, 26, 27, 28, 29]
+  step 3:  [30, 31, 32, 33, 34, 35, 36, 37, 38, 39]
+
+asking did not decide anything: the pooler still predicts
+  [10, 11, 12, 13, 14, 15, 16, 17, 18, 19]
+```
+
+One cell of each node is active, not both: the node was predicted, so the pooler
+knows which of its cells the situation belongs to. That is the difference from
+the temporal memory, whose burst turns on every cell of a node - and the reason a
+pooler can say what comes after what, several steps out, from the state that
+follows rather than from input that does not exist yet.
+
+## A pooler that lost its sequence, and found it again
+
+`examples/temporal-pooler-recovery/main.pony` teaches two sequences that share a
+pattern - `0 1 2 3 4` and `2 8 9` - and then follows the first into an input the
+first does not contain.
+
+```
+following 0 1 2, it predicts
+  [30, 31, 32, 33, 34, 35, 36, 37, 38, 39]
+
+what arrives is 8, which was not predicted
+  active cells:    [161, 163, 165, 167, 169, 171, 173, 175, 177, 179]
+  that is 10 cells, one a node rather than a burst
+  and it predicts: [90, 91, 92, 93, 94, 95, 96, 97, 98, 99]
+```
+
+Twenty active cells would be a burst of all ten nodes. Ten is one a node, which
+is what a predicted node looks like - so the pooler worked out that `8` continues
+a sequence that began two steps ago and carried on from there. It does that by
+re-playing the recent inputs on the assumption that the sequence began further
+back than it thought; [the handoff](handoff.md) has the rule it uses to choose a
+starting point.
+
 ## Picture similarity
 
 `examples/image-similarity/main.pony` encodes four pictures, fingerprints them,
