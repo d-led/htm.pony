@@ -5,9 +5,13 @@ usually comes next". It takes the active columns of one step, compares them with
 what it remembers about the step before, and says which cells it expects to be
 active at the next one.
 
-It is implemented and tested in process. It does not run as actors yet, and it
-is given the columns of a [spatial pooler](../spatial-pooler.md#learning) that
-learns its permanences in process rather than on actors.
+It is implemented and tested in process, and as actors: a `TemporalRegion` holds
+the columns in shards and runs a step as two passes over them. It is given the
+columns of a [spatial pooler](../spatial-pooler.md#learning) that learns its
+permanences in process rather than on actors.
+
+When a memory keeps losing the sequence it is following, what is wanted is the
+[next page](temporal-pooler.md) rather than this one.
 
 ## Why it needs cells
 
@@ -83,12 +87,13 @@ symbol: the learned pooler leaves the sequence far easier to follow.
 
 ## What is not here
 
-- **A deadline on a region.** A step ends only when every shard has answered both
-  passes, so a shard that never answers holds it open. A pooler's round takes a
-  deadline; a region does not.
 - **Segment reuse over long runs.** A column that keeps bursting and never
   matches grows a new segment until it hits `max_segments_per_cell`, and then
   stops learning.
 - **More than one kind of sequence.** The study measures one cycle of symbols and
   one way of damaging them, so the size of the effect it reports is not a
   constant to carry to another stream.
+- **A pooled state.** A memory bursts a column and starts again; keeping the
+  union of the situations that led to a step is the
+  [temporal pooler](temporal-pooler.md), which is a different class rather than a
+  setting on this one.

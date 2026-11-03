@@ -27,6 +27,7 @@ nav:
       - Encoding: concepts/encoding.md
       - Columns and cells: concepts/columns-and-cells.md
       - Temporal memory: concepts/temporal-memory.md
+      - Temporal pooler: concepts/temporal-pooler.md
   - Guides:
       - Spatial pooler: spatial-pooler.md
       - Actors: actors.md
