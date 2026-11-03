@@ -1,3 +1,5 @@
+// Follows spatialPooler_test.go in htm-community/htm (MIT): the assertions are
+// that repository's, the calls go through this repository's vocabulary.
 use "pony_test"
 use "../htm"
 

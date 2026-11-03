@@ -1,3 +1,4 @@
+// Ported from spatialPooler.go in htm-community/htm (MIT) - SpParams, renamed.
 use "collections"
 
 // https://github.com/htm-community/htm/blob/master/spatialPooler.go : InhibitColumns, density

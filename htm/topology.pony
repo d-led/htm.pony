@@ -1,3 +1,4 @@
+// Ported from spatialPooler.go and utils/utils.go in htm-community/htm (MIT).
 use "collections"
 
 // https://github.com/htm-community/htm/blob/master/spatialPooler.go : getNeighborsND

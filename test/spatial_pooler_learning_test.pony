@@ -1,3 +1,5 @@
+// Follows spatialPoolerBoost_test.go in htm-community/htm (MIT) with this
+// repository's vocabulary. See docs/sources.md.
 use "pony_test"
 use "../htm"
 

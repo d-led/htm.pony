@@ -1,3 +1,5 @@
+// Ported from encoders/dateEncoder.go in htm-community/htm (MIT).
+// See docs/sources.md.
 type HolidayMonthDay is (I32,I32)
 
 class val DateEncoderParams

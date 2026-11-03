@@ -1,3 +1,4 @@
+// Ported from temporalMemory.go in htm-community/htm (MIT). See docs/sources.md.
 class val TemporalMemoryParams
   """
   The shape of a temporal memory and how readily it predicts.

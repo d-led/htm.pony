@@ -1,3 +1,5 @@
+// Ported from temporalMemoryConnections.go in htm-community/htm (MIT).
+// See docs/sources.md.
 class TemporalSynapse
   """
   A connection from a segment to the cell that was active when the segment

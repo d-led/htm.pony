@@ -1,3 +1,4 @@
+// Ported from utils/utils.go in htm-community/htm (MIT). See docs/sources.md.
 use "itertools"
 
 primitive BadInput

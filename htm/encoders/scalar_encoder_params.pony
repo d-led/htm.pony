@@ -1,3 +1,5 @@
+// Ported from encoders/scalerEncoder.go in htm-community/htm (MIT).
+// See docs/sources.md.
 primitive N
 primitive Radius
 primitive Resolution

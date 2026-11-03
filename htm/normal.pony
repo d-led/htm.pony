@@ -1,3 +1,5 @@
+// Follows the NuPIC line's normal estimate, including its lower bounds on the
+// mean and the spread.
 use "./util"
 
 class Normal

@@ -11,6 +11,9 @@ actor Main
 
   A raw score of 0.15 means nothing by itself. Read against what came before it,
   it is a perfectly ordinary step, and the 0.9 is not.
+
+  Expect the ordinary steps to sit near a half and only the 0.9 to come near
+  certainty.
   """
   new create(env: Env) =>
     try

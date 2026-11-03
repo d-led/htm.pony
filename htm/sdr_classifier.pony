@@ -1,3 +1,5 @@
+// Follows the NuPIC line's SDR classifier: one weight layer and a softmax,
+// written against this library's vocabulary.
 class SDRClassifier
   """
   Turns an active set of cells into a probability for each category.

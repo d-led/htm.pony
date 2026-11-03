@@ -1,3 +1,5 @@
+// Ported from encoders/dateEncoder.go in htm-community/htm (MIT).
+// See docs/sources.md.
 use "time"
 
 class DateEncoder

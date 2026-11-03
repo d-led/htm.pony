@@ -9,6 +9,9 @@ actor Main
   Four pictures are encoded: one, the same one twice as wide, the same one
   brighter, and a different one. The first three should come out identical and
   the fourth should not.
+
+  Expect the first three to agree on every column and the fourth to share only
+  part of them.
   """
   new create(env: Env) =>
     try

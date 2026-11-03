@@ -1,3 +1,5 @@
+// Written here, following htm.core's SDR merger from its account of the
+// algorithm. htm.core is AGPL: nothing is transcribed from it.
 use "collections"
 use "random"
 

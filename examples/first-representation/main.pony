@@ -7,6 +7,9 @@ actor Main
 
   Encodes three values with a scalar encoder, gives each encoding to a spatial
   pooler, and counts how many columns two neighbouring values share.
+
+  Expect neighbouring values to share most of their columns, and 0.6 and 0.9 to
+  share few.
   """
   new create(env: Env) =>
     try

@@ -1,3 +1,5 @@
+// Follows spatialPooler.go in htm-community/htm (MIT) with this repository's
+// structure: the learning state is separate from the columns it judges.
 use "collections"
 
 class ColumnLearning

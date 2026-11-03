@@ -31,6 +31,8 @@ actor Main
   same sixty learning rounds on it and on an in-process `SpatialPooler` built
   from the same seed. It prints what each path answers at the first round and at
   the last, and whether the two agreed on every round between them.
+
+  Expect the two paths to agree on every round, the first and the last included.
   """
   let _env: Env
   let _expected: Array[Array[USize] val] val

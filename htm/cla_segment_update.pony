@@ -1,3 +1,5 @@
+// Follows segmentUpdate.go in htm-community/htm (MIT) with this repository's
+// structure. See docs/sources.md.
 class ClaSegmentUpdate
   """
   A proposal to change a segment, made at one step and applied at a later one.

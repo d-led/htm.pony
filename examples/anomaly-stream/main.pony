@@ -7,6 +7,9 @@ actor Main
   Three inputs repeat eight times, then a fourth appears. The score is the share
   of columns the temporal memory did not expect: it falls as the pattern is
   learned and jumps when the pattern breaks.
+
+  Expect a high score on the first rounds, a low one once the pattern is known,
+  and the highest of all on the step that breaks it.
   """
   new create(env: Env) =>
     try

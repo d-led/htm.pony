@@ -1,3 +1,5 @@
+// Follows spatialPooler.go in htm-community/htm (MIT) with this repository's
+// structure: a column is an object with synapses, not a row of a matrix.
 use "collections"
 
 class Column

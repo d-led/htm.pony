@@ -1,3 +1,5 @@
+// The approximation from Numerical Recipes, written out rather than called from
+// a maths library. See docs/sources.md.
 primitive Erfc
   """
   The complementary error function, `1 - erf(x)`: the share of a normal

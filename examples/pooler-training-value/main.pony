@@ -214,8 +214,11 @@ actor Main
   with what the same pooler said about the clean pattern.
 
   One seed is printed in full, so the shape of the damage is visible, and then
-  every seed's gain for learning, because one seed can make a fragile effect look
-  certain.
+  every seed's gain for learning, because one seed can make a fragile effect
+  look certain.
+
+  Expect the learned pooler to keep more of the answer than the one that only
+  looks, on every seed printed.
   """
   let _env: Env
 

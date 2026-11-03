@@ -170,6 +170,9 @@ actor Main
 
   Every seed is printed, because a single seed can make a fragile difference
   look certain.
+
+  Expect the count to fall towards nought with boosting and never to move
+  without it, on every seed printed.
   """
   let _env: Env
 

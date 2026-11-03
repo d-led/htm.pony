@@ -11,6 +11,9 @@ actor Main
 
   The last section checks the claim that matters: a round without learning
   changes nothing, so the same input always gives the same representation.
+
+  Expect the winning column's permanences to rise towards the input, losing
+  columns to be boosted, and the round without learning to change nothing.
   """
   new create(env: Env) =>
     try

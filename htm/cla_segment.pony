@@ -1,3 +1,5 @@
+// Follows temporalPooler.go and segment.go in htm-community/htm (MIT) with this
+// repository's structure. See docs/sources.md.
 class ClaSegment
   """
   One cell's memory of the situation that came before it, and how good a

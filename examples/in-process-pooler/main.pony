@@ -7,6 +7,9 @@ actor Main
   Builds a pooler, prints what each column reaches, gives it one input, and
   reads back the representation. The last section builds a second pooler with
   the same seed and compares the two answers.
+
+  Expect each column to reach a different part of the input, and the two poolers
+  built from one seed to answer identically.
   """
   new create(env: Env) =>
     try

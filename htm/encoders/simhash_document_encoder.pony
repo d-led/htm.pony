@@ -1,3 +1,6 @@
+// Written here, following htm.core's SimHashDocumentEncoder from its account of
+// the algorithm. htm.core is AGPL: nothing is transcribed from it, and the
+// token digest is this repository's rather than SHAKE256.
 use "collections"
 
 class val SimHashParams

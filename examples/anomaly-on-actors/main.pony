@@ -11,6 +11,9 @@ actor Main is AnomalyObserver
   of columns the memory did not expect; the likelihood is where that score falls
   among the scores before it. Both arrive through the callback, because a step's
   reading is a message like any other on this path.
+
+  Expect the score and the likelihood to arrive together, and to match the
+  in-process stream step for step.
   """
   let _env: Env
   var _round: USize = 0

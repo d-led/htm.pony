@@ -11,6 +11,9 @@ actor Main
   A step is two passes over the shards - activate, then predict - because a
   prediction is about a state that includes what every column did. The region
   answers only when both passes are back.
+
+  Expect every step to agree with the in-process one, activation and prediction
+  both.
   """
   let _env: Env
   let _region: TemporalRegion tag

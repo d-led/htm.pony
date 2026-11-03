@@ -10,6 +10,9 @@ actor Main
   pair of documents below. Sentences that share words share positions, sentences
   that do not share almost none, and the two differ by how much of the sentence
   survived.
+
+  Expect sentences that share words to share positions and an unrelated one to
+  share almost none.
   """
   let _documents: Array[String] val = recover val [
     "the sky is beautiful today"

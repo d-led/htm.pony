@@ -1,3 +1,6 @@
+// Follows TestLearnPredict in temporalPooler_test.go in htm-community/htm
+// (MIT) with this repository's vocabulary. The statistics and print helpers
+// that file tests are not ported; see docs/sources.md.
 use "pony_test"
 use "../htm"
 

@@ -1,3 +1,5 @@
+// Follows the NuPIC line's anomaly likelihood - a rolling normal estimate over
+// recent scores - written against this library's vocabulary.
 use "./util"
 
 class AnomalyLikelihood

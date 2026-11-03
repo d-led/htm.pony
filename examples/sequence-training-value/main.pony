@@ -321,6 +321,9 @@ actor Main
 
   One seed is printed in full, and then every seed's pair of scores, because a
   single seed can make a fragile difference look certain.
+
+  Expect a small but consistent edge to the learned pooler, on three seeds of
+  five.
   """
   let _env: Env
 

@@ -6,6 +6,8 @@ actor Main
 
   Two columns are shown in turn, a few times, with learning on. Then the first
   is shown alone and the memory says what it expects next.
+
+  Expect a predicted column to activate one cell rather than burst.
   """
   new create(env: Env) =>
     try

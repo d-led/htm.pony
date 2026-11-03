@@ -38,6 +38,7 @@ nav:
   - Examples: examples.md
   - Roadmap: roadmap.md
   - Handoff: handoff.md
+  - Sources: sources.md
   - Tutorial: tutorial.md
   - Reference:
       - Modules: reference/modules.md

@@ -2,7 +2,8 @@
 
 Hierarchical Temporal Memory in Pony. A port of
 [htm-community/htm](https://github.com/htm-community/htm) (MIT), with the
-computation arranged as actors.
+computation arranged as actors. Which file came from where, and under which
+licence, is written down in [Sources](sources.md).
 
 HTM models a stream of inputs as sparse distributed representations and learns
 what tends to follow what. This port has both sides: encoders turn values into

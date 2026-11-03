@@ -1,3 +1,6 @@
+// Follows spatialPooler.go in htm-community/htm (MIT) with this repository's
+// structure: a column holds its synapses as objects, not as a row of a
+// permanence matrix. See docs/sources.md.
 class val Synapse
   """
   A connection from a cortical column to one input bit.

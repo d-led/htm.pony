@@ -93,6 +93,9 @@ actor Main
   eighty a burst turns on.
 
   Nothing here reads a clock, so the numbers are the same on every machine.
+
+  Expect pooling to name more of the cycle and to grow more segments, and the
+  re-play to buy a precise state rather than a longer forecast.
   """
   new create(env: Env) =>
     try

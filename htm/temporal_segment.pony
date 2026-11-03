@@ -1,3 +1,4 @@
+// Ported from segment.go in htm-community/htm (MIT). See docs/sources.md.
 class TemporalSegment
   """
   What one cell remembers about the situation that came before it.

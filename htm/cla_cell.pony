@@ -1,3 +1,5 @@
+// Follows temporalPooler.go in htm-community/htm (MIT) with this repository's
+// structure. See docs/sources.md.
 class ClaCellMatch
   """
   What a node answers when it is asked which of its cells fits a state best.

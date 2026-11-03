@@ -1,3 +1,5 @@
+// Follows temporalMemory.go in htm-community/htm (MIT) with this repository's
+// structure: a column is an object, so the memory can be cut into shards.
 use "collections"
 
 class TemporalMemory

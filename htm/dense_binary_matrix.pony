@@ -1,3 +1,4 @@
+// Ported from denseBinaryMatrix.go in htm-community/htm (MIT).
 // https://github.com/htm-community/htm/blob/master/denseBinaryMatrix.go
 
 /*

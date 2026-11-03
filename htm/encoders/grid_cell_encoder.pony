@@ -1,3 +1,6 @@
+// Written here, following htm.core's GridCellEncoder from its account of the
+// algorithm. htm.core is AGPL: nothing is transcribed from it, its golden bits
+// are not reproduced, and its own test is deliberately not ported.
 use "collections"
 use "random"
 

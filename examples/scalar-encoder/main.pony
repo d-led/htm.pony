@@ -8,6 +8,9 @@ actor Main
   The block of set bits slides with the value, so values close together share
   most of their bits and values far apart share few. The last section counts the
   shared bits between neighbouring values to show that.
+
+  Expect the block of set bits to slide, so neighbours overlap and distant
+  values do not.
   """
   new create(env: Env) =>
     try

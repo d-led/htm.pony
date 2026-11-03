@@ -1,3 +1,5 @@
+// Follows temporalMemory.go in htm-community/htm (MIT) with this repository's
+// structure: one column's whole step, which the Go file holds as arrays.
 use "collections"
 
 class val ColumnStep

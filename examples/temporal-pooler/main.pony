@@ -53,6 +53,9 @@ actor Main
   step before; a pooler learns from the step before *that* while a cell is still
   being predicted, so what it ends up predicting is a union of the situations
   that led here rather than a single path through them.
+
+  Expect the forecast to name the patterns that follow, three steps out, and
+  asking twice to change nothing.
   """
   new create(env: Env) =>
     try

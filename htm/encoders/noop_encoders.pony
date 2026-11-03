@@ -1,3 +1,5 @@
+// Ported from encoders/scalerEncoder.go in htm-community/htm (MIT).
+// See docs/sources.md.
 use "debug"
 
 class NoOpScalarEncoder

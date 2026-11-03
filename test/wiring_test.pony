@@ -1,3 +1,5 @@
+// Follows TestPermanenceInit and TestRaisePermanenceThreshold in
+// spatialPooler_test.go in htm-community/htm (MIT), against the actor layer.
 use "random"
 use "pony_test"
 use "../htm"

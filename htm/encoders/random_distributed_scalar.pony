@@ -1,3 +1,5 @@
+// Follows the NuPIC line's random distributed scalar encoder: a map from bucket
+// to bits, written against this library's vocabulary.
 use "collections"
 use "random"
 

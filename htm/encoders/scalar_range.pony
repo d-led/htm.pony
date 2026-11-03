@@ -1,3 +1,5 @@
+// Ported from encoders/scalerEncoder.go in htm-community/htm (MIT).
+// See docs/sources.md.
 class val ScalarRange
     let left: F64
     let right: F64

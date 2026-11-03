@@ -1,3 +1,5 @@
+// Follows temporalPooler.go in htm-community/htm (MIT) with this repository's
+// structure. See docs/sources.md.
 class CellState
   """
   Which cells are in a state, and which were before.

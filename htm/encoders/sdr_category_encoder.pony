@@ -1,3 +1,5 @@
+// Follows the shape htm.java's and nupic's SDRCategoryEncoder use - w random
+// bits of a fixed width per label - written against this library's vocabulary.
 use "collections"
 use "random"
 

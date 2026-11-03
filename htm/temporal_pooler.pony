@@ -1,3 +1,5 @@
+// Follows temporalPooler.go in htm-community/htm (MIT) with this repository's
+// structure. See docs/sources.md.
 use "random"
 
 class TemporalPooler

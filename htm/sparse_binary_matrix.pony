@@ -1,3 +1,5 @@
+// Ported from sparseBinaryMatrix.go in htm-community/htm (MIT).
+// See docs/sources.md.
 use "collections"
 use "debug"
 

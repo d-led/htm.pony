@@ -285,6 +285,9 @@ actor Main
   came before can follow. The second is a value that climbs and falls, where
   repeating the last input is a real competitor and the question is what
   learning adds to it.
+
+  Expect the memory to lead on the symbols, and the last input to win on the
+  smooth value.
   """
   new create(env: Env) =>
     try

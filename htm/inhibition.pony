@@ -1,3 +1,4 @@
+// Ported from spatialPooler.go in htm-community/htm (MIT).
 // https://github.com/htm-community/htm/blob/master/spatialPooler.go : inhibitColumnsGlobal
 
 primitive Inhibition

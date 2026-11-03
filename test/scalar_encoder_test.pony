@@ -1,3 +1,5 @@
+// Ported from encoders/scalerEncoder_test.go in htm-community/htm (MIT).
+// See docs/sources.md.
 use "pony_test"
 use "../htm/encoders"
 use "../htm/util"

@@ -1,3 +1,5 @@
+// Follows temporalPooler.go in htm-community/htm (MIT): TemporalPoolerParams,
+// with the statistics and printing settings left out.
 class val TemporalPoolerConfig
   """
   The shape of a CLA temporal pooler and how readily it commits to a prediction.

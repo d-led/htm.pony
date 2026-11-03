@@ -15,6 +15,9 @@ actor Main
   A cell's receptive field, printed as a map, is the second half: the places in a
   room where one cell fires, which is the hexagonal tiling the encoding is built
   on.
+
+  Expect about three quarters of the cells to survive a one-unit move, and fewer
+  as the move grows beyond the shortest period.
   """
   let _periods: Array[F64] val = recover val [6.0; 8.5; 12.0; 17.0; 24.0] end
 

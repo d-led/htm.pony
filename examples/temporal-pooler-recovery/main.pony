@@ -56,6 +56,9 @@ actor Main
   cell of all ten nodes. Ten is one cell a node, which is what a predicted node
   looks like, and it is the difference between giving up on the sequence and
   finding it.
+
+  Expect ten active cells on the step after the break, not twenty, and 9 named
+  as the next prediction.
   """
   new create(env: Env) =>
     try
