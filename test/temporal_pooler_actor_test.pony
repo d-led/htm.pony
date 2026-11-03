@@ -9,6 +9,7 @@ class TemporalPoolerActorTest is TestList
 
   fun tag tests(test: PonyTest) =>
     test(_APoolerActorAnswersWhatOneProcessAnswers)
+    test(_APoolerActorForecastsWhatOneProcessForecasts)
     test(_AStepThatAsksForNothingAnswersWhatIsThere)
     test(_AResetOnTheActorEndsTheSequence)
 
@@ -40,6 +41,7 @@ actor ClaComparingObserver is ClaObserver
           and _same(output.active_cells, wanted.active_cells)
           and _same(output.predictive_cells, wanted.predictive_cells)
           and _same(output.predicted_nodes, wanted.predicted_nodes)
+          and _same_confidences(output.node_confidences, wanted.node_confidences)
       then
         _matching = _matching + 1
       end
@@ -55,6 +57,19 @@ actor ClaComparingObserver is ClaObserver
     end
 
   fun _same(left: ReadSeq[USize], right: ReadSeq[USize]): Bool =>
+    if left.size() != right.size() then return false end
+    try
+      var index: USize = 0
+      while index < left.size() do
+        if left(index)? != right(index)? then return false end
+        index = index + 1
+      end
+      true
+    else
+      false
+    end
+
+  fun _same_confidences(left: ReadSeq[F64], right: ReadSeq[F64]): Bool =>
     if left.size() != right.size() then return false end
     try
       var index: USize = 0
@@ -101,6 +116,32 @@ actor ResetObserver is ClaObserver
     _h.assert_eq[USize](10, active.size(), "one cell a node")
     for cell in active.values() do
       _h.assert_eq[USize](0, cell % 2, "and it is the start cell")
+    end
+    _h.complete(true)
+
+actor ComparingForecast is ClaForecaster
+  """
+  Compares a forecast with what the pooler in process said about the same state.
+  """
+  let _h: TestHelper
+  let _expected: ClaForecast
+
+  new create(h: TestHelper, expected: ClaForecast) =>
+    _h = h
+    _expected = expected
+
+  be forecasted(forecast: ClaForecast val) =>
+    _h.assert_eq[USize](
+      _expected.size(), forecast.size(), "the forecast reaches as far")
+    try
+      var step: USize = 0
+      while step < _expected.size() do
+        _h.assert_array_eq[USize](
+          _expected.nodes(step)?,
+          forecast.nodes(step)?,
+          "the nodes at step " + (step + 1).string())
+        step = step + 1
+      end
     end
     _h.complete(true)
 
@@ -157,6 +198,37 @@ class iso _APoolerActorAnswersWhatOneProcessAnswers is UnitTest
       subject.compute(Patterns.of_value(step), false, true, observer)
       step = step + 1
     end
+
+class iso _APoolerActorForecastsWhatOneProcessForecasts is UnitTest
+  fun name(): String => "a forecast on the actor names what one process names"
+
+  fun apply(h: TestHelper) ? =>
+    h.long_test(5_000_000_000)
+
+    let config = Patterns.config()?
+    let in_process = TemporalPooler(config, 7)
+    let subject = TemporalPoolerActor(config, 7)
+    let ignoring = IgnoringObserver
+
+    // the same teaching, to a pooler in process and to the actor
+    var epoch: USize = 0
+    while epoch < 5 do
+      var index: USize = 0
+      while index < 5 do
+        in_process.compute(Patterns.of(index), true, false)?
+        subject.compute(Patterns.of_value(index), true, false, ignoring)
+        index = index + 1
+      end
+      in_process.reset()
+      subject.reset()
+      epoch = epoch + 1
+    end
+
+    // both read the same pattern, so both forecast from the same state
+    in_process.compute(Patterns.of(0), false, true)?
+    subject.compute(Patterns.of_value(0), false, true, ignoring)
+
+    subject.predict(3, ComparingForecast(h, in_process.predict(3)?))
 
 class iso _AStepThatAsksForNothingAnswersWhatIsThere is UnitTest
   fun name(): String =>

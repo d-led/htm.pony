@@ -75,7 +75,7 @@ actor Main
       while step < forecast.size() do
         env.out.print(
           "  step " + (step + 1).string() + ":  " +
-            _cells(_confident(forecast(step)?)))
+            _cells(forecast.nodes(step)?))
         step = step + 1
       end
       env.out.print("")
@@ -99,17 +99,3 @@ actor Main
       text = text + value.string()
     end
     text + "]"
-
-  fun _confident(confidences: ReadSeq[F64]): Array[USize] =>
-    """
-    The nodes a forecast says something about, in node order.
-    """
-    let found = Array[USize]
-    var node: USize = 0
-    while node < confidences.size() do
-      try
-        if confidences(node)? > 0.0 then found.push(node) end
-      end
-      node = node + 1
-    end
-    found

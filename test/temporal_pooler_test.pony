@@ -182,20 +182,6 @@ primitive Patterns
       step = step + 1
     end
 
-  fun confident_nodes(confidences: ReadSeq[F64]): Array[USize] =>
-    """
-    The nodes a confidence vector says something about, in node order.
-    """
-    let found = Array[USize]
-    var node: USize = 0
-    while node < confidences.size() do
-      try
-        if confidences(node)? > 0.0 then found.push(node) end
-      end
-      node = node + 1
-    end
-    found
-
 class iso _AFreshPoolerBurstsAndPredictsNothing is UnitTest
   fun name(): String => "a pooler that has learned nothing bursts every node it sees"
 
@@ -418,7 +404,7 @@ class iso _AForecastNamesTheStepsAfterThisOne is UnitTest
     // each step of the forecast is where the cycle is after that many steps
     var step: USize = 0
     while step < forecast.size() do
-      let confident = Patterns.confident_nodes(forecast(step)?)
+      let confident = forecast.nodes(step)?
       let wanted = Patterns.of(step + 1)
 
       h.assert_eq[USize](

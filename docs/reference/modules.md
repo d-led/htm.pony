@@ -482,10 +482,10 @@ sequence these inputs are part of began and re-enforces that path, rather than
 beginning a fresh one at the seam. A re-play that only asks whether the sequence
 holds teaches nothing.
 
-`predict(steps)` is the soft answer several steps out: what was predicted becomes
-the next step's activity, that step's prediction the one after, and the state is
-put back before the answer is returned. `node_confidences` is the same answer for
-one step.
+`predict(steps)` is the soft answer several steps out, as a `ClaForecast`: what
+was predicted becomes the next step's activity, that step's prediction the one
+after, and the state is put back before the answer is returned.
+`node_confidences` is the same answer for one step.
 
 Tests: `test/temporal_pooler_test.pony`, which is the reference's `TestLearnPredict`
 translated, plus what pooling measurably changes, what the re-play recovers, what
@@ -494,23 +494,38 @@ a length limit costs, and what a forecast names.
 ### `cla_output.pony`
 
 `ClaOutput` (value) - one step of a pooler as one value: the cells it answered
-with, the cells it activated, the cells it predicts for the next step, and the
-nodes those predictions belong to. What crosses back to whoever asked, so that
-nothing handed out points into the pooler.
+with, the cells it activated, the cells it predicts for the next step, the nodes
+those predictions belong to, and how much confidence each node carries. What
+crosses back to whoever asked, so that nothing handed out points into the pooler.
 
 Tests: covered through `TemporalPooler` and its actor.
+
+### `cla_forecast.pony`
+
+`ClaForecast` (value) - several steps of a pooler, as one value: per step, the
+confidence on every node, with `nodes(step)` naming the ones that carry any and
+`confidences(step)` the shares themselves. Produced by `TemporalPooler.predict`
+and sent back by `TemporalPoolerActor.predict`.
+
+Tests: covered through both.
 
 ### `temporal_pooler_actor.pony`
 
 `ClaObserver` - whoever asked for a step, and so receives the answer.
 
+`ClaForecaster` - whoever asked the pooler to look ahead, and so receives the
+forecast. A second interface rather than another behaviour on `ClaObserver`: a
+reader of steps is not necessarily a reader of forecasts, and an interface here
+cannot have a behaviour nobody implements.
+
 `TemporalPoolerActor` (actor) - `TemporalPooler` as messages: one actor, answers
-in the order the steps arrive. One actor and not shards, because a pooler's
-segments reach across nodes and its prediction is decided by scanning the whole
-population, so there is no part of the state that can be owned separately.
+in the order the steps arrive, and `predict(steps, asker)` for the forecast. One
+actor and not shards, because a pooler's segments reach across nodes and its
+prediction is decided by scanning the whole population, so there is no part of
+the state that can be owned separately.
 
 Tests: `test/temporal_pooler_actor_test.pony`, which compares every answer with
-the one-process pooler's.
+the one-process pooler's, and the forecast too.
 
 ### `sdr_merger.pony`
 

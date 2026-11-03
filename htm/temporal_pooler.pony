@@ -127,15 +127,14 @@ class TemporalPooler
     """
     _confidence.node_confidences()
 
-  fun ref predict(steps: USize): Array[Array[F64] val] val ? =>
+  fun ref predict(steps: USize): ClaForecast ? =>
     """
     What the pooler expects, step by step, if nothing arrives to correct it.
 
-    Each entry is the confidence the pooler would put on every node at that
-    step: the first is what it already predicts for the next step, and each one
-    after it is read from the state that follows, with the predicted cells
-    taken as the next step's activity and no input of its own. The state is put
-    back before this answers, so asking what comes next does not decide it.
+    The first step is what it already predicts; each one after it is read from the
+    state that follows, with the predicted cells taken as the next step's
+    activity and no input of its own. The state is put back before this answers,
+    so asking what comes next does not decide it.
 
     Reading several steps ahead like this is worth what the sequences it has
     learned are worth: where the pooler has learned only one continuation the
@@ -164,7 +163,7 @@ class TemporalPooler
     _inference.restore(kept)
     _confidence.restore(kept_confidence)
 
-    forecast
+    ClaForecast(consume forecast)
 
   fun ref _roll_forward() =>
     """
@@ -179,9 +178,15 @@ class TemporalPooler
   fun ref answer(): ClaOutput =>
     """
     Everything the last step produced, as one value: what it answered with, the
-    cells it activated, the cells it predicts, and the nodes those belong to.
+    cells it activated, the cells it predicts, the nodes those belong to, and how
+    much confidence each node carries.
     """
-    ClaOutput(_output(), active_cells(), predicted_cells(), predicted_columns())
+    ClaOutput(
+      _output(),
+      active_cells(),
+      predicted_cells(),
+      predicted_columns(),
+      node_confidences())
 
   fun ref compute(
     active_columns: ReadSeq[USize],

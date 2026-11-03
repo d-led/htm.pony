@@ -4,6 +4,16 @@ interface ClaObserver
   """
   be observed(output: ClaOutput val)
 
+interface ClaForecaster
+  """
+  Whoever asked a pooler to look ahead, and so receives the forecast.
+
+  A second interface rather than another behaviour on `ClaObserver`, because a
+  reader of steps is not necessarily a reader of forecasts and an interface here
+  is not allowed to have a behaviour nobody implements.
+  """
+  be forecasted(forecast: ClaForecast val)
+
 actor TemporalPoolerActor
   """
   The CLA temporal pooler as an actor: steps arrive as messages and each answer
@@ -42,6 +52,22 @@ actor TemporalPoolerActor
     """
     try _pooler.compute(columns, learn, infer)? end
     asker.observed(_pooler.answer())
+
+  be predict(steps: USize, asker: ClaForecaster tag) =>
+    """
+    Answer the asker with what the pooler expects that many steps ahead, without
+    changing where it is.
+
+    A forecast of no steps is refused by the pooler in process, and an actor
+    cannot refuse a message, so here it is answered with a forecast that reaches
+    nowhere rather than with nothing at all.
+    """
+    let forecast: ClaForecast =
+      try _pooler.predict(steps)?
+      else ClaForecast(recover val Array[Array[F64] val] end)
+      end
+
+    asker.forecasted(forecast)
 
   be reset() =>
     """

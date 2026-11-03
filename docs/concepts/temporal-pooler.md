@@ -96,14 +96,16 @@ twenty a burst would turn on.
 
 ## What it says about the future
 
-`predict(steps)` answers the confidence the pooler would put on every node at
-each of the next steps. The first comes from the state it is in; each one after
-that is read from a state rolled forward with no input of its own, where what was
+`predict(steps)` answers a `ClaForecast`: the confidence the pooler would put on
+every node at each of the next steps, with `nodes(step)` naming the ones that
+carry any. The first step comes from the state it is in; each one after that is
+read from a state rolled forward with no input of its own, where what was
 predicted becomes the activity. The state is put back before the answer is
 returned, so asking what comes next does not decide it.
 
 `node_confidences()` is the same soft answer for the step it is on: the
-confidence per node rather than the nodes a threshold lets through.
+confidence per node rather than the nodes a threshold lets through, and it is
+also in the `ClaOutput` a step answers with.
 
 ## Using it
 
@@ -121,8 +123,12 @@ On actors the same steps are messages, and the answer arrives as a value:
 
 ```pony
 let pooler = TemporalPoolerActor(config, seed = 7)
-pooler.compute(active_columns, learn, infer, an_observer)
+pooler.compute(active_columns, learn, infer, an_observer)   // a step
+pooler.predict(3, a_forecaster)                             // three steps ahead
 ```
+
+Both forms answer the same questions - a step, and a forecast - which is the
+rule every actor form in this library is held to.
 
 One actor rather than a set of shards, and that is a finding rather than a
 shortcut: a memory's segment reaches cells of its own column only, so its columns
