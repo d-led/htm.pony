@@ -162,7 +162,7 @@ table is the index to those paragraphs.
 | `pooler-training-value` | what does pooler learning buy a memory? | the learned pooler keeps more of the answer, on every seed printed |
 | `pooler-settings-value` | what do the pooler's settings cost? | pooling names more of the cycle and grows more segments; the re-play buys a precise state |
 | `sequence-training-value` | does a learned representation help a damaged sequence? | a small but consistent edge to the learned pooler, on three seeds of five |
-| `prediction-baselines` | is a memory better than not learning? | it is, on symbols; on a smooth value the last input wins |
+| `prediction-baselines` | is a memory better than not learning? | it is, on symbols and on a point going round a circle; on a smooth value the last input wins |
 
 The measurement studies - the last five - are pinned: their printed numbers are
 stored in `test/fixtures/studies/` and a run that disagrees fails. That is what

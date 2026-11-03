@@ -72,6 +72,83 @@ class Alphabet is Stream
       error
     end
 
+class Circle is Stream
+  """
+  A point moving around a circle one step at a time, and then back the way it
+  came.
+
+  A place on the plane, encoded by what a grid cell layer would fire there: two
+  neighbouring places share most of their cells and distant ones share none, so
+  a trajectory arrives as a sequence of overlapping inputs rather than of
+  unrelated ones. The last input is a strong guess, because the next place is
+  next to it - and at the turn it is the wrong guess, which is the one thing a
+  memory of the order can be better at.
+
+  The circle is drawn by rotating a point by a fixed angle, twenty steps to the
+  lap: no trigonometry, and the same place comes back after every lap.
+  """
+  let _encoder: GridCellEncoder
+  let _cosine: F64 = 0.9510565162951535
+  let _sine: F64 = 0.30901699437494745
+  let _lap: USize = 20
+  let _radius: F64 = 5.0
+
+  new create() ? =>
+    let periods: Array[F64] val = [6.0; 8.5; 12.0; 17.0; 24.0]
+    _encoder = GridCellEncoder(200, 0.25, periods where seed = 42)?
+
+  fun inputs(): USize => _encoder.width()
+
+  fun steps(): USize => 400
+
+  fun warmup(): USize => 100
+
+  fun input(step: USize): Array[Bool] ? =>
+    match _place(step)
+    | (let x: F64, let y: F64) =>
+      _bits(_cells(_encoder, x, y)?)?
+    end
+
+  fun _cells(
+    encoder: GridCellEncoder box,
+    x: F64,
+    y: F64)
+    : Array[USize] val ?
+  =>
+    recover val encoder.encode(x, y)? end
+
+  fun _bits(active: ReadSeq[USize]): Array[Bool] ? =>
+    let bits: Array[Bool] iso = recover iso Array[Bool].init(false, inputs()) end
+    for cell in active.values() do
+      bits(cell)? = true
+    end
+    consume bits
+
+  fun _place(step: USize): (F64, F64) =>
+    """
+    Where the point is after `step` steps around the circle, and back again
+    along the same places once it has gone all the way round one way.
+    """
+    var x: F64 = _radius
+    var y: F64 = 0.0
+    var turned: USize = 0
+    while turned < _turns(step) do
+      let next: F64 = (x * _cosine) - (y * _sine)
+      y = (x * _sine) + (y * _cosine)
+      x = next
+      turned = turned + 1
+    end
+    (x, y)
+
+  fun _turns(step: USize): USize =>
+    """
+    How far round the lap the point has turned: up by one a step until the
+    halfway point, and down by one after it, so the same places are visited
+    again in the other order.
+    """
+    let half: USize = steps() / 2
+    if step < half then step % _lap else (half - (step - half)) % _lap end
+
 primitive Rate
   """
   A share as a percentage with one decimal, so a table of them lines up.
@@ -284,16 +361,27 @@ actor Main
   The first stream is six symbols in a fixed order, which only a memory of what
   came before can follow. The second is a value that climbs and falls, where
   repeating the last input is a real competitor and the question is what
-  learning adds to it.
+  learning adds to it. The third is a point moving around a circle and then
+  back the way it came, encoded by what a grid cell layer would fire there, so
+  that consecutive places overlap: repeating the last input follows the circle
+  and cannot follow the turn.
 
-  Expect the memory to lead on the symbols, and the last input to win on the
-  smooth value.
+  Expect the memory to lead on the symbols, the last input to win on the smooth
+  value, and the circle to be the clearest case of all: repeating the last input
+  is nearly right there, because the next place is next to the present one, and
+  the memory still misses a tenth as much, because it is the order of the places
+  and not their nearness that says where the point goes next.
   """
   new create(env: Env) =>
     try
       _measure(env, "six symbols in a fixed order", Alphabet.create()?)?
       env.out.print("")
       _measure(env, "a value that climbs and falls", Drift.create()?)?
+      env.out.print("")
+      _measure(
+        env,
+        "a point going round a circle, and back",
+        Circle.create()?)?
       env.exitcode(0)
     else
       env.out.print("the example failed")

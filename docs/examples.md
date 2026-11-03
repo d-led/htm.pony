@@ -300,7 +300,7 @@ learned against wired, one setting against another. `examples/prediction-baselin
 asks the question those cannot - is a temporal memory better than the guesses
 that need no learning at all?
 
-Two streams, each encoded and pooled the same way, and four methods asked at
+Three streams, each encoded and pooled the same way, and four methods asked at
 every step which of the columns they expect. What is kept is the share each
 missed, so nought means everything that arrived was anticipated. The open-loop
 methods are the reference's `trivialPredictor.go`: `last input` expects this step
@@ -354,7 +354,35 @@ right about half as often. Learning the transitions buys nothing that the trivia
 method does not already have: on a smooth stream the next value nearly *is* the
 present one. That is not a defect to be fixed - it is the shape of the stream.
 
-In both runs the pooler is settled during the warm-up and then left alone, so
+The third stream is a point moving around a circle and then back the way it
+came, encoded by what a grid cell layer would fire at that place - so
+neighbouring places share most of their cells, which is the hard case for the
+last-input guess: it is nearly right, and being nearly right is all it can ever
+be.
+
+```
+a point going round a circle, and back
+400 steps, the first 100 of them teaching and unscored
+
+method             missed   steps right
+last input         22.3%    0.0%
+most common        26.4%    0.0%
+everything         0.0%     100.0%
+temporal memory    2.9%     10.7%
+```
+
+Here the memory wins by the widest margin of the three, and the reason is the
+one that makes the grid cell encoder worth having: the next place is next to the
+present one, so expecting the present one back is a guess that is never exactly
+right and never wildly wrong either. What says where the point goes is not how
+close the two places are but which of the neighbouring places came before, and
+that is a thing only a memory of the order has. It is not perfect, and the
+imperfection is honest: the reverse is a sequence the memory has never seen, and
+a pooled representation gives different places overlapping columns, so one
+column often carries more than one context - the same caveat the symbol stream
+carries.
+
+In every run the pooler is settled during the warm-up and then left alone, so
 what is measured from there on is the memory rather than a representation still
 moving under it. That also means the tables are reproducible exactly, which is why
 this study is pinned like the others.
@@ -724,6 +752,12 @@ The map is the other half of the idea and the title of the encoder. One cell doe
 not fire in one place; it fires wherever it is near a node of its lattice, so its
 receptive field is not a blob but the repeating hexagonal pattern shown, with
 the cells of its module competing for the same nodes at other phases.
+
+That overlapping, non-blob code has one use in this repository outside the
+encoder's own example: a point moving around a circle, in
+[Is the memory better than guessing?](#is-the-memory-better-than-guessing), where
+the places it fires for are a trajectory and the question is whether a temporal
+memory can follow one.
 
 ## A document, as the words it is made of
 

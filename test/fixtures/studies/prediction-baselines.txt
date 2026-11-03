@@ -15,3 +15,12 @@ last input         1.3%     54.0%
 most common        31.2%    0.0%
 everything         0.0%     100.0%
 temporal memory    5.4%     49.7%
+
+a point going round a circle, and back
+400 steps, the first 100 of them teaching and unscored
+
+method             missed   steps right
+last input         22.3%    0.0%
+most common        26.4%    0.0%
+everything         0.0%     100.0%
+temporal memory    2.9%     10.7%
