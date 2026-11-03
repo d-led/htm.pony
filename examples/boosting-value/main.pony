@@ -38,21 +38,22 @@ primitive Study
 
     SpatialPoolerConfig(
       [columns()],
-      [inputs()],
-      true,                        // one competition for the whole population
-      density() * columns().f64(), // not consulted while a density is stated
-      density(),
-      inputs(),                    // a column may look at any input bit
-      0.9,                         // so it is wired to nine in ten of them
-      0.1,                         // and a synapse counts once it is this strong
-      untouched,                   // a winner moves no permanence...
-      1,                           // a column competes with its neighbours only
-      untouched,                   // ...and neither does a loser
-      0,                           // any overlap may be heard
-      50,                          // activity over the last fifty inputs
-      max_boost,
-      0.001,                       // starving: below a thousandth of the busiest
-      0.1)                         // boosting starts below a tenth of it
+      [inputs()]
+    where
+      global_inhibition' = true,
+      num_active_columns_per_inh_area' = density() * columns().f64(),
+      local_area_density' = density(),
+      potential_radius' = inputs(),
+      potential_pct' = 0.9,
+      connection_threshold' = 0.1,
+      permanence_increment' = untouched,
+      inhibition_radius' = 1,
+      permanence_decrement' = untouched,
+      stimulus_threshold' = 0,
+      duty_cycle_period' = 50,
+      max_boost' = max_boost,
+      min_overlap_duty_cycle' = 0.001,
+      min_active_duty_cycle' = 0.1)
 
   fun patterns(): Array[Array[Bool] val] val ? =>
     """

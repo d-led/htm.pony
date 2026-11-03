@@ -4,16 +4,25 @@ use "../htm"
 primitive PredictionFixture
   fun predictor(): PredictionClassifier ? =>
     PredictionClassifier(
-      TemporalMemory(TemporalMemoryParams(4, 4, 1, 0.5, 0.5, 0.1, 0.02, 8, 4)),
+      _memory(),
       2,
       0.1)?
 
   fun two_step(): PredictionClassifier ? =>
     PredictionClassifier(
-      TemporalMemory(TemporalMemoryParams(4, 4, 1, 0.5, 0.5, 0.1, 0.02, 8, 4)),
+      _memory(),
       3,
       0.1,
       2)?
+
+  fun _memory(): TemporalMemory =>
+    TemporalMemory(TemporalMemoryParams(
+      where
+        columns' = 4,
+        cells_per_column' = 4,
+        activation_threshold' = 1,
+        max_synapses' = 8,
+        max_segments_per_cell' = 4))
 
   fun teaches_a_cycle(target: PredictionClassifier) ? =>
     """

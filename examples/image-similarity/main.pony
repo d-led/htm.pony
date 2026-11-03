@@ -12,8 +12,10 @@ actor Main
   """
   new create(env: Env) =>
     try
-      let encoder = ImageEncoder(ImageEncoderParams(256, 64, 7))?
-      let pooler = SpatialPooler(SpatialPoolerConfig([64], [256], true, 16.0), 42)?
+      let encoder = ImageEncoder(
+        ImageEncoderParams(256, 64 where seed' = 7))?
+      let pooler = SpatialPooler(SpatialPoolerConfig([64], [256]
+        where global_inhibition' = true, num_active_columns_per_inh_area' = 16.0), 42)?
 
       let original = Pictures.pattern(18, 16)?
       let pictures: Array[(String, GrayscaleImage val)] = [

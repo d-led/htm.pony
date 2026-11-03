@@ -7,10 +7,19 @@ primitive AnomalyFixture
   """
 
   fun pooler(): SpatialPooler ? =>
-    SpatialPooler(SpatialPoolerConfig([64], [64], true, 16.0, 0.1), 42)?
+    SpatialPooler(SpatialPoolerConfig([64], [64]
+      where
+        global_inhibition' = true,
+        num_active_columns_per_inh_area' = 16.0,
+        local_area_density' = 0.1), 42)?
 
   fun memory(): TemporalMemory =>
-    TemporalMemory(TemporalMemoryParams(64, 8, 1, 0.5, 0.5, 0.1, 0.02, 32, 4))
+    TemporalMemory(TemporalMemoryParams(
+      where
+        columns' = 64,
+        cells_per_column' = 8,
+        activation_threshold' = 1,
+        max_segments_per_cell' = 4))
 
   fun detector(): StreamingAnomalyDetector ? =>
     StreamingAnomalyDetector(pooler()?, memory())

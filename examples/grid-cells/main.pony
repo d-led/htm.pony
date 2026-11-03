@@ -20,7 +20,8 @@ actor Main
 
   new create(env: Env) =>
     try
-      let encoder = GridCellEncoder(200, 0.25, _periods, 42)?
+      let encoder = GridCellEncoder(
+        200, 0.25, _periods where seed = 42)?
       env.out.print(
         encoder.width().string()
           + " cells, five spacings, a quarter of each module firing")

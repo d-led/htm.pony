@@ -10,7 +10,8 @@ primitive Session
   fun seed(): U64 => 42
 
   fun config(): SpatialPoolerConfig val =>
-    SpatialPoolerConfig([8; 8], [64], false, 2.0)
+    SpatialPoolerConfig([8; 8], [64]
+      where global_inhibition' = false, num_active_columns_per_inh_area' = 2.0)
 
   fun input(): Array[Bool] val =>
     let values: Array[Bool] iso = recover iso Array[Bool].init(false, 64) end

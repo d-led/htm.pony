@@ -19,10 +19,19 @@ primitive StreamFixture
   `anomaly-stream` example uses, so that the two can be read against each other.
   """
   fun config(): SpatialPoolerConfig val =>
-    SpatialPoolerConfig([64], [64], true, 16.0, 0.1)
+    SpatialPoolerConfig([64], [64]
+      where
+        global_inhibition' = true,
+        num_active_columns_per_inh_area' = 16.0,
+        local_area_density' = 0.1)
 
   fun params(): TemporalMemoryParams val =>
-    TemporalMemoryParams(64, 8, 1, 0.5, 0.5, 0.1, 0.02, 32, 4)
+    TemporalMemoryParams(
+      where
+        columns' = 64,
+        cells_per_column' = 8,
+        activation_threshold' = 1,
+        max_segments_per_cell' = 4)
 
   fun steps(): Array[Array[Bool] val] val =>
     let answers: Array[Array[Bool] val] iso = recover iso

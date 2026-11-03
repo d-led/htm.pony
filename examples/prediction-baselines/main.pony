@@ -304,10 +304,16 @@ actor Main
     _report(env, study)?
 
   fun _params(): TemporalMemoryParams val =>
-    TemporalMemoryParams(256, 8, 4, 0.5, 0.5, 0.1, 0.02, 32, 4)
+    TemporalMemoryParams(
+      where
+        columns' = 256,
+        cells_per_column' = 8,
+        activation_threshold' = 4,
+        max_segments_per_cell' = 4)
 
   fun _pooler(stream: Stream): SpatialPooler ? =>
-    SpatialPooler(SpatialPoolerConfig([256], [stream.inputs()], true), 42)?
+    SpatialPooler(SpatialPoolerConfig([256], [stream.inputs()]
+      where global_inhibition' = true), 42)?
 
   fun _announce(env: Env, what: String, stream: Stream) =>
     env.out.print(what)

@@ -9,7 +9,13 @@ actor Main
   """
   new create(env: Env) =>
     try
-      let memory = TemporalMemory(TemporalMemoryParams(4, 4, 1, 0.5, 0.5, 0.1, 0.02, 8, 4))
+      let memory = TemporalMemory(TemporalMemoryParams(
+        where
+          columns' = 4,
+          cells_per_column' = 4,
+          activation_threshold' = 1,
+          max_synapses' = 8,
+          max_segments_per_cell' = 4))
 
       env.out.print("teaching: column 0 then column 1")
 

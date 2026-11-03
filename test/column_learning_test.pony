@@ -14,7 +14,8 @@ class ColumnLearningTest is TestList
 
 primitive LearningSeam
   fun config(): SpatialPoolerConfig val =>
-    SpatialPoolerConfig([4; 4], [8], true, 1.0)
+    SpatialPoolerConfig([4; 4], [8]
+      where global_inhibition' = true, num_active_columns_per_inh_area' = 1.0)
 
   fun grid(): Grid ? => Grid([4; 4])?
 

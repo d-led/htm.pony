@@ -13,7 +13,8 @@ class SpatialPoolerTest is TestList
     test(_ARepresentationIsSparserThanTheInput)
 
   fun config(): SpatialPoolerConfig =>
-    SpatialPoolerConfig([8; 8], [64], false, 2.0)
+    SpatialPoolerConfig([8; 8], [64]
+      where global_inhibition' = false, num_active_columns_per_inh_area' = 2.0)
 
   fun input(on: ReadSeq[USize], width: USize = 64): Array[Bool] =>
     let values = Array[Bool].init(false, width)

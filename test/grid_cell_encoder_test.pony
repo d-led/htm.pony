@@ -22,7 +22,7 @@ primitive GridCellFixture
     recover val [6.0; 8.5; 12.0; 17.0; 24.0] end
 
   fun encoder(sparsity: F64 = 0.25, seed: U64 = 42): GridCellEncoder ? =>
-    GridCellEncoder(200, sparsity, periods(), seed)?
+    GridCellEncoder(200, sparsity, periods() where seed = seed)?
 
   fun cells(at: GridCellEncoder, x: F64, y: F64): Set[USize] val ? =>
     recover val

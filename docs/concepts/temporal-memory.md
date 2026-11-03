@@ -71,13 +71,20 @@ down.
 ## Using it
 
 ```pony
-let memory = TemporalMemory(TemporalMemoryParams(columns = 64, cells_per_column = 32))?
+let memory = TemporalMemory(TemporalMemoryParams(
+  where columns' = 64, cells_per_column' = 32))?
 
-let output = memory.compute(active_columns, learn = true)?
+let output = memory.compute(active_columns, true)?
 output.active_cells      // what is active now
 output.predictive_cells  // what it expects next
 output.bursting_columns  // the columns it had no prediction for
 ```
+
+Every setting is named because a memory is nine numbers otherwise: `columns'`,
+`cells_per_column'`, `activation_threshold'`, the two permanence thresholds and
+the two steps it takes, and the two limits on what one cell may hold. Named
+arguments may be given in any order, so only the ones that differ from the
+defaults need to appear at all.
 
 `predictive_cells` describes the future, not the present: it is computed from the
 cells that just became active, so it says what the memory expects at the next

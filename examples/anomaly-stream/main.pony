@@ -11,8 +11,17 @@ actor Main
   new create(env: Env) =>
     try
       let detector = StreamingAnomalyDetector(
-        SpatialPooler(SpatialPoolerConfig([64], [64], true, 16.0, 0.1), 42)?,
-        TemporalMemory(TemporalMemoryParams(64, 8, 1, 0.5, 0.5, 0.1, 0.02, 32, 4)))
+        SpatialPooler(SpatialPoolerConfig([64], [64]
+          where
+            global_inhibition' = true,
+            num_active_columns_per_inh_area' = 16.0,
+            local_area_density' = 0.1), 42)?,
+        TemporalMemory(TemporalMemoryParams(
+          where
+            columns' = 64,
+            cells_per_column' = 8,
+            activation_threshold' = 1,
+            max_segments_per_cell' = 4)))
 
       env.out.print("eight rounds of a b c, then d")
       env.out.print("")

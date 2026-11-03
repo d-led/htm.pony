@@ -55,17 +55,27 @@ primitive Patterns
     segment, and no pooling, over fifty nodes unless more are needed.
     """
     TemporalPoolerConfig(
-      nodes, 2,           // nodes, and cells in each
-      8, 10, 10,          // activation threshold, min threshold, synapses wanted
-      false,              // no pooling
-      0.5, 0.5,           // initial and connection permanence
-      0.1, 0.0, 1.0,      // permanence increment, decrement, ceiling
-      0.0,                // no global decay
-      1, 10,              // update window, pam length
-      10, learn_backtrack, // the two backtrack windows
-      100000,             // nothing is ever aged out
-      longest,            // longest sequence worth naming
-      0, 0)?              // no fixed-size limits
+      where
+        columns' = nodes,
+        cells_per_column' = 2,
+        activation_threshold' = 8,
+        min_threshold' = 10,
+        new_synapse_count' = 10,
+        pooling' = false,
+        initial_permanence' = 0.5,
+        connected_threshold' = 0.5,
+        permanence_increment' = 0.1,
+        permanence_decrement' = 0.0,
+        permanence_max' = 1.0,
+        global_decay' = 0.0,
+        update_window' = 1,
+        pam_length' = 10,
+        max_inference_backtrack' = 10,
+        max_learning_backtrack' = learn_backtrack,
+        max_segment_age' = 100000,
+        max_sequence_length' = longest,
+        max_segments_per_cell' = 0,
+        max_synapses_per_segment' = 0)?
 
   fun pooler(
     nodes: USize = 50,
@@ -127,17 +137,27 @@ primitive Patterns
     The same pooler, but pooling, and with a window of its own.
     """
     let pooling = TemporalPoolerConfig(
-      50, 2,
-      8, 10, 10,
-      true,               // pooling
-      0.5, 0.5,
-      0.1, 0.0, 1.0,
-      0.0,
-      window, 10,
-      10, 5,
-      100000,
-      32,
-      0, 0)?
+      where
+        columns' = 50,
+        cells_per_column' = 2,
+        activation_threshold' = 8,
+        min_threshold' = 10,
+        new_synapse_count' = 10,
+        pooling' = true,
+        initial_permanence' = 0.5,
+        connected_threshold' = 0.5,
+        permanence_increment' = 0.1,
+        permanence_decrement' = 0.0,
+        permanence_max' = 1.0,
+        global_decay' = 0.0,
+        update_window' = window,
+        pam_length' = 10,
+        max_inference_backtrack' = 10,
+        max_learning_backtrack' = 5,
+        max_segment_age' = 100000,
+        max_sequence_length' = 32,
+        max_segments_per_cell' = 0,
+        max_synapses_per_segment' = 0)?
     TemporalPooler(pooling, 7)
 
   fun predicts_the_sequence(h: TestHelper, subject: TemporalPooler) ? =>
@@ -257,17 +277,27 @@ class iso _AnUnusedSynapseAgesAway is UnitTest
   fun apply(h: TestHelper) ? =>
     // a synapse weaker than the decay cannot survive it
     let config = TemporalPoolerConfig(
-      20, 2,
-      3, 2, 3,
-      false,
-      0.02, 0.5,
-      0.1, 0.0, 1.0,
-      0.05,               // global decay, stronger than any synapse here
-      1, 10,
-      10, 5,
-      1,                  // everything unused for one step goes
-      32,
-      0, 0)?
+      where
+        columns' = 20,
+        cells_per_column' = 2,
+        activation_threshold' = 3,
+        min_threshold' = 2,
+        new_synapse_count' = 3,
+        pooling' = false,
+        initial_permanence' = 0.02,
+        connected_threshold' = 0.5,
+        permanence_increment' = 0.1,
+        permanence_decrement' = 0.0,
+        permanence_max' = 1.0,
+        global_decay' = 0.05,
+        update_window' = 1,
+        pam_length' = 10,
+        max_inference_backtrack' = 10,
+        max_learning_backtrack' = 5,
+        max_segment_age' = 1,
+        max_sequence_length' = 32,
+        max_segments_per_cell' = 0,
+        max_synapses_per_segment' = 0)?
     let pooler = TemporalPooler(config, 3)
 
     pooler.compute(Patterns.of(0), true, false)?

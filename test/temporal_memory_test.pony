@@ -8,15 +8,12 @@ primitive TemporalFixture
   """
   fun params(cells_per_column: USize = 4): TemporalMemoryParams val =>
     TemporalMemoryParams(
-      4,
-      cells_per_column,
-      1,
-      0.5,
-      0.5,
-      0.1,
-      0.02,
-      8,
-      4)
+      where
+        columns' = 4,
+        cells_per_column' = cells_per_column,
+        activation_threshold' = 1,
+        max_synapses' = 8,
+        max_segments_per_cell' = 4)
 
   fun memory(): TemporalMemory =>
     TemporalMemory(params())
@@ -26,7 +23,14 @@ primitive TemporalFixture
     The same, but a synapse moves a long way when it is punished, so a test can
     reach the outcome in a few steps.
     """
-    TemporalMemory(TemporalMemoryParams(4, 4, 1, 0.5, 0.5, 0.1, 0.2, 8, 4))
+    TemporalMemory(TemporalMemoryParams(
+      where
+        columns' = 4,
+        cells_per_column' = 4,
+        activation_threshold' = 1,
+        permanence_decrement' = 0.2,
+        max_synapses' = 8,
+        max_segments_per_cell' = 4))
 
   fun teaches(target: TemporalMemory, first: USize, second: USize) ? =>
     """
@@ -183,8 +187,12 @@ class iso _ASegmentNeedsEnoughActiveSynapsesToPredict is UnitTest
     // the same sequence, learned by two memories that differ in one number: how
     // many active synapses make a segment a prediction. Their segments are
     // allowed one synapse each, so the patient one can never reach two.
-    let eager = TemporalMemory(TemporalMemoryParams(4, 4, 1, 0.5, 0.5, 0.1, 0.02, 1, 4))
-    let patient = TemporalMemory(TemporalMemoryParams(4, 4, 2, 0.5, 0.5, 0.1, 0.02, 1, 4))
+    let eager = TemporalMemory(TemporalMemoryParams(
+      where columns' = 4, cells_per_column' = 4, activation_threshold' = 1,
+        max_synapses' = 1, max_segments_per_cell' = 4))
+    let patient = TemporalMemory(TemporalMemoryParams(
+      where columns' = 4, cells_per_column' = 4, activation_threshold' = 2,
+        max_synapses' = 1, max_segments_per_cell' = 4))
 
     for memory in [eager; patient].values() do
       // shown once, because a column that bursts again grows its next segment
@@ -209,7 +217,13 @@ class iso _AVeriedCycleIsPredictedEveryStep is UnitTest
   fun apply(h: TestHelper) ? =>
     // five patterns of ten columns, two cells each: enough columns that a burst
     // cannot reach them all with one segment's synapses
-    let shape = TemporalMemoryParams(50, 2, 8, 0.5, 0.5, 0.1, 0.02, 10, 5)
+    let shape = TemporalMemoryParams(
+      where
+        columns' = 50,
+        cells_per_column' = 2,
+        activation_threshold' = 8,
+        max_synapses' = 10,
+        max_segments_per_cell' = 5)
     let memory = TemporalMemory(shape)
 
     var epoch: USize = 0
@@ -253,7 +267,13 @@ class iso _AColumnInTwoContextsIsPredictedInBoth is UnitTest
   fun apply(h: TestHelper) ? =>
     // one state, two predecessors: a column that can only remember one thing
     // about itself has to choose between them, and bursts every other visit
-    let shape = TemporalMemoryParams(3, 3, 1, 0.5, 0.5, 0.1, 0.02, 3, 4)
+    let shape = TemporalMemoryParams(
+      where
+        columns' = 3,
+        cells_per_column' = 3,
+        activation_threshold' = 1,
+        max_synapses' = 3,
+        max_segments_per_cell' = 4)
     let memory = TemporalMemory(shape)
     let shared: Array[USize] val = [0]
     let first: Array[USize] val = [1]

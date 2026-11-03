@@ -22,7 +22,12 @@ actor Main
   new create(env: Env) =>
     try
       let encoder = SimHashDocumentEncoder(
-        SimHashParams(400, 20, false, false, 0, 0)?)
+        SimHashParams(400, 20
+          where
+            token_similarity' = false,
+            case_sensitive' = false,
+            frequency_ceiling' = 0,
+            frequency_floor' = 0)?)
 
       env.out.print(encoder.width().string() + " positions, 20 of them set"
         + " per document")

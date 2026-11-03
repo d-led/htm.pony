@@ -41,7 +41,9 @@ class iso _AStatedDensityWins is UnitTest
   fun name(): String => "a stated local area density is used as it stands"
 
   fun apply(h: TestHelper) =>
-    let config = SpatialPoolerConfig([8], [8], false, 10.0, 0.125)
+    let config = SpatialPoolerConfig([8], [8]
+      where global_inhibition' = false, num_active_columns_per_inh_area' = 10.0,
+        local_area_density' = 0.125)
     h.assert_eq[F64](0.125, config.density(1))
 
 class iso _TheDensityIsCappedAtOneHalf is UnitTest

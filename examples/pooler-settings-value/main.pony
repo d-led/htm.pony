@@ -22,17 +22,27 @@ primitive Cycle
     learning: USize): TemporalPoolerConfig val ?
   =>
     TemporalPoolerConfig(
-      100, 8,             // nodes, and cells in each
-      8, 10, 10,          // activation threshold, min threshold, synapses wanted
-      pooling,
-      0.5, 0.5,
-      0.1, 0.0, 1.0,
-      0.0,
-      window, 10,         // update window, pam length
-      inference, learning,
-      100000,
-      32,
-      0, 0)?
+      where
+        columns' = 100,
+        cells_per_column' = 8,
+        activation_threshold' = 8,
+        min_threshold' = 10,
+        new_synapse_count' = 10,
+        pooling' = pooling,
+        initial_permanence' = 0.5,
+        connected_threshold' = 0.5,
+        permanence_increment' = 0.1,
+        permanence_decrement' = 0.0,
+        permanence_max' = 1.0,
+        global_decay' = 0.0,
+        update_window' = window,
+        pam_length' = 10,
+        max_inference_backtrack' = inference,
+        max_learning_backtrack' = learning,
+        max_segment_age' = 100000,
+        max_sequence_length' = 32,
+        max_segments_per_cell' = 0,
+        max_synapses_per_segment' = 0)?
 
   fun learn_cycle(subject: TemporalPooler, passes: USize) ? =>
     """

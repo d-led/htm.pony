@@ -332,7 +332,9 @@ class iso _AColumnsTieIsBrokenByTheSeed is UnitTest
   fun apply(h: TestHelper) ? =>
     h.long_test(5_000_000_000)
 
-    let config = SpatialPoolerConfig([2], [2], true, 1.0, 0.5)
+    let config = SpatialPoolerConfig([2], [2]
+      where global_inhibition' = true, num_active_columns_per_inh_area' = 1.0,
+        local_area_density' = 0.5)
     let input: Array[Bool] val = recover val [true; true] end
     let seeds: Array[U64] = [1; 2; 3; 4; 5; 6; 7; 8]
     let watcher = TieWatcher(h, seeds.size())

@@ -27,7 +27,8 @@ primitive PoolerSession
   fun seed(): U64 => 5
 
   fun config(): SpatialPoolerConfig val =>
-    SpatialPoolerConfig([8; 8], [64], false, 2.0)
+    SpatialPoolerConfig([8; 8], [64]
+      where global_inhibition' = false, num_active_columns_per_inh_area' = 2.0)
 
   fun pattern(): Array[USize] => [3; 9; 14; 18; 25; 33; 41; 52]
 

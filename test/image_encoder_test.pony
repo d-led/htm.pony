@@ -86,7 +86,7 @@ primitive TestImages
     GrayscaleImage(image.width, image.height, consume pixels)?
 
   fun encoder(bits: USize = 64): ImageEncoder ? =>
-    ImageEncoder(ImageEncoderParams(1024, bits, 42))?
+    ImageEncoder(ImageEncoderParams(1024, bits where seed' = 42))?
 
 class ImageEncoderTest is TestList
   fun name(): String => "Image encoder"
@@ -179,7 +179,7 @@ class iso _ARepresentationNarrowerThanTheFingerprintIsRefused is UnitTest
 
   fun apply(h: TestHelper) =>
     try
-      ImageEncoder(ImageEncoderParams(32, 64, 42))?
+      ImageEncoder(ImageEncoderParams(32, 64 where seed' = 42))?
       h.fail("an encoder narrower than its fingerprint should not be built")
     end
 

@@ -51,4 +51,5 @@ class iso _AShardVotesForEveryColumnItOwns is UnitTest
 
     // two votes means the round needs both of them, however they are grouped
     let ballot = BallotBox(ShardWatcher(h, recover val [1.0; 0.0] end), 2)
-    ColumnShard(wirings, SpatialPoolerConfig([2], [2], false, 2.0)).observe(0, input, ballot)
+    ColumnShard(wirings, SpatialPoolerConfig([2], [2]
+      where global_inhibition' = false, num_active_columns_per_inh_area' = 2.0)).observe(0, input, ballot)

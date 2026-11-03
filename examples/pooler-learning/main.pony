@@ -22,7 +22,8 @@ actor Main
     end
 
   fun _run(env: Env): I32 ? =>
-    let config = SpatialPoolerConfig([8; 8], [64], false, 2.0)
+    let config = SpatialPoolerConfig([8; 8], [64]
+      where global_inhibition' = false, num_active_columns_per_inh_area' = 2.0)
     let pattern = _pattern()
     let learning = SpatialPooler(config, 42)?
     let watching = SpatialPooler(config, 42)?

@@ -17,17 +17,27 @@ primitive Branches
 
   fun config(): TemporalPoolerConfig val ? =>
     TemporalPoolerConfig(
-      100, 2,
-      8, 10, 10,
-      false,
-      0.5, 0.5,
-      0.1, 0.0, 1.0,
-      0.0,
-      1, 10,
-      10, 5,
-      100000,
-      32,
-      0, 0)?
+      where
+        columns' = 100,
+        cells_per_column' = 2,
+        activation_threshold' = 8,
+        min_threshold' = 10,
+        new_synapse_count' = 10,
+        pooling' = false,
+        initial_permanence' = 0.5,
+        connected_threshold' = 0.5,
+        permanence_increment' = 0.1,
+        permanence_decrement' = 0.0,
+        permanence_max' = 1.0,
+        global_decay' = 0.0,
+        update_window' = 1,
+        pam_length' = 10,
+        max_inference_backtrack' = 10,
+        max_learning_backtrack' = 5,
+        max_segment_age' = 100000,
+        max_sequence_length' = 32,
+        max_segments_per_cell' = 0,
+        max_synapses_per_segment' = 0)?
 
 actor Main
   """

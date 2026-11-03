@@ -17,17 +17,27 @@ primitive Sequence
 
   fun config(): TemporalPoolerConfig val ? =>
     TemporalPoolerConfig(
-      50, 2,              // nodes, and cells in each
-      8, 10, 10,          // activation threshold, min threshold, synapses wanted
-      false,              // no pooling
-      0.5, 0.5,           // initial and connection permanence
-      0.1, 0.0, 1.0,      // permanence increment, decrement, ceiling
-      0.0,                // no global decay
-      1, 10,              // update window, pam length
-      10, 5,              // the two backtrack windows
-      100000,             // nothing is ever aged out
-      32,                 // longest sequence worth naming
-      0, 0)?              // no fixed-size limits
+      where
+        columns' = 50,
+        cells_per_column' = 2,
+        activation_threshold' = 8,
+        min_threshold' = 10,
+        new_synapse_count' = 10,
+        pooling' = false,
+        initial_permanence' = 0.5,
+        connected_threshold' = 0.5,
+        permanence_increment' = 0.1,
+        permanence_decrement' = 0.0,
+        permanence_max' = 1.0,
+        global_decay' = 0.0,
+        update_window' = 1,
+        pam_length' = 10,
+        max_inference_backtrack' = 10,
+        max_learning_backtrack' = 5,
+        max_segment_age' = 100000,
+        max_sequence_length' = 32,
+        max_segments_per_cell' = 0,
+        max_synapses_per_segment' = 0)?
 
 actor Main
   """

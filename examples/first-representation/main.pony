@@ -11,7 +11,8 @@ actor Main
   new create(env: Env) =>
     try
       let encoder = _encoder()?
-      let config = SpatialPoolerConfig([8; 8], [46], true, 2.0)
+      let config = SpatialPoolerConfig([8; 8], [46]
+        where global_inhibition' = true, num_active_columns_per_inh_area' = 2.0)
       let pooler = SpatialPooler(config, 42)?
 
       _headline(env, encoder, config)

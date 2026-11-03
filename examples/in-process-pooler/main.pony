@@ -10,7 +10,8 @@ actor Main
   """
   new create(env: Env) =>
     try
-      let config = SpatialPoolerConfig([8; 8], [64], false, 2.0)
+      let config = SpatialPoolerConfig([8; 8], [64]
+        where global_inhibition' = false, num_active_columns_per_inh_area' = 2.0)
 
       env.out.print("columns " + config.num_columns().string()
         + ", inputs " + config.num_inputs().string())

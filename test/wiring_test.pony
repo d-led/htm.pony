@@ -20,7 +20,13 @@ primitive Pool
   where it sits in the input.
   """
   fun config(potential_pct: F64 = 1.0): SpatialPoolerConfig val =>
-    SpatialPoolerConfig([4], [10], false, 2.0, -1.0, 2, potential_pct)
+    SpatialPoolerConfig([4], [10]
+      where
+        global_inhibition' = false,
+        num_active_columns_per_inh_area' = 2.0,
+        local_area_density' = -1.0,
+        potential_radius' = 2,
+        potential_pct' = potential_pct)
 
 class iso _AColumnReachesTheInputAroundItsOwnPosition is UnitTest
   fun name(): String => "a column reaches the inputs around where it sits"

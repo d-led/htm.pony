@@ -31,10 +31,17 @@ primitive Study
   fun seeds(): Array[U64] => [3; 5; 11; 23; 41]
 
   fun config(): SpatialPoolerConfig val =>
-    SpatialPoolerConfig([8; 8], [64], false, 2.0)
+    SpatialPoolerConfig([8; 8], [64]
+      where global_inhibition' = false, num_active_columns_per_inh_area' = 2.0)
 
   fun memory(): TemporalMemoryParams val =>
-    TemporalMemoryParams(width(), 4, 1, 0.5, 0.5, 0.1, 0.02, 8, 4)
+    TemporalMemoryParams(
+      where
+        columns' = width(),
+        cells_per_column' = 4,
+        activation_threshold' = 1,
+        max_synapses' = 8,
+        max_segments_per_cell' = 4)
 
   fun inputs(seed: U64): Array[Array[Bool] val] val ? =>
     """

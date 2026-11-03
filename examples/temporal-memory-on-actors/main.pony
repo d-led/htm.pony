@@ -42,7 +42,13 @@ actor Main
     end
 
   fun tag _params(): TemporalMemoryParams val =>
-    TemporalMemoryParams(4, 4, 1, 0.5, 0.5, 0.1, 0.02, 8, 4)
+    TemporalMemoryParams(
+      where
+        columns' = 4,
+        cells_per_column' = 4,
+        activation_threshold' = 1,
+        max_synapses' = 8,
+        max_segments_per_cell' = 4)
 
   fun tag _steps(): Array[Array[USize] val] =>
     let steps = Array[Array[USize] val]

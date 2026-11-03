@@ -7,7 +7,8 @@ primitive EncoderFixture
   The picture the decoder tests already carry, turned into bits in one process,
   so the actor has something to be compared with.
   """
-  fun params(): ImageEncoderParams val => ImageEncoderParams(1024, 64, 7)
+  fun params(): ImageEncoderParams val =>
+    ImageEncoderParams(1024, 64 where seed' = 7)
 
   fun bits(env: Env): Array[Bool] val ? =>
     let encoder = ImageEncoder(params())?
