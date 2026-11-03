@@ -19,12 +19,15 @@ ponyup update corral release
 `ponyup` writes its binaries to `~/.local/share/ponyup/bin`. Put that directory
 on `PATH`.
 
-The compiler must be 0.65.0 or later. The decoder for picture files is a C source
-sitting beside a Pony package, and ponyc only started compiling those in 0.65.0;
-with an older compiler the build fails at the link step with an undefined
-reference to `stbi_load_from_memory`. The images on Docker Hub stop at 0.58.0,
-which is why the `Dockerfile` in this repository installs the compiler from
-ponyup rather than starting from one of them.
+The compiler must be 0.65.0 or later for the decoder for picture files to build:
+that decoder is a C source sitting beside a Pony package, and ponyc only started
+compiling those in 0.65.0; with an older compiler the build fails at the link
+step with an undefined reference to `stbi_load_from_memory`. This repository is
+developed and tested with **0.77**, and CI builds it inside
+`ponylang/ponyc:release`, so a compiler close to that is what is known to work.
+The images on Docker Hub stop at 0.58.0, which is why the `Dockerfile` in this
+repository installs the compiler from ponyup rather than starting from one of
+them.
 
 ## Get the code
 
@@ -44,13 +47,14 @@ corral run -- ponyc --debug
 The suite prints one line per test and a summary:
 
 ```
----- Passed: 69
+---- Passed: 251
 ----
----- 69 tests ran.
----- Passed: 69
+---- 251 tests ran.
+---- Passed: 251
 ```
 
-A non-zero exit status means something failed. The runner takes a few options:
+The count is whatever the suite holds; it moves as tests are added. A non-zero
+exit status means something failed. The runner takes a few options:
 
 ```
 ./test --list                      # names the tests without running them
@@ -90,8 +94,8 @@ representation:    3, 5, 7, 8, 13, 17, 19, 28, 42, 45, 55, 56
 a second pooler with the same seed gives the same representation
 ```
 
-The other three examples are described in [Examples](examples.md). To build and
-run all four at once, from the repository root:
+The other examples are described in [Examples](examples.md). To build and run all
+of them at once, from the repository root:
 
 ```
 ./examples/run-all.sh
@@ -108,5 +112,7 @@ runs.
 
 - [Representations](concepts/representations.md) — what a bit vector means here
 - [Spatial pooler](spatial-pooler.md) — the representation algorithm
+- [Temporal memory](concepts/temporal-memory.md) — what usually comes next
+- [Temporal pooler](concepts/temporal-pooler.md) — the situations those predictions belong to
 - [Actors](actors.md) — the same computation as messages
 - [Tutorial](tutorial.md) — build a representation step by step
