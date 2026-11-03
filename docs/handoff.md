@@ -43,7 +43,7 @@ cd test && corral run -- ponyc --debug && ./test       # the suite
 ./examples/run-all.sh                                  # every example, from the repo root
 python3 scripts/api-reference.py                       # regenerate the API reference
 ./.venv-docs/bin/mkdocs build --strict                 # docs, warnings are errors
-./scripts/studies.sh                                   # the three measured studies
+./scripts/studies.sh                                   # the four measured studies
 cd microbenchmarks && corral run -- ponyc              # never --debug here
 ~/go/bin/actionlint .github/workflows/*.yml            # the workflows
 ```

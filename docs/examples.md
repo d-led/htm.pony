@@ -16,7 +16,7 @@ corral run -- ponyc --debug
 ./in-process-pooler
 ```
 
-Three of them measure rather than demonstrate: what learning is worth, what a
+Four of them measure rather than demonstrate: what learning is worth, what a
 learned pooler gives a memory, what boosting is worth, and what the CLA pooler's
 settings are worth. Their numbers are the
 output of `scripts/studies.sh`, which CI runs on every push to master and
