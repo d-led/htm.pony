@@ -25,124 +25,61 @@ class DateEncoder
 
         var width': USize = 0
 
-        if params.season_width != 0 then
-            // Ignore leapyear differences -- assume 366 days in a year
-            // Radius = 91.5 days = length of season
-            // Value is number of days since beginning of year (0 - 355)
-
-            let sep = ScalarEncoderParams(
-                params.season_width,
-                0,
-                366
-            where
-                name' = "Season",
-                periodic' = true,
-                radius' = params.season_radius
-            )
-
-            let season_encoder' = ScalarEncoder(sep) ?
-            season_encoder = season_encoder'
-            season_offset = width'
-            width' = width' + season_encoder'.n
-        else
-            season_offset = 0
-            season_encoder = NoOpScalarEncoder
-        end
+        let season = DateField.build(
+          params.season_width,
+          366,
+          "Season",
+          params.season_radius,
+          true,
+          width')?
+        season_encoder = season._1
+        season_offset = season._2
+        width' = width' + season._3
 
 
-        if params.day_of_week_width != 0 then
-            // Value is day of week (floating point)
-            // Radius is 1 day
+        let day = DateField.build(
+          params.day_of_week_width,
+          7,
+          "day of week",
+          params.day_of_week_radius,
+          true,
+          width')?
+        day_of_week_encoder = day._1
+        day_of_week_offset = day._2
+        width' = width' + day._3
 
-            let sep = ScalarEncoderParams(
-                params.day_of_week_width,
-                0,
-                7
-            where
-                name' = "day of week",
-                radius' = params.day_of_week_radius,
-                periodic' = true
-            )
+        let weekend = DateField.build(
+          params.weekend_width,
+          1,
+          "weekend",
+          params.weekend_radius,
+          false,
+          width')?
+        weekend_encoder = weekend._1
+        weekend_offset = weekend._2
+        width' = width' + weekend._3
 
-            let day_of_week_encoder' = ScalarEncoder(sep) ?
-            day_of_week_encoder = day_of_week_encoder'
-            day_of_week_offset = width'
-            width' = width' + day_of_week_encoder'.n
-        else
-            day_of_week_offset = 0
-            day_of_week_encoder = NoOpScalarEncoder
-        end
+        let holiday = DateField.build(
+          params.holiday_width,
+          1,
+          "holiday",
+          params.holiday_radius,
+          false,
+          width')?
+        holiday_encoder = holiday._1
+        holiday_offset = holiday._2
+        width' = width' + holiday._3
 
-        if params.weekend_width != 0 then
-            // Binary value. Not sure if this makes sense. Also is somewhat redundant
-            // with dayOfWeek
-            //Append radius if it was not provided
-
-            let sep = ScalarEncoderParams(
-                params.weekend_width,
-                0,
-                1
-            where
-                name' = "weekend",
-                radius' = params.weekend_radius,
-                periodic' = false
-            )
-
-            let weekend_encoder' = ScalarEncoder(sep) ?
-            weekend_encoder = weekend_encoder'
-            weekend_offset = width'
-            width' = width' + weekend_encoder'.n
-        else
-            weekend_offset = 0
-            weekend_encoder = NoOpScalarEncoder
-        end
-
-        if params.holiday_width != 0 then
-            // A "continuous" binary value. = 1 on the holiday itself and smooth ramp
-            // 0->1 on the day before the holiday and 1->0 on the day after the holiday.
-
-            let sep = ScalarEncoderParams(
-                params.holiday_width,
-                0,
-                1
-            where
-                name' = "holiday",
-                radius' = params.holiday_radius,
-                periodic' = false
-            )
-
-            let holiday_encoder' = ScalarEncoder(sep) ?
-            holiday_encoder = holiday_encoder'
-            holiday_offset = width'
-            width' = width' + holiday_encoder'.n
-        else
-            holiday_offset = 0
-            holiday_encoder = NoOpScalarEncoder
-        end
-
-        if params.time_of_day_width != 0 then
-            // Value is time of day in hours
-            // Radius = 4 hours, e.g. morning, afternoon, evening, early night,
-            // late night, etc.
-
-            let sep = ScalarEncoderParams(
-                params.time_of_day_width,
-                0,
-                24
-            where
-                name' = "time of day",
-                radius' = params.time_of_day_radius,
-                periodic' = true
-            )
-
-            let time_of_day_encoder' = ScalarEncoder(sep) ?
-            time_of_day_encoder = time_of_day_encoder'
-            time_of_day_offset = width'
-            width' = width' + time_of_day_encoder'.n
-        else
-            time_of_day_offset = 0
-            time_of_day_encoder = NoOpScalarEncoder
-        end
+        let time_of_day = DateField.build(
+          params.time_of_day_width,
+          24,
+          "time of day",
+          params.time_of_day_radius,
+          true,
+          width')?
+        time_of_day_encoder = time_of_day._1
+        time_of_day_offset = time_of_day._2
+        width' = width' + time_of_day._3
 
         // finally, set the total width
         width = width'

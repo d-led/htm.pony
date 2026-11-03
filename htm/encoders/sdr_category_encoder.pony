@@ -130,7 +130,15 @@ primitive RandomPositions
     width is wanted. The answer is ascending, like every other representation
     here.
     """
-    let positions: Array[USize] iso = recover iso Array[USize] end
+    let positions = _shuffled(size, random)
+    let on = _marked(positions, bits, size)
+    _ascending(on, size)
+
+  fun _shuffled(size: USize, random: Rand ref): Array[USize] ref =>
+    """
+    Every position, in an order drawn at random.
+    """
+    let positions: Array[USize] ref = Array[USize]
     var index: USize = 0
     while index < size do
       positions.push(index)
@@ -148,14 +156,28 @@ primitive RandomPositions
       placed = placed + 1
     end
 
+    positions
+
+  fun _marked(positions: ReadSeq[USize], bits: USize, size: USize): Array[Bool] =>
+    """
+    The first `bits` of the shuffled positions, as a flag per position.
+    """
     let on = Array[Bool].init(false, size)
+
     var taken: USize = 0
     while taken < bits do
       try on(positions(taken)?)? = true end
       taken = taken + 1
     end
 
+    on
+
+  fun _ascending(on: ReadSeq[Bool], size: USize): Array[USize] val =>
+    """
+    The flagged positions, in order.
+    """
     let chosen: Array[USize] iso = recover iso Array[USize] end
+
     var position: USize = 0
     while position < size do
       try

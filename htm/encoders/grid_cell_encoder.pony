@@ -126,24 +126,40 @@ class GridCellEncoder
     if (sparsity' <= 0.0) or (sparsity' > 1.0) then error end
     if periods'.size() == 0 then error end
 
-    var longest: F64 = 0.0
-    for period in periods'.values() do
-      if period < 4.0 then error end
-      if period > longest then longest = period end
-    end
-
     let periods = Spacings.ascending(periods')
     let random = Rand(seed)
+    _warm(random)
 
+    _size = size'
+    _sparsity = sparsity'
+    _modules = _build(size', periods, random)?
+
+  fun tag _warm(random: Rand ref) =>
+    """
+    Pony's generator is weak for the first few draws after seeding, which would
+    make the phases follow the seed rather than chance.
+    """
     var forgotten: USize = 0
     while forgotten < 16 do
       random.int(2)
       forgotten = forgotten + 1
     end
 
-    // a phase is where a cell's lattice sits, and the lattices of one module
-    // have to stay independent of each other, so the phases are spread wider
-    // than the largest period by an order of magnitude
+  fun tag _build(
+    size: USize,
+    periods: Array[F64] val,
+    random: Rand ref)
+    : Array[GridModule] val ?
+  =>
+    """
+    One module per period, each owning its slice of the cells and a lattice over
+    it: a phase per cell, and an orientation for the module.
+
+    A phase is where a cell's lattice sits, and the lattices of one module have
+    to stay independent of each other, so the phases are spread wider than the
+    largest period by an order of magnitude.
+    """
+    let longest = _longest(periods)?
     let reach = 9.0 * longest
     let modules: Array[GridModule] iso = recover iso Array[GridModule] end
 
@@ -151,24 +167,40 @@ class GridCellEncoder
     var start: USize = 0
     for period in periods.values() do
       module = module + 1
-      let stop = ((module * size') / periods.size())
-      let phases: Array[(F64, F64)] iso = recover iso Array[(F64, F64)] end
-
-      var cell: USize = start
-      while cell < stop do
-        phases.push((reach * random.real(), reach * random.real()))
-        cell = cell + 1
-      end
+      let stop = ((module * size) / periods.size())
 
       modules.push(
-        GridModule(start, stop, period, 2.0 * 3.141592653589793 * random.real(),
-          consume phases))
+        GridModule(
+          start,
+          stop,
+          period,
+          2.0 * 3.141592653589793 * random.real(),
+          _phases(start, stop, reach, random)))
       start = stop
     end
 
-    _size = size'
-    _sparsity = sparsity'
-    _modules = consume modules
+    consume modules
+
+  fun tag _longest(periods: Array[F64] val): F64 ? =>
+    var longest: F64 = 0.0
+    for period in periods.values() do
+      if period < 4.0 then error end
+      if period > longest then longest = period end
+    end
+    longest
+
+  fun tag _phases(start: USize, stop: USize, reach: F64, random: Rand ref)
+    : Array[(F64, F64)] val
+  =>
+    let phases: Array[(F64, F64)] iso = recover iso Array[(F64, F64)] end
+
+    var cell: USize = start
+    while cell < stop do
+      phases.push((reach * random.real(), reach * random.real()))
+      cell = cell + 1
+    end
+
+    consume phases
 
   fun width(): USize =>
     """How many cells the encoding addresses."""
