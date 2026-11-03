@@ -64,6 +64,7 @@ class TemporalMemoryTest is TestList
     test(_ASegmentThatPredictsWronglyIsForgotten)
     test(_AColumnOutsideTheMemoryIsRefused)
     test(_AVeriedCycleIsPredictedEveryStep)
+    test(_AColumnInTwoContextsIsPredictedInBoth)
 
 class iso _AFreshMemoryPredictsNothing is UnitTest
   fun name(): String => "a fresh memory predicts nothing"
@@ -186,7 +187,10 @@ class iso _ASegmentNeedsEnoughActiveSynapsesToPredict is UnitTest
     let patient = TemporalMemory(TemporalMemoryParams(4, 4, 2, 0.5, 0.5, 0.1, 0.02, 1, 4))
 
     for memory in [eager; patient].values() do
-      TemporalFixture.teaches(memory, 0, 1)?
+      // shown once, because a column that bursts again grows its next segment
+      // on a different cell - which is a fact about cells, not about thresholds
+      memory.compute([0], true)?
+      memory.compute([1], true)?
     end
 
     let by_eager = eager.compute([0], false)?
@@ -241,3 +245,35 @@ class iso _AVeriedCycleIsPredictedEveryStep is UnitTest
       column = column + 1
     end
     columns
+
+class iso _AColumnInTwoContextsIsPredictedInBoth is UnitTest
+  fun name(): String =>
+    "a state that arrives after two different things is predicted in both"
+
+  fun apply(h: TestHelper) ? =>
+    // one state, two predecessors: a column that can only remember one thing
+    // about itself has to choose between them, and bursts every other visit
+    let shape = TemporalMemoryParams(3, 3, 1, 0.5, 0.5, 0.1, 0.02, 3, 4)
+    let memory = TemporalMemory(shape)
+    let shared: Array[USize] val = [0]
+    let first: Array[USize] val = [1]
+    let second: Array[USize] val = [2]
+
+    var round: USize = 0
+    while round < 8 do
+      memory.compute(first, true)?
+      memory.compute(shared, true)?
+      memory.compute(second, true)?
+      memory.compute(shared, true)?
+      round = round + 1
+    end
+
+    let stream: Array[Array[USize] val] val = [first; shared; second; shared]
+    var step: USize = 0
+    while step < 8 do
+      let output = memory.compute(stream(step % 4)?, false)?
+
+      h.assert_eq[USize](0, output.bursting_columns.size(),
+        "nothing bursts at step " + step.string())
+      step = step + 1
+    end

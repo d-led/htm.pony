@@ -121,6 +121,16 @@ Two hundred steps of ordinary anomaly scores, then one that is not, put through
 `StreamingAnomalyDetector`'s likelihood estimator. Shows a raw score read
 against the steps before it, which is what turns a number into a probability.
 
+## [prediction-baselines](prediction-baselines/)
+
+Asks a temporal memory, and three guesses that need no learning, which of each
+step's columns they expect: the last input, the most common columns, and
+everything. Runs it twice - over six symbols in a fixed order, where only a
+memory can follow, and over a value that climbs and falls, where repeating the
+last input is hard to beat. Prints what share of each step's columns each method
+missed, and how often it was exactly right. Every other example here compares
+the library with itself; this one compares it with not learning at all.
+
 ## Running them
 
 Build and run one from its own directory:

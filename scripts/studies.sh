@@ -19,7 +19,7 @@ mkdir -p "$out"
 
 status=0
 
-for study in pooler-training-value sequence-training-value boosting-value pooler-settings-value; do
+for study in pooler-training-value sequence-training-value boosting-value pooler-settings-value prediction-baselines; do
     echo "=== $study ==="
     cd "$root/examples/$study"
     corral run -- ponyc -o . .

@@ -44,15 +44,23 @@ because the memory does not know which one applies, and it learns a segment for
 the situation that preceded it.
 
 A burst also has to pick **one** cell to be the one the situation belongs to -
-the cell whose segment came closest, or the first cell where a new segment is
-grown. That cell is the column's *winner* for the step, and the next step grows
-its new synapses to the winners and not to every cell that was active. The
-difference is easy to miss and expensive to get wrong: a burst lights up every
-cell of its column, so a segment that reached all of them and was then capped at
-`max_synapses` would be wired to a mix of the two offsets, and would reach only
-half its synapses the moment the state arrives as a prediction rather than a
-burst. With winners, a learned sequence is followed at every step instead of
-alternating with bursts.
+the cell whose segment came closest, or a cell that has learned least, where a
+new segment is grown. That cell is the column's *winner* for the step, and the
+next step grows its new synapses to the winners and not to every cell that was
+active. The difference is easy to miss and expensive to get wrong: a burst lights
+up every cell of its column, so a segment that reached all of them and was then
+capped at `max_synapses` would be wired to a mix of the two offsets, and would
+reach only half its synapses the moment the state arrives as a prediction rather
+than a burst. With winners, a learned sequence is followed at every step instead
+of alternating with bursts.
+
+*Least used* rather than always the first cell, because a cell holds a few
+segments and a column that arrives after two different states needs one segment
+for each. Growing every new segment on the first cell made the second context
+overwrite the first: the column then burst every other time the state arrived
+and could never settle. This is also what the reference does - it draws one of
+the least-used cells at random, where this port takes the lowest index so that a
+run can be repeated.
 
 A segment that was active and whose cell then did not become active was wrong,
 and its synapses towards the cells that were active move away from connection.

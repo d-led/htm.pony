@@ -34,10 +34,11 @@ As of the pooler being finished it was **251 tests and 19 examples**, three of t
 examples the pooler's own: teaching a sequence, recovering one it lost, and the
 study of what its settings are worth.
 
-Since then the memory learns from winner cells and strengthens only the synapses
-its prediction had already connected - the reference's rule, and the last
-difference the audit found - so the suite is **255 tests** and the examples are
-the same 19.
+Since then the memory learns from winner cells, strengthens only the synapses its
+prediction had already connected, and grows a new segment on the cell that has
+learned least - the reference's rules, and the last differences the audit and the
+baseline study found - so the suite is **256 tests**, the examples are **20**, and
+there are **five** pinned studies.
 
 ## How to verify a change
 
@@ -48,7 +49,7 @@ cd test && corral run -- ponyc --debug && ./test       # the suite
 ./examples/run-all.sh                                  # every example, from the repo root
 python3 scripts/api-reference.py                       # regenerate the API reference
 ./.venv-docs/bin/mkdocs build --strict                 # docs, warnings are errors
-./scripts/studies.sh                                   # the four measured studies
+./scripts/studies.sh                                   # the five measured studies
 cd microbenchmarks && corral run -- ponyc              # never --debug here
 ~/go/bin/actionlint .github/workflows/*.yml            # the workflows
 ```
@@ -75,6 +76,10 @@ is written under it.
 Item 8 is in as well: the temporal memory learns from winner cells, which it did
 not, and the numbers that moved with it are brought along rather than explained
 away.
+
+Item 9 closed the last difference the audit found. Item 10 is the first thing
+here that compares the library with not learning at all, and it found a defect of
+its own; both are written under it.
 
 New work beyond that starts from the [roadmap](roadmap.md) and from what is still
 open in [actors](actors.md#what-is-missing).
@@ -391,9 +396,53 @@ stand, and neither showed a defect:
   at one bit of damage and 0.188 against 0.191 at two, the learned pooler ahead
   on three of five seeds at each. That is the first form of the study in which
   learning buys anything, and it is a direction rather than a margin;
-  `docs/examples.md` carries the table and says as much. The only behavioural
-  difference from `temporalMemory.go` left is the ordering in the bullet above,
-  which exists so the studies stay reproducible.
+  `docs/examples.md` carries the table and says as much. What is left of a
+  difference from `temporalMemory.go` is only which of several equally good
+  choices is taken - the ordering in the bullet above, and the tie-break on the
+  least used cell in item 10 - and both exist so that a run can be repeated.
+
+### 10. A baseline that does not learn — and the defect it turned up
+
+Every pinned study compared this library with itself. This one compares it with
+the guesses that need no learning, which is what the reference's
+`trivialPredictor.go` exists for: predict the last input, predict the most common
+columns, predict everything. `examples/prediction-baselines` runs four methods
+over two streams and asks each, before a step arrives, which of its columns it
+expects.
+
+On six symbols in a fixed order - where a symbol shares no bit with the one
+before it - the two guesses are close to useless (62.8% and 32.9% of each step's
+columns missed) and the memory is at 17.5%. On a value that climbs and falls the
+memory **loses** to the last input, 5.4% against 1.3%: consecutive values share
+most of their bits, so the trivial method is right more than half the time. That
+is a fact about the stream, not a defect, and it is now written down where
+somebody will read it before reaching for a memory on a smooth signal.
+
+**The defect it turned up.** On the symbol stream the memory left about one
+column in six unforeseen, and instrumenting the columns showed why: a column
+active 120 times burst exactly 61 of them, and one active 60 times burst 60 -
+never learning at all. `TemporalColumn._win` grew every new segment on the
+column's **first** cell, so a column could remember one context per
+`max_segments_per_cell` slot on one cell, and a column arriving after two
+different states had the second overwrite the first. The reference takes the
+least used cell (`getLeastUsedCell`, `temporalMemory.go:396`, drawing one of them
+at random); this port now takes the lowest index of the least used, so runs
+repeat. `test/temporal_memory_test.pony` states it as
+`_AColumnInTwoContextsIsPredictedInBoth` - one state that arrives after two
+others - and it fails against the old behaviour at every other step.
+
+**What moved.** The symbol stream went from 20.8% to 17.5%, and
+`sequence-training-value` moved again (clean 0.029 against 0.024, one bit 0.093
+against 0.155, two bits 0.187 against 0.208 - still better on three seeds of
+five), so that fixture and its table came along. `pooler-settings-value` did not
+move.
+
+**Still open, deliberately.** The residual 17.5%: a longer warm-up takes it to
+11%, and on hand-built patterns the same memory is exact, so what is left belongs
+to the pooled representation - a pooler gives different symbols overlapping
+columns, and a shared column has to hold several contexts. Nobody has measured
+whether that is the whole of the remainder. If somebody wants to, the instrument
+is the one used here: count bursts per column against visits per column.
 
 ## Decisions already made — do not reverse them silently
 

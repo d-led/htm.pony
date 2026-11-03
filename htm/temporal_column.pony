@@ -42,26 +42,19 @@ class TemporalColumn
   let index: USize
   let _params: TemporalMemoryParams val
   let _segments: Array[Array[TemporalSegment]]
-  let _first_cell: Array[TemporalSegment]
 
   new create(index': USize, params: TemporalMemoryParams val) =>
     index = index'
     _params = params
 
-    let first = Array[TemporalSegment]
     let per_cell = Array[Array[TemporalSegment]](params.cells_per_column)
 
     var offset: USize = 0
     while offset < params.cells_per_column do
-      if offset == 0 then
-        per_cell.push(first)
-      else
-        per_cell.push(Array[TemporalSegment])
-      end
+      per_cell.push(Array[TemporalSegment])
       offset = offset + 1
     end
 
-    _first_cell = first
     _segments = per_cell
 
   fun cells(): Array[USize] =>
@@ -142,26 +135,63 @@ class TemporalColumn
   =>
     """
     Which cell a burst belongs to: the owner of the segment that came closest,
-    or the first cell, where a new segment is grown.
+    or a cell that has learned least, where a new segment is grown.
 
     One cell, not every cell the burst lit up. The next step grows synapses to
     this cell, so it has to be the cell a prediction will activate again.
+
+    Least used rather than the first cell, because one cell holds a few
+    segments and a column that arrives after two different states needs one
+    segment for each. Growing everything on the first cell made the second
+    context overwrite the first: the column then burst every other time the
+    state arrived, and could never settle. The reference takes the least used
+    cell too.
     """
     match _best_segment(previous)
     | let segment: TemporalSegment =>
       if learn then _reinforce(segment, previous, previous_winners, when) end
       segment.owner
     | None =>
-      if
-        learn and (_first_cell.size() < _params.max_segments_per_cell)
-      then
-        let segment = TemporalSegment(_cell_at(0))
+      let choice = _least_used_cell()
+      if learn and (choice._2 < _params.max_segments_per_cell) then
+        _grow(choice._1, previous_winners, when)
+      end
+      _cell_at(choice._1)
+    end
+
+  fun _least_used_cell(): (USize, USize) =>
+    """
+    The cell that has learned least, and how many segments it holds. Ties go to
+    the lowest index rather than to a draw, so that a run can be repeated.
+    """
+    var chosen: USize = 0
+    var fewest: USize = USize.max_value()
+
+    for (offset, segments) in _segments.pairs() do
+      if segments.size() < fewest then
+        chosen = offset
+        fewest = segments.size()
+      end
+    end
+
+    (chosen, fewest)
+
+  fun ref _grow(
+    offset: USize,
+    previous_winners: ReadSeq[USize],
+    when: U64)
+  =>
+    """
+    A new segment on one cell, reaching the cells that won the previous step.
+    """
+    for (at, segments) in _segments.pairs() do
+      if at == offset then
+        let segment = TemporalSegment(_cell_at(offset))
         segment.connect_to(
           previous_winners, _params.initial_permanence, _params.max_synapses)
         segment.last_used = when
-        _first_cell.push(segment)
+        segments.push(segment)
       end
-      _cell_at(0)
     end
 
   fun _enough(segments: ReadSeq[TemporalSegment], state: ReadSeq[Bool]): Bool =>

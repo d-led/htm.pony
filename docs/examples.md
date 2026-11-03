@@ -246,27 +246,26 @@ it knocks bits out of every symbol and scores the sequence again:
 
 ```
 seed    clean: L  W         1 bit: L  W         2 bits: L  W
-3       0.000     0.109     0.033     0.192     0.054      0.209
-5       0.221     0.000     0.320     0.143     0.388      0.249
-11      0.000     0.000     0.064     0.116     0.188      0.193
-23      0.000     0.000     0.107     0.042     0.274      0.108
-41      0.000     0.000     0.019     0.164     0.038      0.194
-mean    0.044     0.022     0.109     0.131     0.188      0.191
+3       0.000     0.000     0.087     0.148     0.107      0.206
+5       0.000     0.000     0.086     0.167     0.243      0.254
+11      0.073     0.063     0.137     0.108     0.255      0.136
+23      0.072     0.058     0.136     0.100     0.290      0.154
+41      0.000     0.000     0.019     0.250     0.038      0.292
+mean    0.029     0.024     0.093     0.155     0.187      0.208
 ```
 
 `L` is the watcher whose pooler learned, `W` the one whose pooler only looked, and
 a number is the mean anomaly score - the share of a step's columns the memory did
 not expect, so lower means the sequence was followed.
 
-Most seeds learn the cycle to nothing on both sides. Seed 5 does not: its learned
-watcher scores 0.221 on the clean cycle while the wired one scores nothing, which
-is the one result here large enough to stand out from the spread.
+Most seeds learn the cycle to nothing on both sides; seed 11 and seed 23 keep a
+little of it, which is where the 0.029 against 0.024 at the clean end comes from.
 
 What is left is a direction rather than a margin. At one bit of damage the
-learned pooler averages 0.109 against 0.131 and is better on three of five seeds;
-at two bits 0.188 against 0.191, again better on three of five. One seed at the
-wrong end would flip either comparison, and seed 5's clean-side outlier is larger
-than the difference being claimed.
+learned pooler averages 0.093 against 0.155 and is better on three of five seeds;
+at two bits 0.187 against 0.208, again better on three of five. One seed at the
+wrong end would flip either comparison, and those spreads are wider than the
+difference being claimed.
 
 This study used to show a clearer benefit - 0.051 against 0.189 at one bit - and
 that result came from a pooler whose ties were broken by column index: with a
@@ -274,20 +273,92 @@ frozen pooler the same low-numbered columns keep winning, which is a stable
 representation for a memory to learn and not a property of learning. Give ties to
 a nudge instead and most of that advantage goes.
 
-The absolute numbers have moved twice since. First both sides fell by about half
+The absolute numbers have moved three times since. Both sides fell by about half
 when the memory learned from winner cells rather than from every active cell, so
-that a learned sequence was followed rather than alternated with bursts; on those
-numbers learning bought nothing measurable at one bit. Then they rose again when
-the memory began strengthening only the synapses its own prediction had already
-connected, which is the reference's rule: a synapse a punishment has pushed below
-the connection threshold now decays instead of climbing back, so what a segment
-ends up reaching is what it was rewarded for. That is the state above, and it is
-the first form of this study in which the learned pooler comes out ahead at both
-levels of damage.
+that a learned sequence was followed rather than alternated with bursts; they rose
+again when the memory began strengthening only the synapses its own prediction had
+already connected, so that a synapse a punishment had pushed below the threshold
+decays instead of climbing back; and they moved once more when a burst began
+growing its new segment on the cell that has learned least rather than always on
+the column's first cell, which is what lets one column remember two contexts.
+That last one is the state above, and through all three the claim this study
+exists for has held: the learned pooler follows a damaged sequence a little better
+than the frozen one, on three seeds of five.
 
 The lesson is about the study, not the code: a comparison that rests on one
 mechanism being switched off is worth re-running when the mechanism next to it
 changes.
+
+## Is the memory better than guessing?
+
+Every study above compares this library with itself: pooled against unpooled,
+learned against wired, one setting against another. `examples/prediction-baselines/main.pony`
+asks the question those cannot - is a temporal memory better than the guesses
+that need no learning at all?
+
+Two streams, each encoded and pooled the same way, and four methods asked at
+every step which of the columns they expect. What is kept is the share each
+missed, so nought means everything that arrived was anticipated. The open-loop
+methods are the reference's `trivialPredictor.go`: `last input` expects this step
+to look like the one before it, and `most common` expects the columns that have
+been active most often so far, half as many as an average step turns on.
+`everything` expects every column and is the end of the scale rather than a
+competitor - a method that cannot be surprised scores nought by construction.
+
+The first stream is six symbols in a fixed order, encoded so that no two share a
+bit:
+
+```
+six symbols in a fixed order
+360 steps, the first 60 of them teaching and unscored
+
+method             missed   steps right
+last input         62.8%    0.0%
+most common        32.9%    0.0%
+everything         0.0%     100.0%
+temporal memory    17.5%    14.3%
+```
+
+On symbols both guesses are close to useless, as they must be: a symbol shares
+nothing with the one before it, and the most common columns cover a third of what
+arrives. The memory is the only method in the right ballpark, and it is not
+perfect, which is worth saying plainly - about one column in six still arrives
+unforeseen. A pooler gives different symbols overlapping columns, so a single
+column often has to remember more than one context, and the memory leaves some of
+them short: over the same stream with a longer warm-up the miss rate falls to
+11%, and on the hand-built patterns of `test/temporal_memory_test.pony` the same
+memory is exact. What is left belongs to a pooled representation rather than to
+the memory itself.
+
+The second stream is a value that climbs and falls, where the last input is a
+serious competitor:
+
+```
+a value that climbs and falls
+400 steps, the first 100 of them teaching and unscored
+
+method             missed   steps right
+last input         1.3%     54.0%
+most common        31.2%    0.0%
+everything         0.0%     100.0%
+temporal memory    5.4%     49.7%
+```
+
+Here the memory loses. Consecutive values share most of their bits, so expecting
+the last input to come back is right more than half the time, and the memory is
+right about half as often. Learning the transitions buys nothing that the trivial
+method does not already have: on a smooth stream the next value nearly *is* the
+present one. That is not a defect to be fixed - it is the shape of the stream.
+
+In both runs the pooler is settled during the warm-up and then left alone, so
+what is measured from there on is the memory rather than a representation still
+moving under it. That also means the tables are reproducible exactly, which is why
+this study is pinned like the others.
+
+The lesson is the one the reference's trivial predictor exists to teach, and the
+one this repository had no measurement of until now: a method that predicts is
+only interesting next to one that does not, and which of them wins depends on how
+much the stream repeats itself.
 
 ## The same computation on actors
 
