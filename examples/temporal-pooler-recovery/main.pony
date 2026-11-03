@@ -50,50 +50,72 @@ actor Main
   new create(env: Env) =>
     try
       let pooler = TemporalPooler(Branches.config()?, 7)
-
-      var epoch: USize = 0
-      while epoch < 10 do
-        var index: USize = 0
-        while index < 5 do
-          pooler.compute(Branches.of(index), true, false)?
-          index = index + 1
-        end
-        pooler.reset()
-
-        pooler.compute(Branches.of(2), true, false)?
-        pooler.compute(Branches.of(8), true, false)?
-        pooler.compute(Branches.of(9), true, false)?
-        pooler.reset()
-
-        epoch = epoch + 1
-      end
-
-      env.out.print("taught two sequences that share a pattern:")
-      env.out.print("  0 1 2 3 4, and 2 8 9")
-      env.out.print("")
-
-      pooler.compute(Branches.of(0), false, true)?
-      pooler.compute(Branches.of(1), false, true)?
-      pooler.compute(Branches.of(2), false, true)?
-      env.out.print("following 0 1 2, it predicts")
-      env.out.print("  " + _cells(pooler.predicted_columns()))
-      env.out.print("")
-
-      pooler.compute(Branches.of(8), false, true)?
-      env.out.print("what arrives is 8, which was not predicted")
-      env.out.print("  active cells:    " + _cells(pooler.active_cells()))
-      env.out.print("  that is " + pooler.active_cells().size().string() +
-        " cells, one a node rather than a burst")
-      env.out.print("  and it predicts: " + _cells(pooler.predicted_columns()))
-      env.out.print("")
-      env.out.print("so it found the sequence 2 8 9 that began two steps ago, and")
-      env.out.print("carried on from there instead of starting again")
-
+      _teach(pooler, env)?
+      _follow(pooler, env)?
+      _recover(pooler, env)?
+      _conclusion(env)
       env.exitcode(0)
     else
       env.out.print("the example failed")
       env.exitcode(1)
     end
+
+  fun _teach(pooler: TemporalPooler, env: Env) ? =>
+    """
+    The long sequence, then the branch out of it, ten times over.
+    """
+    var epoch: USize = 0
+    while epoch < 10 do
+      _long_sequence(pooler)?
+      pooler.reset()
+      _branch(pooler)?
+      pooler.reset()
+      epoch = epoch + 1
+    end
+
+    env.out.print("taught two sequences that share a pattern:")
+    env.out.print("  0 1 2 3 4, and 2 8 9")
+    env.out.print("")
+
+  fun _long_sequence(pooler: TemporalPooler) ? =>
+    var index: USize = 0
+    while index < 5 do
+      pooler.compute(Branches.of(index), true, false)?
+      index = index + 1
+    end
+
+  fun _branch(pooler: TemporalPooler) ? =>
+    pooler.compute(Branches.of(2), true, false)?
+    pooler.compute(Branches.of(8), true, false)?
+    pooler.compute(Branches.of(9), true, false)?
+
+  fun _follow(pooler: TemporalPooler, env: Env) ? =>
+    """
+    The start of the long sequence, watched rather than taught: 2 is followed by
+    3, so 3 is what the pooler expects.
+    """
+    pooler.compute(Branches.of(0), false, true)?
+    pooler.compute(Branches.of(1), false, true)?
+    pooler.compute(Branches.of(2), false, true)?
+    env.out.print("following 0 1 2, it predicts")
+    env.out.print("  " + _cells(pooler.predicted_columns()))
+    env.out.print("")
+
+  fun _recover(pooler: TemporalPooler, env: Env) ? =>
+    """
+    An input it did not predict, which looks back far enough to explain.
+    """
+    pooler.compute(Branches.of(8), false, true)?
+    env.out.print("what arrives is 8, which was not predicted")
+    env.out.print("  active cells:    " + _cells(pooler.active_cells()))
+    env.out.print("  that is " + pooler.active_cells().size().string()
+      + " cells, one a node rather than a burst")
+    env.out.print("  and it predicts: " + _cells(pooler.predicted_columns()))
+    env.out.print("")
+
+  fun _conclusion(env: Env) =>
+    env.out.print("so it found the sequence 2 8 9 that began two steps ago, and")
+    env.out.print("carried on from there instead of starting again")
 
   fun _cells(values: ReadSeq[USize]): String =>
     var text: String = "["

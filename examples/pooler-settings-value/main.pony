@@ -86,74 +86,85 @@ actor Main
   """
   new create(env: Env) =>
     try
-      env.out.print("a cycle of ten patterns, taught sixty times")
-      env.out.print("settings            segments  named per step")
-
-      var which: USize = 0
-      while which < 3 do
-        let pooling = which > 0
-        let window: USize = if which == 2 then 5 else 1 end
-        let pooler = TemporalPooler(Cycle.config(pooling, window, 10, 5)?, 7)
-        Cycle.learn_cycle(pooler, 60)?
-
-        var named: USize = 0
-        var step: USize = 0
-        while step < 10 do
-          pooler.compute(Cycle.of(step), false, true)?
-          named = named + pooler.predicted_columns().size()
-          step = step + 1
-        end
-
-        let label: String =
-          if which == 0 then "plain" 
-          elseif which == 1 then "pooling, window 1"
-          else "pooling, window 5"
-          end
-
-        env.out.print(_padded(label, 20) + _padded(pooler.segments().string(), 10) +
-          (named / 10).string())
-        which = which + 1
-      end
-
+      _cycle(env)?
       env.out.print("")
-      env.out.print("two sequences that share a pattern, followed into an input")
-      env.out.print("only the other one contains")
-      env.out.print("re-play window      active cells  named")
-
-      var inference: USize = 10
-      var round: USize = 0
-      while round < 2 do
-        let pooler = TemporalPooler(Cycle.config(false, 1, inference, 5)?, 7)
-        Cycle.learn_branches(pooler, 10)?
-
-        pooler.compute(Cycle.of(0), false, true)?
-        pooler.compute(Cycle.of(1), false, true)?
-        pooler.compute(Cycle.of(2), false, true)?
-
-        // 8 continues the sequence that began two steps ago
-        pooler.compute(Cycle.of(8), false, true)?
-
-        let label: String = if inference == 0 then "none" else "ten steps" end
-        env.out.print(
-          _padded(label, 20) +
-            _padded(pooler.active_cells().size().string(), 14) +
-            pooler.predicted_columns().size().string())
-
-        inference = 0
-        round = round + 1
-      end
-
-      env.out.print("")
-      env.out.print("the re-play does not find more of the next pattern here - the")
-      env.out.print("same ten nodes either way. What it keeps is the state: ten cells")
-      env.out.print("rather than a burst of eighty, and a precise state is what a")
-      env.out.print("pooled union is built from.")
-
+      _branches(env)?
+      _conclusion(env)
       env.exitcode(0)
     else
       env.out.print("the study failed")
       env.exitcode(1)
     end
+
+  fun _cycle(env: Env) ? =>
+    """
+    A cycle of ten patterns, followed after sixty passes of teaching, under
+    three sets of settings.
+    """
+    env.out.print("a cycle of ten patterns, taught sixty times")
+    env.out.print("settings            segments  named per step")
+
+    _cycle_row(env, "plain", false, 1)?
+    _cycle_row(env, "pooling, window 1", true, 1)?
+    _cycle_row(env, "pooling, window 5", true, 5)?
+
+  fun _cycle_row(
+    env: Env,
+    label: String,
+    pooling: Bool,
+    window: USize)
+  ?
+  =>
+    let pooler = TemporalPooler(Cycle.config(pooling, window, 10, 5)?, 7)
+    Cycle.learn_cycle(pooler, 60)?
+
+    env.out.print(_padded(label, 20)
+      + _padded(pooler.segments().string(), 10)
+      + (_named_over_a_cycle(pooler)? / 10).string())
+
+  fun _named_over_a_cycle(pooler: TemporalPooler): USize ? =>
+    var named: USize = 0
+    var step: USize = 0
+    while step < 10 do
+      pooler.compute(Cycle.of(step), false, true)?
+      named = named + pooler.predicted_columns().size()
+      step = step + 1
+    end
+    named
+
+  fun _branches(env: Env) ? =>
+    """
+    Two sequences that share a pattern, followed into an input only the other
+    one contains, with the re-play on and off.
+    """
+    env.out.print("two sequences that share a pattern, followed into an input")
+    env.out.print("only the other one contains")
+    env.out.print("re-play window      active cells  named")
+
+    _branch_row(env, "ten steps", 10)?
+    _branch_row(env, "none", 0)?
+
+  fun _branch_row(env: Env, label: String, inference: USize) ? =>
+    let pooler = TemporalPooler(Cycle.config(false, 1, inference, 5)?, 7)
+    Cycle.learn_branches(pooler, 10)?
+
+    pooler.compute(Cycle.of(0), false, true)?
+    pooler.compute(Cycle.of(1), false, true)?
+    pooler.compute(Cycle.of(2), false, true)?
+
+    // 8 continues the sequence that began two steps ago
+    pooler.compute(Cycle.of(8), false, true)?
+
+    env.out.print(_padded(label, 20)
+      + _padded(pooler.active_cells().size().string(), 14)
+      + pooler.predicted_columns().size().string())
+
+  fun _conclusion(env: Env) =>
+    env.out.print("")
+    env.out.print("the re-play does not find more of the next pattern here - the")
+    env.out.print("same ten nodes either way. What it keeps is the state: ten cells")
+    env.out.print("rather than a burst of eighty, and a precise state is what a")
+    env.out.print("pooled union is built from.")
 
   fun _padded(text: String, width: USize): String =>
     var padded: String = text

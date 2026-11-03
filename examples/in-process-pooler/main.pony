@@ -20,35 +20,58 @@ actor Main
       let input = _input()
 
       env.out.print("")
-      env.out.print("column   field      synapses")
-      let sampled: Array[USize] = [0; 9; 31; 63]
-      for column in sampled.values() do
-        let field = Wiring.receptive_field(config, Grid([64])?, column)
-        env.out.print(
-          _pad(column.string(), 8)
-            + _pad(field(0)?.string() + ".." + field(field.size() - 1)?.string(), 11)
-            + pooler.columns(column)?.synapses.size().string())
-      end
+      _field_table(env, config, pooler)?
 
       env.out.print("")
       env.out.print("active input bits: " + _columns(_input_bits()))
       env.out.print("representation:    " + _columns(pooler.compute(input)?))
 
-      let again = SpatialPooler(config, 42)?
-      let first = pooler.compute(input)?
-      let second = again.compute(input)?
-
       env.out.print("")
-      if _same(first, second) then
-        env.out.print("a second pooler with the same seed gives the same representation")
-      else
-        env.out.print("the same seed gave two different representations")
+      if not _same_seed_agrees(env, config, pooler, input)? then
         env.exitcode(1)
+        return
       end
       env.exitcode(0)
     else
       env.out.print("the example failed")
       env.exitcode(1)
+    end
+
+  fun _field_table(env: Env, config: SpatialPoolerConfig val, pooler: SpatialPooler) ? =>
+    """
+    A few columns and the input bits each of them is wired to.
+    """
+    env.out.print("column   field      synapses")
+    let sampled: Array[USize] = [0; 9; 31; 63]
+    for column in sampled.values() do
+      let field = Wiring.receptive_field(config, Grid([64])?, column)
+      env.out.print(
+        _pad(column.string(), 8)
+          + _pad(field(0)?.string() + ".." + field(field.size() - 1)?.string(), 11)
+          + pooler.columns(column)?.synapses.size().string())
+    end
+
+  fun _same_seed_agrees(
+    env: Env,
+    config: SpatialPoolerConfig val,
+    pooler: SpatialPooler,
+    input: ReadSeq[Bool])
+    : Bool ?
+  =>
+    """
+    A second pooler built from the same seed, and whether it answers the same.
+    """
+    let again = SpatialPooler(config, 42)?
+    let first = pooler.compute(input)?
+    let second = again.compute(input)?
+
+    if _same(first, second) then
+      env.out.print(
+        "a second pooler with the same seed gives the same representation")
+      true
+    else
+      env.out.print("the same seed gave two different representations")
+      false
     end
 
   fun _input_bits(): Array[USize] =>

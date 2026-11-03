@@ -28,26 +28,10 @@ actor Main
         + " per document")
       env.out.print("")
 
-      let encoded: Array[Array[Bool] val] ref = Array[Array[Bool] val]
-      for document in _documents.values() do
-        env.out.print(_pad(document, 34) + _set(encoder.encode(document)?).string()
-          + " positions set")
-        encoded.push(encoder.encode(document)?)
-      end
+      let encoded = _encode_each(env, encoder)?
 
       env.out.print("")
-      env.out.print("positions in common, row against column:")
-      env.out.print(_pad("", 34) + "  1   2   3   4   5")
-
-      var row: USize = 0
-      for left in encoded.values() do
-        row = row + 1
-        var line: String = _pad(row.string() + " " + _documents(row - 1)?, 34)
-        for right in encoded.values() do
-          line = line + _pad(_shared(left, right)?.string(), 4)
-        end
-        env.out.print(line)
-      end
+      _table(env, encoded)?
 
       env.out.print("")
       env.out.print("the same words are twenty positions, one word changed is"
@@ -58,6 +42,42 @@ actor Main
       env.out.print("the example failed")
       env.exitcode(1)
     end
+
+  fun _encode_each(env: Env, encoder: SimHashDocumentEncoder)
+    : Array[Array[Bool] val] ref ?
+  =>
+    """
+    Every document, and how many positions its encoding sets.
+    """
+    let encoded: Array[Array[Bool] val] ref = Array[Array[Bool] val]
+    for document in _documents.values() do
+      let bits = encoder.encode(document)?
+      env.out.print(_pad(document, 34) + _set(bits).string() + " positions set")
+      encoded.push(bits)
+    end
+    encoded
+
+  fun _table(env: Env, encoded: Array[Array[Bool] val] ref) ? =>
+    """
+    Every pair, row against column.
+    """
+    env.out.print("positions in common, row against column:")
+    env.out.print(_pad("", 34) + "  1   2   3   4   5")
+
+    var row: USize = 0
+    for left in encoded.values() do
+      row = row + 1
+      env.out.print(_line(row, left, encoded)?)
+    end
+
+  fun _line(row: USize, left: Array[Bool] val, encoded: Array[Array[Bool] val] ref)
+    : String ?
+  =>
+    var line: String = _pad(row.string() + " " + _documents(row - 1)?, 34)
+    for right in encoded.values() do
+      line = line + _pad(_shared(left, right)?.string(), 4)
+    end
+    line
 
   fun _set(bits: Array[Bool] val): USize =>
     var set: USize = 0

@@ -281,6 +281,17 @@ actor Main
     _env.out.print("how much more of the answer learning kept, on 1 to 3 bits")
     _env.out.print(_row("seed", "bits off", "bits on"))
 
+    let gains = _rows(trials)?
+    if trials.size() == 0 then return end
+
+    _env.out.print(_row("mean", _signed(gains._1 / trials.size().f64()),
+      _signed(gains._2 / trials.size().f64())))
+    _reading(trials.size(), gains)
+
+  fun _rows(trials: Array[Trial]): (F64, F64, USize, USize) ? =>
+    """
+    One row per seed, and the totals the mean and the two counts come from.
+    """
     var lost: F64 = 0.0
     var gained: F64 = 0.0
     var lost_seeds: USize = 0
@@ -299,19 +310,21 @@ actor Main
       _env.out.print(_row(trial.seed.string(), _signed(off), _signed(on)))
     end
 
-    if trials.size() == 0 then return end
+    (lost, gained, lost_seeds, gained_seeds)
 
-    let count = trials.size().f64()
-    let seeds: String val = trials.size().string()
+  fun _reading(seeds: USize, gains: (F64, F64, USize, USize)) =>
+    """
+    What the two columns say about each other.
+    """
+    let per = seeds.f64()
 
-    _env.out.print(_row("mean", _signed(lost / count), _signed(gained / count)))
     _env.out.print("")
-    _env.out.print("learning kept more of the answer on " + lost_seeds.string()
-      + " of " + seeds + " seeds when a pattern lost bits,")
-    _env.out.print("and on " + gained_seeds.string() + " of " + seeds
+    _env.out.print("learning kept more of the answer on " + gains._3.string()
+      + " of " + seeds.string() + " seeds when a pattern lost bits,")
+    _env.out.print("and on " + gains._4.string() + " of " + seeds.string()
       + " when it gained bits it never had.")
 
-    if (lost / count) > (gained / count) then
+    if (gains._1 / per) > (gains._2 / per) then
       _env.out.print("Losing bits is where the learning pays most.")
     else
       _env.out.print("Adding bits pays the learned pooler about as well.")

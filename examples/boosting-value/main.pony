@@ -133,6 +133,32 @@ class Trial
 
     seed = seed'
 
+  fun row(): String =>
+    """
+    One seed's line: the silent-column count from each pooler at every
+    checkpoint, boosting first.
+    """
+    Table.pad(seed.string(), 8) + Table.counts(unheard_boosted) + " "
+      + Table.counts(unheard_flat)
+
+primitive Table
+  """
+  A row of counts with its columns lined up.
+  """
+  fun pad(text: String, width: USize): String =>
+    var padded: String = text
+    while padded.size() < width do
+      padded = padded + " "
+    end
+    padded
+
+  fun counts(values: ReadSeq[USize]): String =>
+    var line: String = ""
+    for value in values.values() do
+      line = line + pad(value.string(), 9)
+    end
+    line
+
 actor Main
   """
   What a pooler's boosting is worth.
@@ -150,61 +176,72 @@ actor Main
     _env = env
 
     try
-      let runs: Array[Trial] = Array[Trial]
-      for seed in Study.seeds().values() do
-        runs.push(Trial(seed)?)
-      end
-
-      _env.out.print(Study.columns().string() + " columns, "
-        + (Study.density() * Study.columns().f64()).string()
-        + " of them allowed to win, over five inputs of twenty bits.")
-      _env.out.print("No permanence moves, so only a boost can change who wins."
-        + " A checkpoint is a count")
-      _env.out.print("of the inputs a pooler has seen.")
-      _env.out.print("")
-      _env.out.print("counted: how many columns have never won")
-      _env.out.print("")
-      _env.out.print(_pad("", 8) + _pad("boosting", 28) + "no boost")
-      _env.out.print(_labels())
-
+      let runs = _trials()?
+      _header()
       for trial in runs.values() do
-        _env.out.print(_pad(trial.seed.string(), 8)
-          + _counts(trial.unheard_boosted)
-          + " "
-          + _counts(trial.unheard_flat))
+        _env.out.print(trial.row())
       end
-
-      if runs.size() == 0 then return end
-
-      let seeds: String val = runs.size().string()
-      let at = Study.checkpoints().size() - 1
-      let after = Study.checkpoints()(at)?
-      var heard_with: USize = 0
-      var heard_without: USize = 0
-      var all_heard: USize = 0
-
-      for trial in runs.values() do
-        heard_with = heard_with + trial.unheard_boosted(at)?
-        heard_without = heard_without + trial.unheard_flat(at)?
-        if trial.unheard_boosted(at)? == 0 then
-          all_heard = all_heard + 1
-        end
-      end
-
-      _env.out.print("")
-      _env.out.print("after " + after.string() + " inputs, columns never heard: "
-        + _mean(heard_with, runs.size()) + " with boosting, "
-        + _mean(heard_without, runs.size()) + " without")
-      _env.out.print("boosting had heard every column on " + all_heard.string()
-        + " of " + seeds + " seeds.")
-      _env.out.print("without it the count cannot move: nothing but a boost"
-        + " changes a winner here,")
-      _env.out.print("so a pooler that may not boost keeps the winners it"
-        + " started with.")
+      _summary(runs)?
+      env.exitcode(0)
     else
       _env.out.print("the study failed")
       _env.exitcode(1)
     end
+
+  fun _trials(): Array[Trial] ? =>
+    let runs: Array[Trial] = Array[Trial]
+    for seed in Study.seeds().values() do
+      runs.push(Trial(seed)?)
+    end
+    runs
+
+  fun _header() =>
+    _env.out.print(Study.columns().string() + " columns, "
+      + (Study.density() * Study.columns().f64()).string()
+      + " of them allowed to win, over five inputs of twenty bits.")
+    _env.out.print("No permanence moves, so only a boost can change who wins."
+      + " A checkpoint is a count")
+    _env.out.print("of the inputs a pooler has seen.")
+    _env.out.print("")
+    _env.out.print("counted: how many columns have never won")
+    _env.out.print("")
+    _env.out.print(_pad("", 8) + _pad("boosting", 28) + "no boost")
+    _env.out.print(_labels())
+
+  fun _summary(runs: Array[Trial]) ? =>
+    if runs.size() == 0 then return end
+
+    let at = Study.checkpoints().size() - 1
+    let heard = _at_the_end(runs, at)?
+
+    _env.out.print("")
+    _env.out.print("after " + Study.checkpoints()(at)?.string()
+      + " inputs, columns never heard: "
+      + _mean(heard._1, runs.size()) + " with boosting, "
+      + _mean(heard._2, runs.size()) + " without")
+    _env.out.print("boosting had heard every column on " + heard._3.string()
+      + " of " + runs.size().string() + " seeds.")
+    _env.out.print("without it the count cannot move: nothing but a boost"
+      + " changes a winner here,")
+    _env.out.print("so a pooler that may not boost keeps the winners it"
+      + " started with.")
+
+  fun _at_the_end(runs: Array[Trial], at: USize): (USize, USize, USize) ? =>
+    """
+    The two counts summed over every seed, and how many seeds had heard every
+    column with boosting.
+    """
+    var with_boost: USize = 0
+    var without: USize = 0
+    var all_heard: USize = 0
+
+    for trial in runs.values() do
+      with_boost = with_boost + trial.unheard_boosted(at)?
+      without = without + trial.unheard_flat(at)?
+      if trial.unheard_boosted(at)? == 0 then all_heard = all_heard + 1 end
+    end
+
+    (with_boost, without, all_heard)
 
   fun _labels(): String =>
     """
@@ -221,22 +258,12 @@ actor Main
     end
     line
 
-  fun _counts(counts: Array[USize]): String =>
-    var line: String = ""
-    for count in counts.values() do
-      line = line + _pad(count.string(), 9)
-    end
-    line
+  fun _counts(counts: Array[USize]): String => Table.counts(counts)
 
   fun _mean(total: USize, count: USize): String =>
     _near(total.f64() / count.f64())
 
-  fun _pad(text: String, width: USize): String =>
-    var padded: String = text
-    while padded.size() < width do
-      padded = padded + " "
-    end
-    padded
+  fun _pad(text: String, width: USize): String => Table.pad(text, width)
 
   fun _near(value: F64): String =>
     """

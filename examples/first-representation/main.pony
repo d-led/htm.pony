@@ -10,43 +10,70 @@ actor Main
   """
   new create(env: Env) =>
     try
-      let params = ScalarEncoderParams(23, 0, 1 where radius' = 0.5, periodic' = true)
-      let encoder = ScalarEncoder(params)?
-
+      let encoder = _encoder()?
       let config = SpatialPoolerConfig([8; 8], [46], true, 2.0)
       let pooler = SpatialPooler(config, 42)?
 
-      env.out.print("encoder output: " + encoder.n.string() + " bits")
-      env.out.print("columns: " + config.num_columns().string()
-        + ", active per round: " + _pad(_winners(config).string(), 4))
-      env.out.print("")
+      _headline(env, encoder, config)
 
       let values: Array[F64] = [0.50; 0.55; 0.60; 0.90]
-      let representations = Array[Array[USize]]
+      let representations = _representations(env, encoder, pooler, values)?
 
-      for value in values.values() do
-        let encoded = _encode(encoder, value)?
-        let active = pooler.compute(encoded)?
-        representations.push(active)
-        env.out.print(_pad(value.string(), 6) + _columns(active))
-      end
-
-      env.out.print("")
-      env.out.print("columns two values share:")
-      var index: USize = 0
-      while (index + 1) < representations.size() do
-        let here = representations(index)?
-        let next = representations(index + 1)?
-        env.out.print(
-          _pad(values(index)?.string() + " and " + values(index + 1)?.string(), 14)
-            + _shared(here, next).string())
-        index = index + 1
-      end
-
+      _sharing(env, values, representations)?
       env.exitcode(0)
     else
       env.out.print("the example failed")
       env.exitcode(1)
+    end
+
+  fun _encoder(): ScalarEncoder ? =>
+    ScalarEncoder(
+      ScalarEncoderParams(23, 0, 1 where radius' = 0.5, periodic' = true))?
+
+  fun _headline(env: Env, encoder: ScalarEncoder, config: SpatialPoolerConfig val) =>
+    env.out.print("encoder output: " + encoder.n.string() + " bits")
+    env.out.print("columns: " + config.num_columns().string()
+      + ", active per round: " + _pad(_winners(config).string(), 4))
+    env.out.print("")
+
+  fun _representations(
+    env: Env,
+    encoder: ScalarEncoder,
+    pooler: SpatialPooler,
+    values: Array[F64])
+    : Array[Array[USize]] ?
+  =>
+    """
+    Each value in turn, and the columns it is represented by.
+    """
+    let representations = Array[Array[USize]]
+    for value in values.values() do
+      let active = pooler.compute(_encode(encoder, value)?)?
+      representations.push(active)
+      env.out.print(_pad(value.string(), 6) + _columns(active))
+    end
+    representations
+
+  fun _sharing(
+    env: Env,
+    values: Array[F64],
+    representations: Array[Array[USize]])
+  ?
+  =>
+    """
+    How many columns two neighbouring values have in common.
+    """
+    env.out.print("")
+    env.out.print("columns two values share:")
+
+    var index: USize = 0
+    while (index + 1) < representations.size() do
+      let here = representations(index)?
+      let next = representations(index + 1)?
+      env.out.print(
+        _pad(values(index)?.string() + " and " + values(index + 1)?.string(), 14)
+          + _shared(here, next).string())
+      index = index + 1
     end
 
   fun _winners(config: SpatialPoolerConfig val): USize =>

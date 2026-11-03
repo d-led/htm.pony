@@ -47,50 +47,67 @@ actor Main
   new create(env: Env) =>
     try
       let pooler = TemporalPooler(Sequence.config()?, 7)
-
-      var epoch: USize = 0
-      while epoch < 10 do
-        var index: USize = 0
-        while index < 5 do
-          pooler.compute(Sequence.of(index), true, false)?
-          index = index + 1
-        end
-        pooler.reset()
-        epoch = epoch + 1
-      end
-
-      env.out.print("taught five patterns, in order, ten times")
-      env.out.print("  segments grown:  " + pooler.segments().string())
-      env.out.print("")
-
-      pooler.compute(Sequence.of(0), false, true)?
-      env.out.print("showing pattern 0 alone")
-      env.out.print("  active cells:    " + _cells(pooler.active_cells()))
-      env.out.print("  predicts nodes:  " + _cells(pooler.predicted_columns()))
-      env.out.print("")
-
-      env.out.print("asking what follows, three steps out")
-      let forecast = pooler.predict(3)?
-      var step: USize = 0
-      while step < forecast.size() do
-        env.out.print(
-          "  step " + (step + 1).string() + ":  " +
-            _cells(forecast.nodes(step)?))
-        step = step + 1
-      end
-      env.out.print("")
-
-      env.out.print("asking did not decide anything: the pooler still predicts")
-      env.out.print("  " + _cells(pooler.predicted_columns()))
-      env.out.print("")
-      env.out.print("each step of the forecast is the pattern that follows the one")
-      env.out.print("before it, because that is the only continuation it was taught")
-
+      _teach(pooler, env)?
+      _show_pattern_zero(pooler, env)?
+      _forecast(pooler, env)?
+      _unchanged(pooler, env)
+      _conclusion(env)
       env.exitcode(0)
     else
       env.out.print("the example failed")
       env.exitcode(1)
     end
+
+  fun _teach(pooler: TemporalPooler, env: Env) ? =>
+    """
+    The five patterns in order, ten times, each showing ending in a reset.
+    """
+    var epoch: USize = 0
+    while epoch < 10 do
+      var index: USize = 0
+      while index < 5 do
+        pooler.compute(Sequence.of(index), true, false)?
+        index = index + 1
+      end
+      pooler.reset()
+      epoch = epoch + 1
+    end
+
+    env.out.print("taught five patterns, in order, ten times")
+    env.out.print("  segments grown:  " + pooler.segments().string())
+    env.out.print("")
+
+  fun _show_pattern_zero(pooler: TemporalPooler, env: Env) ? =>
+    pooler.compute(Sequence.of(0), false, true)?
+    env.out.print("showing pattern 0 alone")
+    env.out.print("  active cells:    " + _cells(pooler.active_cells()))
+    env.out.print("  predicts nodes:  " + _cells(pooler.predicted_columns()))
+    env.out.print("")
+
+  fun _forecast(pooler: TemporalPooler, env: Env) ? =>
+    """
+    What comes next, and after that again, from the state that follows rather
+    than from the input.
+    """
+    env.out.print("asking what follows, three steps out")
+    let forecast = pooler.predict(3)?
+
+    var step: USize = 0
+    while step < forecast.size() do
+      env.out.print(
+        "  step " + (step + 1).string() + ":  " + _cells(forecast.nodes(step)?))
+      step = step + 1
+    end
+    env.out.print("")
+
+  fun _unchanged(pooler: TemporalPooler, env: Env) =>
+    env.out.print("asking did not decide anything: the pooler still predicts")
+    env.out.print("  " + _cells(pooler.predicted_columns()))
+    env.out.print("")
+
+  fun _conclusion(env: Env) =>
+    env.out.print("each step of the forecast is the pattern that follows the one")
+    env.out.print("before it, because that is the only continuation it was taught")
 
   fun _cells(values: ReadSeq[USize]): String =>
     var text: String = "["

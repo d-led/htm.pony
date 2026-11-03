@@ -174,18 +174,62 @@ class Watcher
     if seen == 0 then return 0.0 end
     total / seen.f64()
 
+primitive Table
+  """
+  A row of figures with their columns lined up.
+  """
+  fun pad(text: String, width: USize): String =>
+    var padded: String = text
+    while padded.size() < width do
+      padded = padded + " "
+    end
+    padded
+
+  fun near(value: F64): String =>
+    """
+    Three decimals, so the columns line up.
+    """
+    let size = (value.abs() * 1000.0).round().usize()
+    let rest = size % 1000
+    let sign = if value < 0.0 then "-" else "" end
+    let tail: String val =
+      if rest < 10 then
+        "00" + rest.string()
+      elseif rest < 100 then
+        "0" + rest.string()
+      else
+        rest.string()
+      end
+
+    sign + (size / 1000).string() + "." + tail
+
+  fun cell(value: F64, width: USize): String =>
+    pad(near(value), width)
+
 class Trial
   """
   One seed: both watchers learned the same cycle, then scored the clean cycle
   and the same cycle with one and then two bits knocked out of every symbol.
+
+  Six scores and a seed, so it is also the row of the table and the thing the
+  trials are added up into.
   """
-  let seed: U64
-  let clean_learned: F64
-  let clean_wired: F64
-  let one_learned: F64
-  let one_wired: F64
-  let two_learned: F64
-  let two_wired: F64
+  var seed: U64
+  var clean_learned: F64
+  var clean_wired: F64
+  var one_learned: F64
+  var one_wired: F64
+  var two_learned: F64
+  var two_wired: F64
+
+  new nothing() =>
+    seed = 0
+    clean_learned = 0.0
+    clean_wired = 0.0
+    one_learned = 0.0
+    one_wired = 0.0
+    two_learned = 0.0
+    two_wired = 0.0
 
   new create(seed': U64) ? =>
     let clean = Study.inputs(seed')?
@@ -200,20 +244,65 @@ class Trial
     learned.learn(clean)?
     wired.learn(clean)?
 
-    let plain_learning = learned.score(clean)?
-    let plain_looking = wired.score(clean)?
-    let once_learning = learned.score(once)?
-    let once_looking = wired.score(once)?
-    let twice_learning = learned.score(twice)?
-    let twice_looking = wired.score(twice)?
-
     seed = seed'
-    clean_learned = plain_learning
-    clean_wired = plain_looking
-    one_learned = once_learning
-    one_wired = once_looking
-    two_learned = twice_learning
-    two_wired = twice_looking
+    clean_learned = learned.score(clean)?
+    clean_wired = wired.score(clean)?
+    one_learned = learned.score(once)?
+    one_wired = wired.score(once)?
+    two_learned = learned.score(twice)?
+    two_wired = wired.score(twice)?
+
+  fun plus(other: Trial): Trial =>
+    let total = Trial.nothing()
+    total.seed = seed
+    total.clean_learned = clean_learned + other.clean_learned
+    total.clean_wired = clean_wired + other.clean_wired
+    total.one_learned = one_learned + other.one_learned
+    total.one_wired = one_wired + other.one_wired
+    total.two_learned = two_learned + other.two_learned
+    total.two_wired = two_wired + other.two_wired
+    total
+
+  fun scaled(per: F64): Trial =>
+    let averaged = Trial.nothing()
+    averaged.clean_learned = clean_learned / per
+    averaged.clean_wired = clean_wired / per
+    averaged.one_learned = one_learned / per
+    averaged.one_wired = one_wired / per
+    averaged.two_learned = two_learned / per
+    averaged.two_wired = two_wired / per
+    averaged
+
+  fun row(): String => row_called(seed.string())
+
+  fun row_called(label: String): String =>
+    Table.pad(label, 8)
+      + Table.cell(clean_learned, 10)
+      + Table.cell(clean_wired, 10)
+      + Table.cell(one_learned, 10)
+      + Table.cell(one_wired, 10)
+      + Table.cell(two_learned, 11)
+      + Table.near(two_wired)
+
+class Scores
+  """
+  The trials added up, and the two comparisons the study is for: how often the
+  learned pooler gave the better sequence at one and at two bits of damage.
+  """
+  var total: Trial = Trial.nothing()
+  var better_once: USize = 0
+  var better_twice: USize = 0
+  var trials: USize = 0
+
+  new create() => None
+
+  fun ref add(trial: Trial) =>
+    total = total.plus(trial)
+    trials = trials + 1
+    if trial.one_learned < trial.one_wired then better_once = better_once + 1 end
+    if trial.two_learned < trial.two_wired then better_twice = better_twice + 1 end
+
+  fun mean(): Trial => total.scaled(trials.f64())
 
 actor Main
   """
@@ -232,97 +321,59 @@ actor Main
     _env = env
 
     try
-      let runs: Array[Trial] = Array[Trial]
-      for seed in Study.seeds().values() do
-        runs.push(Trial(seed)?)
-      end
-
-      _env.out.print(Study.symbols().string() + " symbols of "
-        + Study.bits().string() + " bits in " + Study.width().string()
-        + ", a cycle of them: " + Study.warming().string()
-        + " passes to warm the pooler, " + Study.passes().string()
-        + " to learn the sequence")
-      _env.out.print("")
-      _env.out.print("an anomaly score is the share of a step's columns the")
-      _env.out.print("memory did not expect: lower means the sequence was followed")
-      _env.out.print("")
-      _env.out.print(_pad("seed", 8) + _pad("clean: L", 10)
-        + _pad("W", 10) + _pad("1 bit: L", 10) + _pad("W", 10)
-        + _pad("2 bits: L", 11) + "W")
-
-      var clean_learning: F64 = 0.0
-      var clean_looking: F64 = 0.0
-      var one_learning: F64 = 0.0
-      var one_looking: F64 = 0.0
-      var two_learning: F64 = 0.0
-      var two_looking: F64 = 0.0
-      var better_once: USize = 0
-      var better_twice: USize = 0
-
-      for trial in runs.values() do
-        clean_learning = clean_learning + trial.clean_learned
-        clean_looking = clean_looking + trial.clean_wired
-        one_learning = one_learning + trial.one_learned
-        one_looking = one_looking + trial.one_wired
-        two_learning = two_learning + trial.two_learned
-        two_looking = two_looking + trial.two_wired
-
-        if trial.one_learned < trial.one_wired then better_once = better_once + 1 end
-        if trial.two_learned < trial.two_wired then better_twice = better_twice + 1 end
-
-        _env.out.print(_pad(trial.seed.string(), 8)
-          + _pad(_near(trial.clean_learned), 10)
-          + _pad(_near(trial.clean_wired), 10)
-          + _pad(_near(trial.one_learned), 10)
-          + _pad(_near(trial.one_wired), 10)
-          + _pad(_near(trial.two_learned), 11)
-          + _near(trial.two_wired))
-      end
-
-      if runs.size() == 0 then return end
-
-      let count = runs.size().f64()
-      let seeds: String val = runs.size().string()
-
-      _env.out.print(_pad("mean", 8)
-        + _pad(_near(clean_learning / count), 10)
-        + _pad(_near(clean_looking / count), 10)
-        + _pad(_near(one_learning / count), 10)
-        + _pad(_near(one_looking / count), 10)
-        + _pad(_near(two_learning / count), 11)
-        + _near(two_looking / count))
-      _env.out.print("")
-      _env.out.print("the learned pooler gave a better sequence on "
-        + better_once.string() + " of " + seeds
-        + " seeds at one bit of damage,")
-      _env.out.print("and on " + better_twice.string() + " of " + seeds
-        + " at two.")
+      let runs = _trials()?
+      _header()
+      let scores = _rows(runs)
+      _summary(scores)
+      env.exitcode(0)
     else
       _env.out.print("the study failed")
       _env.exitcode(1)
     end
 
-  fun _pad(text: String, width: USize): String =>
-    var padded: String = text
-    while padded.size() < width do
-      padded = padded + " "
+  fun _trials(): Array[Trial] ? =>
+    let runs: Array[Trial] = Array[Trial]
+    for seed in Study.seeds().values() do
+      runs.push(Trial(seed)?)
     end
-    padded
+    runs
 
-  fun _near(value: F64): String =>
-    """
-    Three decimals, so the columns line up.
-    """
-    let size = (value.abs() * 1000.0).round().usize()
-    let rest = size % 1000
-    let sign = if value < 0.0 then "-" else "" end
-    let tail: String val =
-      if rest < 10 then
-        "00" + rest.string()
-      elseif rest < 100 then
-        "0" + rest.string()
-      else
-        rest.string()
-      end
+  fun _header() =>
+    _env.out.print(Study.symbols().string() + " symbols of "
+      + Study.bits().string() + " bits in " + Study.width().string()
+      + ", a cycle of them: " + Study.warming().string()
+      + " passes to warm the pooler, " + Study.passes().string()
+      + " to learn the sequence")
+    _env.out.print("")
+    _env.out.print("an anomaly score is the share of a step's columns the")
+    _env.out.print("memory did not expect: lower means the sequence was followed")
+    _env.out.print("")
+    _env.out.print(Table.pad("seed", 8) + Table.pad("clean: L", 10)
+      + Table.pad("W", 10) + Table.pad("1 bit: L", 10) + Table.pad("W", 10)
+      + Table.pad("2 bits: L", 11) + "W")
 
-    sign + (size / 1000).string() + "." + tail
+  fun _rows(runs: Array[Trial]): Scores =>
+    """
+    A row per seed, and everything the summary needs on the way.
+    """
+    let scores = Scores.create()
+    for trial in runs.values() do
+      scores.add(trial)
+      _env.out.print(trial.row())
+    end
+    scores
+
+  fun _summary(scores: Scores) =>
+    if scores.trials == 0 then return end
+
+    _env.out.print(scores.mean().row_called("mean"))
+    _env.out.print("")
+    _env.out.print("the learned pooler gave a better sequence on "
+      + scores.better_once.string() + " of " + scores.trials.string()
+      + " seeds at one bit of damage,")
+    _env.out.print("and on " + scores.better_twice.string() + " of "
+      + scores.trials.string() + " at two.")
+
+  fun _pad(text: String, width: USize): String => Table.pad(text, width)
+
+  fun _near(value: F64): String => Table.near(value)
