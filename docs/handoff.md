@@ -61,14 +61,19 @@ Two rules that keep the repository honest, both enforced by tests:
 
 ## What is left, in the order to do it
 
-Every item on this list is in as of the pooler's forecast: the CLA temporal
-pooler in seven slices, the region's deadline and retry, multi-step prediction,
-`SDRMerger`, the fixed-width category encoder, the graph encoder, and the smaller
-things item 7 diagnoses. What each slice was held to, and which parts of the
-reference were deliberately not ported, is written under it.
+Items 1 to 7 are in: the CLA temporal pooler in seven slices, the region's
+deadline and retry, multi-step prediction, `SDRMerger`, the fixed-width category
+encoder, the graph encoder, and the smaller things item 7 diagnoses. What each
+slice was held to, and which parts of the reference were deliberately not ported,
+is written under it.
 
-New work starts from the [roadmap](roadmap.md) and from what is still open in
-[actors](actors.md#what-is-missing).
+**Item 8 is not in, and it is the one to do next**: the temporal memory has no
+winner cells, so it does not answer what the reference answers and the anomaly
+reading it feeds alternates on a stream it has learned. It is diagnosed with
+measurements and a plan rather than left as a suspicion.
+
+New work beyond that starts from the [roadmap](roadmap.md) and from what is still
+open in [actors](actors.md#what-is-missing).
 
 ### 1. The CLA temporal pooler — the largest piece, the reason the port exists
 
@@ -315,6 +320,58 @@ this; they are not it.
 - **One coordinator is one round.** Two poolers over the same shards would each
   start their own rounds, and the same is true of two regions. Recorded in
   [actors](actors.md#what-is-missing); not a bug, a limit somebody may want to lift.
+
+### 8. The temporal memory has no winner cells — diagnosed, not yet fixed
+
+**Found while measuring whether two anomaly readings agree, and it is the most
+important thing on this page.** The reference keeps two sets of cells per step:
+the ones that are active, and the ones that *won* - one per active column, which
+is the predicted cell when the column was predicted and the cell the column chose
+when it burst. `prevWinnerCells` is what new synapses are grown from
+(`pickCellsToLearnOn`), and a segment is only adapted if it is a learning segment
+or sits on a winner cell (`lrnOnSegments` in
+`~/src/htm/temporalMemory.go`, around line 254).
+
+This port has no winner cells at all - `grep winner htm/temporal*.pony` finds
+nothing - and grows new synapses from **every active cell** of the previous step
+(`TemporalColumn._reinforce` and `_learn_burst` call
+`segment.connect_to(previous_cells, ...)`, where `previous_cells` is
+`_indexes(previous)`).
+
+The consequence, measured on a cycle of five patterns of ten columns, two cells a
+column, taught ten times and then followed:
+
+```
+saw 0: burst []   predicts []   active [0,2,4,...]        anomaly 0
+saw 1: burst 1x   predicts 2x   active [20..39]           anomaly 1
+saw 2: burst []   predicts []   active [40,42,...]        anomaly 0
+saw 3: burst 3x   predicts 4x   active [60..79]           anomaly 1
+```
+
+Every other step predicts nothing and bursts. The cause is arithmetic: when the
+previous step was a burst, `previous_cells` holds *both* cells of every column -
+twenty cells for a ten-column pattern - and `max_synapses` of ten can only reach
+half of them. The segment is then connected to a mix of the two offsets, and when
+the state arrives as a predicted step (one cell a column) it reaches five of its
+ten synapses and stays below `activation_threshold`. A pooler with the same
+configuration reads zero throughout, which is how the difference was noticed.
+
+So the memory does **not** answer what the reference answers, and the anomaly
+reading it feeds - the library's headline example, and one of the pinned studies -
+is alternating between "expected" and "nothing was expected" on a stream it has
+learned. The studies are pinned to that behaviour, which means they are pinning a
+defect.
+
+**The fix, in order, and it has to be one commit:** `ColumnStep` gains
+`winners: Array[USize] val` (the predicted cells when predicted, the chosen cell
+when bursting); `TemporalColumn.activate` takes `previous_winners` instead of
+`previous_cells` and connects to those; `TemporalMemory` keeps
+`_previous_winners` and passes it; `TemporalPass` carries the same, and
+`TemporalSink.activated` has to report the winners back so the region can keep
+them - which is the only reason the actor path is in the same commit, since the
+region test holds the two forms to the same answer. Then bring the two pinned
+study fixtures and the numbers quoted in `docs/anomaly-detection.md` and
+`docs/examples.md` with it: they will move, and that is the point.
 
 ## Decisions already made — do not reverse them silently
 
