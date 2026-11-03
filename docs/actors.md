@@ -320,6 +320,13 @@ longer each time, and then reports what it has. The answer's `missing` names the
 bands that never spoke - a step computed without part of the memory, which
 is worth saying out loud rather than passing off as a complete one.
 
+A region names bands because bands are what it asked; where each band begins is
+the caller's, since any band set can be handed over. Given the width the bands
+were built with - the number `TemporalShards.build` was given -
+`output.missing_columns(params, width)` turns those names back into the columns
+the step was decided without, including the last band being shorter than the
+rest.
+
 The bands can be replaced while the region runs, `region.reconfigure(shards)`,
 and the new set answers from the next round on.
 
@@ -362,8 +369,6 @@ that ends a training sequence has to be the one that sent it.
 
 - One coordinator is one round. Two poolers over the same shards would each
   start their own rounds, and the same is true of two regions.
-- A region says *which bands* were missing, not which columns. Turning a band
-  into the columns it owed is arithmetic the caller has, not the region.
 - Nothing here survives a second machine. A shard that is busy is asked again
   with a longer deadline and then given up on; a shard that is gone would be
   given up on forever, because nothing in this design tells the two apart.

@@ -55,6 +55,37 @@ class val TemporalOutput
     if active.size() == 0 then return 0.0 end
     bursting_columns.size().f64() / active.size().f64()
 
+  fun missing_columns(
+    params: TemporalMemoryParams val,
+    band_width: USize): Array[USize] val
+  =>
+    """
+    The columns the bands that never answered would have carried.
+
+    A region names bands because bands are what it asked; where those bands begin
+    is the caller's, since any band set can be handed over. Given the width the
+    bands were built with - the number `TemporalShards.build` was given - this
+    turns the names back into the columns the step was decided without.
+
+    A width of zero owes nothing, and neither does a band that falls past the
+    population: an answer is better off short than invented. The last band is
+    usually shorter than the width, and what it owes is the columns that are
+    there.
+    """
+    let columns: Array[USize] iso = recover iso Array[USize] end
+    if band_width == 0 then return consume columns end
+
+    for band in missing.values() do
+      let first = band * band_width
+      var column = first
+      while (column < (first + band_width)) and (column < params.columns) do
+        columns.push(column)
+        column = column + 1
+      end
+    end
+
+    consume columns
+
   fun _columns_of(cells: ReadSeq[USize], params: TemporalMemoryParams val): Array[USize] val =>
     let columns: Array[USize] iso = recover iso Array[USize] end
     let seen = Set[USize]

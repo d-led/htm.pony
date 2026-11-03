@@ -354,9 +354,12 @@ Tests: `test/temporal_memory_test.pony`.
 it expects next, the columns that burst, and the bands a region never heard from.
 The derived forms - `active_columns`, `predicted_columns` and `anomaly` - are what
 a caller usually wants, since a cell number means little without the shape to read
-it against.
+it against. `missing_columns(params, band_width)` does the same for `missing`:
+given the width the bands were cut with, it names the columns the step was decided
+without.
 
-Tests: covered through `TemporalMemory`.
+Tests: covered through `TemporalMemory`, and through `TemporalRegion` for
+`missing_columns`.
 
 ### `temporal_shard.pony`
 

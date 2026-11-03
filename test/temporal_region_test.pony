@@ -14,6 +14,7 @@ class TemporalRegionTest is TestList
     test(_ABusyBandIsAskedAgain)
     test(_ABandBusyTwiceIsStillHeardFrom)
     test(_PatienceIsBoundedByTheRetriesItWasGiven)
+    test(_AMissingBandNamesTheColumnsItOwed)
     test(_AHandedOverBandAnswersTheNextRound)
     test(_ARegionWithNoBandsAnswersAtOnce)
 
@@ -279,6 +280,39 @@ class iso _PatienceIsBoundedByTheRetriesItWasGiven is UnitTest
     // more patience than one retry, and still an answer rather than a wait
     let region = TemporalRegion(RegionFixture.params(), consume shards, 10, 3)
     region.compute(recover val [0] end, true, MissingObserver(h, recover val [1] end))
+
+class iso _AMissingBandNamesTheColumnsItOwed is UnitTest
+  fun name(): String => "a band that never answered names the columns it owed"
+
+  fun apply(h: TestHelper) =>
+    // four columns in bands of two: band 1 is columns 2 and 3
+    h.assert_array_eq[USize](
+      [2; 3],
+      _missing(1).missing_columns(RegionFixture.params(), 2),
+      "the columns of the band that stayed silent")
+
+    // a last band shorter than the width owes only the columns that are there
+    h.assert_array_eq[USize](
+      [3],
+      _missing(1).missing_columns(RegionFixture.params(), 3),
+      "a band that runs past the population owes what is inside it")
+
+    h.assert_array_eq[USize](
+      Array[USize],
+      _missing(6).missing_columns(RegionFixture.params(), 2),
+      "a band past the population owes nothing")
+
+    h.assert_array_eq[USize](
+      Array[USize],
+      _missing(1).missing_columns(RegionFixture.params(), 0),
+      "and a width of zero says nothing was ever cut that way")
+
+  fun _missing(band: USize): TemporalOutput =>
+    TemporalOutput(
+      recover val Array[USize] end,
+      recover val Array[USize] end,
+      recover val Array[USize] end,
+      recover val [band] end)
 
 class iso _AHandedOverBandAnswersTheNextRound is UnitTest
   fun name(): String => "a band handed over later answers the next round"
