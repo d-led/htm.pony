@@ -35,6 +35,8 @@ encoder, gives each encoding to a pooler, and counts how many columns two values
 share. [The tutorial](tutorial.md) walks through it line by line.
 
 ```
+one number in, a set of columns out
+
 encoder output: 46 bits
 columns: 64, active per round: 14
 
@@ -60,6 +62,8 @@ the representation. It finishes by building a second pooler from the same seed
 and comparing the two answers.
 
 ```
+the spatial pooler without actors
+
 columns 64, inputs 64
 density at radius 1: 0.222222
 
@@ -368,10 +372,12 @@ same sixty rounds through an in-process `SpatialPooler` built from the same seed
 and compares the two answers round by round.
 
 ```
-round 1 in process: [3, 5, 7, 8, 13, 17, 19, 28, 42, 45, 55, 56]
-round 1 on actors:  [3, 5, 7, 8, 13, 17, 19, 28, 42, 45, 55, 56]
-round 60 in process: [7, 8, 9, 19, 20, 21, 42, 45, 52, 55, 56]
-round 60 on actors:  [7, 8, 9, 19, 20, 21, 42, 45, 52, 55, 56]
+the same spatial pooler on actors, round for round
+
+round 1 in process: [3, 7, 8, 13, 17, 19, 23, 28, 29, 40, 42, 45, 55, 56]
+round 1 on actors:  [3, 7, 8, 13, 17, 19, 23, 28, 29, 40, 42, 45, 55, 56]
+round 60 in process: [3, 7, 8, 18, 19, 21, 28, 33, 39, 42, 45, 52, 55, 56]
+round 60 on actors:  [3, 7, 8, 18, 19, 21, 28, 33, 39, 42, 45, 52, 55, 56]
 the two paths agreed on all 60 learning rounds
 ```
 
@@ -522,6 +528,9 @@ and puts each representation through the spatial pooler.
 [Picture encoders](image-encoder.md) explains what the two steps do.
 
 ```
+four pictures: one, the same twice as wide, the same
+brighter, and a different one
+
 picture           bits set  distance  columns  shared with the original
 the original      10        0         18       18
 twice the size    10        0         18       18
@@ -674,6 +683,8 @@ the cells of its module competing for the same nodes at other phases.
 many positions every pair of them has in common.
 
 ```
+a document as the positions its words vote for
+
 400 positions, 20 of them set per document
 
 positions in common, row against column:

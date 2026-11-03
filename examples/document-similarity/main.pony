@@ -29,6 +29,8 @@ actor Main
             frequency_ceiling' = 0,
             frequency_floor' = 0)?)
 
+      env.out.print("a document as the positions its words vote for")
+      env.out.print("")
       env.out.print(encoder.width().string() + " positions, 20 of them set"
         + " per document")
       env.out.print("")

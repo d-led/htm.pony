@@ -28,6 +28,9 @@ actor Main
       let first = DifferenceHash.compute(original)?
       let base = pooler.compute(encoder.encode_fingerprint(first)?)?
 
+      env.out.print("four pictures: one, the same twice as wide, the same")
+      env.out.print("brighter, and a different one")
+      env.out.print("")
       env.out.print(
         _pad("picture", 18) + _pad("bits set", 10) + _pad("distance", 10)
           + _pad("columns", 9) + "shared with the original")

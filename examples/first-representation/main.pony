@@ -32,6 +32,8 @@ actor Main
       ScalarEncoderParams(23, 0, 1 where radius' = 0.5, periodic' = true))?
 
   fun _headline(env: Env, encoder: ScalarEncoder, config: SpatialPoolerConfig val) =>
+    env.out.print("one number in, a set of columns out")
+    env.out.print("")
     env.out.print("encoder output: " + encoder.n.string() + " bits")
     env.out.print("columns: " + config.num_columns().string()
       + ", active per round: " + _pad(_winners(config).string(), 4))

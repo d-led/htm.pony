@@ -40,6 +40,9 @@ actor Main
     _env = env
     _expected = _in_process()
 
+    _env.out.print("the same spatial pooler on actors, round for round")
+    _env.out.print("")
+
     try
       let config = Session.config()
       let input = Session.input()

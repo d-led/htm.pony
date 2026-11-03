@@ -13,6 +13,8 @@ actor Main
       let config = SpatialPoolerConfig([8; 8], [64]
         where global_inhibition' = false, num_active_columns_per_inh_area' = 2.0)
 
+      env.out.print("the spatial pooler without actors")
+      env.out.print("")
       env.out.print("columns " + config.num_columns().string()
         + ", inputs " + config.num_inputs().string())
       env.out.print("density at radius 1: " + config.density(1).string())
