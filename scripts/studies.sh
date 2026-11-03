@@ -1,42 +1,66 @@
 #!/bin/sh
-# Runs the studies whose numbers are quoted in the documentation, keeps what each
-# one printed in build/studies/, and checks it against the numbers published last.
+# Runs every measurement example, keeps what each printed as markdown, and
+# checks the numbers against the ones published last.
 #
-# Their output is deterministic - every study is seeded and none of them reads a
-# clock - so the files are worth keeping: CI publishes them as an artifact on
-# every push to master, and the tables in docs/examples.md are read from that
-# published run rather than from whichever machine happened to run them.
+# The studies are seeded and read no clock, so their output is worth keeping:
+# `docs/results/` is what the documentation renders, and CI republishes it on
+# every push, so nobody copies numbers by hand. `test/fixtures/studies/` is the
+# deliberate copy: a change to the pooler moves those numbers, and a run that no
+# longer matches them has to fail somewhere rather than quietly disagree with
+# what is written down.
 #
-# The comparison is the point of the fixture. A change to the pooler moves these
-# numbers and the documentation quotes them, so a run that no longer matches what
-# is written down has to fail somewhere rather than quietly disagree.
+# A study prints markdown. One that still prints an aligned text table is kept
+# in a fenced block, so the file is markdown either way.
 set -e
 
 root=$(cd "$(dirname "$0")/.." && pwd)
 out="$root/build/studies"
 expected="$root/test/fixtures/studies"
-mkdir -p "$out"
+results="$root/docs/results"
+mkdir -p "$out" "$expected" "$results"
 
 status=0
 
-for study in pooler-training-value sequence-training-value boosting-value pooler-settings-value prediction-baselines; do
+# The one list of the measurement examples. examples/run-all.sh reads it to know
+# which ones to leave out when CI runs the demonstrations, so a study added here
+# is picked up by both.
+studies="pooler-training-value sequence-training-value boosting-value pooler-settings-value prediction-baselines image-robustness"
+
+markdown_of() {
+    # $1 is what the study printed, $2 where the markdown goes, $3 its name.
+    if grep -q '^==== markdown ====$' "$1"; then
+        awk '/^==== markdown ====$/{found=1; next} found' "$1" > "$2"
+    else
+        {
+            echo "#### $3"
+            echo
+            echo '```text'
+            cat "$1"
+            echo '```'
+        } > "$2"
+    fi
+}
+
+for study in $studies; do
     echo "=== $study ==="
     cd "$root/examples/$study"
     corral run -- ponyc -o . .
     "./$study" > "$out/$study.txt"
-    cat "$out/$study.txt"
+    markdown_of "$out/$study.txt" "$out/$study.md" "$study"
+    cat "$out/$study.md"
 
-    if [ -f "$expected/$study.txt" ]; then
-        if ! diff -u "$expected/$study.txt" "$out/$study.txt"; then
+    if [ -f "$expected/$study.md" ]; then
+        if ! diff -u "$expected/$study.md" "$out/$study.md"; then
             echo
             echo "The $study numbers no longer match test/fixtures/studies/."
-            echo "If the change was intended, copy it over and bring the tables"
-            echo "in docs/examples.md with it:"
-            echo "    cp build/studies/$study.txt test/fixtures/studies/"
+            echo "If the change was intended, take it as the new record:"
+            echo "    cp build/studies/$study.md test/fixtures/studies/"
+            echo "docs/results/ has already been updated by this run."
             status=1
         fi
     fi
 
+    cp "$out/$study.md" "$results/$study.md"
     echo
 done
 

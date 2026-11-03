@@ -15,6 +15,8 @@ jobs:
   test:
     name: Build and test
     runs-on: ubuntu-latest
+    # A hung test binary would otherwise sit on GitHub's default 360 minutes.
+    timeout-minutes: 10
 
     steps:
       - uses: actions/checkout@v7
@@ -30,6 +32,9 @@ jobs:
   examples:
     name: Build and run the examples
     runs-on: ubuntu-latest
+    # Measured at about two and a half minutes for all twenty-two; the cap is
+    # for a run that stops behaving, not for a run that is merely slow.
+    timeout-minutes: 8
 
     steps:
       - uses: actions/checkout@v7
@@ -42,8 +47,13 @@ jobs:
       # running them is the check. The list is run-all.sh's, not a copy of it:
       # the copy that used to live here stopped running the newer studies
       # without anyone noticing.
-      - name: Build and run every example
-        run: ./examples/run-all.sh
+      #
+      # The measurement examples are left out here and run by the studies job
+      # below, in a release build: a debug build of one of them takes a minute
+      # and a half on its own, and running the same programs twice is most of
+      # what this job used to cost.
+      - name: Build and run the demonstrations
+        run: ./examples/run-all.sh --demos-only
 
       # Compiled, not timed. A shared CI runner is the one machine whose timings
       # mean nothing, but a benchmark that no longer builds is rot, and nobody
@@ -55,6 +65,7 @@ jobs:
   studies:
     name: Measure the studies
     runs-on: ubuntu-latest
+    timeout-minutes: 15
 
     steps:
       - uses: actions/checkout@v7
@@ -68,6 +79,26 @@ jobs:
       # using, and published, so every table can be traced to a run.
       - name: Run the studies
         run: ./scripts/studies.sh
+
+      # The published copy is not typed in and not copied by hand: the run above
+      # wrote docs/results/, and this puts it on master so the site and GitHub
+      # show what the benchmarks just measured. `test/fixtures/studies/` still
+      # has to be updated deliberately, which is what makes a behaviour change
+      # fail rather than publish itself.
+      - name: Publish the numbers the studies just measured
+        # Only on master, and never from the commit this step made itself: the
+        # second run finds nothing to publish and stops there.
+        if: github.event_name == 'push' && github.actor != 'github-actions[bot]'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add docs/results
+          if git diff --cached --quiet; then
+            echo "the published numbers are already current"
+          else
+            git commit -m "publish the numbers the benchmarks measured"
+            git push
+          fi
 
       - name: Write the numbers to the job summary
         run: |

@@ -46,7 +46,12 @@ examples/anomaly-likelihood/anomaly-likelihood
 examples/anomaly-on-actors/anomaly-on-actors
 examples/prediction-baselines/prediction-baselines
 examples/image-retrieval/image-retrieval
+examples/image-robustness/image-robustness
 
 # Picture corpora fetched by scripts/fetch-images.sh. No dataset is vendored:
 # the benchmark downloads one into here and reads it from here.
 data/
+
+# Interrupted builds leave these beside an example.
+*.o.tmp
+*.shim.*

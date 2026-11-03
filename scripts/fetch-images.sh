@@ -19,18 +19,30 @@ data_root="${HTM_PONY_DATA:-$(cd "$(dirname "$0")/.." && pwd)/data}"
 archive="https://s3.amazonaws.com/fast-ai-imageclas/${dataset}.tgz"
 target="${data_root}/${dataset}"
 
-if [ -d "${target}/train" ]; then
+# Idempotent: the second run does nothing, and says so. The test is that both
+# halves of the corpus have pictures in them, because a directory that exists
+# is not the same as a corpus that arrived - an interrupted unpack leaves the
+# directory behind.
+if [ -d "${target}/train" ] && [ -d "${target}/val" ] &&
+   [ -n "$(ls -A "${target}/train")" ] && [ -n "$(ls -A "${target}/val")" ]; then
   echo "already fetched: ${target}"
   exit 0
 fi
 
+if [ -e "${target}" ]; then
+  echo "${target} is there but not complete; remove it and run this again: " >&2
+  echo "    rm -rf '${target}'" >&2
+  exit 1
+fi
+
 mkdir -p "${data_root}"
 echo "fetching ${archive}"
-curl -fL --progress-bar "${archive}" -o "${data_root}/${dataset}.tgz"
+curl -fL --retry 3 --retry-delay 2 --progress-bar \
+  "${archive}" -o "${data_root}/${dataset}.tgz"
 echo "unpacking into ${data_root}"
 tar xzf "${data_root}/${dataset}.tgz" -C "${data_root}"
 rm -f "${data_root}/${dataset}.tgz"
 
 echo "pictures: $(find "${target}/train" -type f | wc -l | tr -d ' ') in train, \
 $(find "${target}/val" -type f | wc -l | tr -d ' ') in val"
-echo "now: ./examples/image-retrieval/run.sh"
+echo "now: ./examples/run-all.sh runs the picture benchmarks against it"

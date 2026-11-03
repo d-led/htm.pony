@@ -618,6 +618,61 @@ directories, or setting `HTM_PONY_IMAGES`; the reader takes `.jpeg`, `.jpg`,
 and reads class and picture names in order so the numbers are the corpus's
 rather than the filesystem's.
 
+## How far does a fingerprint drift?
+
+`examples/image-robustness/main.pony` asks the question a hash is actually for:
+when the same picture comes back brighter, larger, or grainy, does it still
+fingerprint as the same picture? Five pictures built in code - a diagonal ramp,
+vertical bars, a smooth gradient, a ring and a checkerboard - each distorted
+five ways, and each hash measured against the distance between *different*
+pictures, which is the row that makes the others mean anything.
+
+```
+difference hash, 64 bits
+
+                              bits changed
+brighter, forty levels        0.0%
+twice the size                5.3%
+half the size                 3.1%
+cropped, a twentieth a side   23.8%
+grain, 10 levels              5.3%
+a different picture           45.0%
+
+average hash, 256 bits
+
+                              bits changed
+brighter, forty levels        0.0%
+twice the size                0.0%
+half the size                 0.0%
+cropped, a twentieth a side   19.1%
+grain, 10 levels              10.2%
+a different picture           49.3%
+```
+
+Brightness costs neither hash anything, and that is by construction rather than
+by luck: the difference hash keeps only the *sign* of the gradient between
+neighbours, so a level added to every pixel cancels, and the average hash
+compares each cell with the median of the picture, so a level added to every
+pixel moves the median with it.
+
+Size costs the average hash nothing and the difference hash a few bits, and the
+reason is arithmetic rather than perception: sixteen cells into ninety-six
+pixels lands on a boundary, nine does not, so doubling the picture moves the
+difference hash's cells by a pixel and flips an occasional comparison.
+
+Grain costs the difference hash less, which is the opposite of what the sizes
+suggest: its cells are the larger ones, so grain averages away before the
+comparison happens.
+
+Cropping is the one neither survives, and the yardstick is what makes that
+readable: a crop costs about half of what being a different picture costs, so a
+cropped copy is neither the same picture nor another one. That is not a defect
+to be fixed by tuning - a hash that survived cropping would have to be built for
+it, which is what PDQ is and what this library does not have.
+
+The measurement is pinned, so a change to either hash has to bring these numbers
+with it.
+
 ## Anomaly detection
 
 `examples/anomaly-stream/main.pony` streams three repeating inputs and then one

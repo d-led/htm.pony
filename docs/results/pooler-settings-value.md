@@ -1,3 +1,6 @@
+#### pooler-settings-value
+
+```text
 a cycle of ten patterns, taught sixty times
 settings            segments  named per step
 plain               290       10
@@ -14,3 +17,4 @@ the re-play does not find more of the next pattern here - the
 same ten nodes either way. What it keeps is the state: ten cells
 rather than a burst of eighty, and a precise state is what a
 pooled union is built from.
+```

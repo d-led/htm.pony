@@ -1,5 +1,6 @@
 use "../../htm"
 use "../../htm/encoders"
+use "../../htm/measure"
 
 actor Main
   """
@@ -109,30 +110,7 @@ primitive Pictures
     GrayscaleImage(width, height, consume pixels)?
 
   fun scaled(image: GrayscaleImage val, factor: USize): GrayscaleImage val ? =>
-    let width = image.width * factor
-    let height = image.height * factor
-    let pixels: Array[U8] iso = recover iso Array[U8].init(0, width * height) end
-    var y: USize = 0
-    while y < height do
-      var x: USize = 0
-      while x < width do
-        pixels((y * width) + x)? = image(x / factor, y / factor)?
-        x = x + 1
-      end
-      y = y + 1
-    end
-    GrayscaleImage(width, height, consume pixels)?
+    Distortions.scaled(image, factor)?
 
   fun brighter(image: GrayscaleImage val, by: U8): GrayscaleImage val ? =>
-    let pixels: Array[U8] iso = recover iso Array[U8].init(0, image.width * image.height) end
-    var y: USize = 0
-    while y < image.height do
-      var x: USize = 0
-      while x < image.width do
-        let value = image(x, y)?.u16() + by.u16()
-        pixels((y * image.width) + x)? = if value > 255 then 255 else value.u8() end
-        x = x + 1
-      end
-      y = y + 1
-    end
-    GrayscaleImage(image.width, image.height, consume pixels)?
+    Distortions.brighter(image, by)?

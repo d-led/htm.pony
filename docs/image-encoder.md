@@ -90,13 +90,45 @@ close. A difference hash keeps the coarse run of brightness across nine cells
 and throws the rest away; that is why size and brightness cannot move it, and
 also why it cannot tell a golf ball from a gas pump.
 
+## Drift, against a second hash
+
+The question a hash is for is not whether it can tell classes apart but whether
+the *same* picture still fingerprints as itself after it has been resized,
+re-exposed or recompressed. `examples/image-robustness` measures that, on
+pictures built in code so that the answer is reproducible, and it measures a
+second hash beside it: `AverageHash`, a 256-bit layout of 16 by 16 block
+averages each compared with the picture's own median. The two are the ends of
+the cheap spectrum - gradients against layout - and neither is PDQ, whose low
+frequencies come from a cosine transform; that transform needs trigonometry
+this library does not carry, and a use has not yet earned it.
+
+```
+                              difference   average
+brighter, forty levels        0.0%         0.0%
+twice the size                5.3%         0.0%
+half the size                 3.1%         0.0%
+cropped, a twentieth a side   23.8%        19.1%
+grain, 10 levels              5.3%         10.2%
+a different picture           45.0%        49.3%
+```
+
+Brightness costs neither anything, and by construction: the difference hash
+keeps only the sign of the gradient, and a level added to every pixel cancels;
+the average hash compares against the median, which moves with the picture.
+Size costs the average hash nothing and the difference hash a few bits because
+sixteen cells into ninety-six pixels lands on a boundary and nine does not.
+Grain costs the difference hash less, because its cells are larger and average
+the grain away first. Cropping costs both about half of what being a different
+picture costs - see below.
+
 ## What it does not survive
 
 - **Cropping.** Moving the frame changes which cells fall in which of the nine
-  columns, so every comparison can change. PDQ, a 256-bit hash used for
-  near-duplicate detection, is built to survive this; it would replace
-  `DifferenceHash` without the encoder noticing, because the encoder only ever
-  sees an `ImageFingerprint`.
+  columns, so comparisons change: measured, a crop of a twentieth a side costs a
+  fifth of the bits, which is about half of what being a different picture
+  costs. PDQ, a 256-bit hash used for near-duplicate detection, is built to
+  survive this; it would replace `DifferenceHash` without the encoder noticing,
+  because the encoder only ever sees an `ImageFingerprint`.
 - **Rotation**, for the same reason.
 
 ## Reading a file

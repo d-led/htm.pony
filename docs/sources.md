@@ -103,11 +103,20 @@ measurement rather than a port, and has no upstream file to compare against.
   `cla_forecast.pony`, `prediction_classifier.pony`. An answer that crosses an
   actor boundary has to be a value, which the reference never needed.
 - **The picture side**: `htm/encoders/image_fingerprint.pony`,
-  `difference_hash.pony`, `image_encoder.pony`, `picture_encoder.pony`,
-  `grayscale_image.pony`, `image_decoder.pony`, `image_encoder_params.pony`,
-  `graph_encoder.pony`. Difference hashing is a known technique and this is a
-  plain implementation of it; the graph encoder has no upstream at all - that
-  was checked across all five implementations in this workspace.
+  `difference_hash.pony`, `average_hash.pony`, `resample.pony`,
+  `image_encoder.pony`, `picture_encoder.pony`, `grayscale_image.pony`,
+  `image_decoder.pony`, `image_encoder_params.pony`, `graph_encoder.pony`.
+  Difference hashing and average hashing are known techniques and these are
+  plain implementations of them, written here rather than taken from anywhere;
+  PDQ would be the third and is not written, because its cosine transform needs
+  trigonometry that this library does not carry. The graph encoder has no
+  upstream at all - that was checked across all five implementations in this
+  workspace.
+- **The measurement package**: `htm/measure/corpus.pony`, `corpus_image.pony`,
+  `image_corpus.pony`, `retrieval.pony`, `distortions.pony`, `synthetic.pony`.
+  Reading a labelled corpus off a disk, counting how often a neighbour shares a
+  class, and distorting a picture in the ways a photograph is distorted. None of
+  it has an upstream; the metrics are simple enough to be stated in a test.
 - **The examples and the studies**: see below.
 
 ## Tests
@@ -128,6 +137,7 @@ is a question the reference never asks.
 | `spatial_pooler_learning_test.pony`, `pooler_learning_test.pony` | `spatialPoolerBoost_test.go` |
 | `temporal_memory_test.pony` | `temporalMemory_test.go` (`TestPickCellsToLearnOn`, `TestAdaptSegment`, `TestLeastUsedCell`) |
 | `temporal_pooler_test.pony` | `temporalPooler_test.go` (`TestLearnPredict`) |
+| `resample_test.pony`, `average_hash_test.pony`, `distortions_test.pony`, `image_corpus_test.pony`, `retrieval_test.pony` | nothing: these state this repository's own picture and measurement behaviour |
 
 Everything else in `test/` states this library's own behaviour - the actor
 paths, the pooler's forecast, the anomaly stream, the encoders that were written
@@ -151,6 +161,7 @@ table is the index to those paragraphs.
 | `document-similarity` | how does a document become bits? | sentences that share words share positions; an unrelated one shares almost none |
 | `image-similarity` | does a representation survive scale and brightness? | the first three pictures are identical, the fourth is not |
 | `image-retrieval` | does the representation find pictures of the same class? | well above chance and well short of retrieval: 17.3% against 9.7%, on imagenette, a corpus the fetch script downloads |
+| `image-robustness` | how far does a fingerprint drift under a distortion? | brightness costs nothing, size costs the difference hash a few bits, and cropping costs both about half the distance to a different picture |
 | `temporal-memory` | does the memory predict what follows? | a predicted column activates one cell instead of bursting |
 | `temporal-memory-on-actors` | does the sharded memory answer the same? | every step agrees with the in-process one |
 | `temporal-pooler` | what does pooling add? | the forecast three steps out names the patterns that follow, and asking changes nothing |

@@ -48,44 +48,4 @@ primitive DifferenceHash
     mean anything.
     """
     if (image.width < columns()) or (image.height < rows()) then error end
-
-    let result = Array[F64](columns() * rows())
-    var row: USize = 0
-    while row < rows() do
-      var column: USize = 0
-      while column < columns() do
-        let left = (column * image.width) / columns()
-        let right = ((column + 1) * image.width) / columns()
-        let top = (row * image.height) / rows()
-        let bottom = ((row + 1) * image.height) / rows()
-        result.push(_average(image, left, top, right, bottom)?)
-        column = column + 1
-      end
-      row = row + 1
-    end
-    result
-
-  fun _average(
-    image: GrayscaleImage val,
-    left: USize,
-    top: USize,
-    right: USize,
-    bottom: USize)
-    : F64 ?
-  =>
-    var total: USize = 0
-    var count: USize = 0
-
-    var y = top
-    while y < bottom do
-      var x = left
-      while x < right do
-        total = total + image(x, y)?.usize()
-        count = count + 1
-        x = x + 1
-      end
-      y = y + 1
-    end
-
-    if count == 0 then return 0.0 end
-    total.f64() / count.f64()
+    Resample.block_average(image, columns(), rows())?

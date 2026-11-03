@@ -1,6 +1,7 @@
 use "collections"
 use "../../htm"
 use "../../htm/encoders"
+use "../../htm/measure"
 
 interface Stream
   """
@@ -374,25 +375,85 @@ actor Main
   """
   new create(env: Env) =>
     try
-      _measure(env, "six symbols in a fixed order", Alphabet.create()?)?
+      let measured: Array[(String val, Study)] = Array[(String val, Study)]
+      measured.push(
+        _measure(env, "six symbols in a fixed order", Alphabet.create()?)?)
       env.out.print("")
-      _measure(env, "a value that climbs and falls", Drift.create()?)?
+      measured.push(
+        _measure(env, "a value that climbs and falls", Drift.create()?)?)
       env.out.print("")
-      _measure(
-        env,
-        "a point going round a circle, and back",
-        Circle.create()?)?
+      measured.push(
+        _measure(env, "a point going round a circle, and back", Circle.create()?)?)
+
+      // Everything from here is markdown, which scripts/studies.sh keeps for
+      // docs/results/ rather than to be read in a terminal.
+      env.out.print("")
+      env.out.print("==== markdown ====")
+      _markdown(env, measured)?
       env.exitcode(0)
     else
       env.out.print("the example failed")
       env.exitcode(1)
     end
 
-  fun _measure(env: Env, what: String, stream: Stream) ? =>
+  fun _measure(
+    env: Env,
+    what: String val,
+    stream: Stream)
+    : (String val, Study) ?
+  =>
     let study = Study(_params().columns, _params(), stream.warmup())
     _announce(env, what, stream)
     _run(study, _pooler(stream)?, stream)?
     _report(env, study)?
+    (what, study)
+
+  fun _markdown(env: Env, measured: Array[(String val, Study)]) ? =>
+    """
+    The same numbers as markdown: one table over every stream and method, and
+    a chart of the misses per stream.
+    """
+    let rows: Array[Array[String] val] iso =
+      recover iso Array[Array[String] val] end
+    for (what, study) in measured.values() do
+      var index: USize = 0
+      while index < study.methods() do
+        let missed: String val = _valued(Rate.of(study.mean(index)?))
+        let right: String val = _valued(Rate.of(study.right(index)?))
+        let method: String val = _valued(study.name(index)?)
+        rows.push(recover val [what; method; missed; right] end)
+        index = index + 1
+      end
+    end
+
+    env.out.print("")
+    env.out.print("#### Does a memory beat guessing, on three streams?")
+    env.out.print("")
+    env.out.print(Report.table(
+      recover val ["stream"; "method"; "missed"; "steps right"] end,
+      consume rows))
+
+    // The chart is the comparison the study exists for: the memory against
+    // the best guess that needs no learning, on each stream.
+    let streams: Array[String val] iso = recover iso Array[String val] end
+    let guesses: Array[F64] iso = recover iso Array[F64] end
+    let memories: Array[F64] iso = recover iso Array[F64] end
+    for (what, study) in measured.values() do
+      streams.push(what)
+      guesses.push(study.mean(0)? * 100.0)
+      memories.push(study.mean(3)? * 100.0)
+    end
+    let series: Array[(String, Array[F64] val)] iso =
+      recover iso Array[(String, Array[F64] val)] end
+    series.push(("last input", consume guesses))
+    series.push(("temporal memory", consume memories))
+    env.out.print(Report.chart(
+      "what the memory saves against repeating the last input",
+      "% of columns missed",
+      consume streams,
+      consume series))
+
+  fun _valued(text: String): String val => text.clone()
 
   fun _params(): TemporalMemoryParams val =>
     TemporalMemoryParams(

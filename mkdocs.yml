@@ -17,6 +17,12 @@ markdown_extensions:
   - pymdownx.highlight:
       anchor_linenums: true
       pygments_lang_class: true
+  # The results page is a copy of what the benchmarks printed: the files under
+  # docs/results/ are written by scripts/studies.sh, which CI diffs, so the
+  # page cannot drift from the programs.
+  - pymdownx.snippets:
+      base_path: docs
+      check_paths: true
 nav:
   - Home: index.md
   - Getting started: getting-started.md
@@ -36,6 +42,7 @@ nav:
       - Streaming anomaly detection: anomaly-detection.md
       - Classification: classification.md
   - Examples: examples.md
+  - Results: results.md
   - Roadmap: roadmap.md
   - Handoff: handoff.md
   - Sources: sources.md

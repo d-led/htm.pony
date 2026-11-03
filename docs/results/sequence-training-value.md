@@ -1,3 +1,6 @@
+#### sequence-training-value
+
+```text
 4 symbols of 8 bits in 64, a cycle of them: 20 passes to warm the pooler, 12 to learn the sequence
 
 an anomaly score is the share of a step's columns the
@@ -13,3 +16,4 @@ mean    0.029     0.024     0.093     0.155     0.187      0.208
 
 the learned pooler gave a better sequence on 3 of 5 seeds at one bit of damage,
 and on 3 of 5 at two.
+```

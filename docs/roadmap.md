@@ -113,6 +113,30 @@ was written was to keep it off master until the pooler consumes an SDR end to en
 then build a corpus of real, noisy pictures, measure how far the Hamming distance
 drifts under the distortions that matter, and only then choose the hash.
 
+That measurement now exists, in two parts. `examples/image-robustness` puts five
+pictures built in code through brightness, size, crop and grain, and reports the
+drift of each hash against the distance between two different pictures - which
+is the yardstick, because a hash that survived everything would be the same for
+every picture. `examples/image-retrieval` asks the harder question of a corpus of
+real photographs, which is downloaded rather than stored.
+
+What they said: brightness costs a fingerprint nothing, size costs the average
+hash nothing and the difference hash a few bits (nine cells into ninety-six
+pixels does not land on a boundary, sixteen does), grain costs the difference
+hash less because it averages larger cells, and cropping costs both about half
+of the distance to a different picture. The same kind of measurement says a
+sixty-four bit difference hash finds a classmate 17.3% of the time against 9.7%
+by chance, so that hash is not a retrieval descriptor - the average hash has not
+been put through the corpus benchmark yet, and that is the next number worth
+having.
+
+That leaves the hash choice open with a reason: a perceptual hash built for near
+duplicates - PDQ, whose low frequencies come from a cosine transform - would
+take the place of `DifferenceHash` without the encoder noticing, and the one
+thing it needs that this library does not have is trigonometry. Until a use earns
+it, the two hashes here are the ends of the cheap spectrum: gradients against
+layout, both measured.
+
 The next thing worth doing there is an **example rather than a library feature**:
 run common datasets through it - the ones deep learning is known to struggle with,
 rotations, texture against shape, noisy handwriting - and show what a spatial

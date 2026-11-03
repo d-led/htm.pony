@@ -1,3 +1,6 @@
+#### pooler-training-value
+
+```text
 8 patterns of 8 bits in 64, shown 30 times each
 
 seed 3, in full
@@ -27,3 +30,4 @@ mean        +0.073    +0.043
 learning kept more of the answer on 5 of 5 seeds when a pattern lost bits,
 and on 4 of 5 when it gained bits it never had.
 Losing bits is where the learning pays most.
+```

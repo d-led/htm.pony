@@ -16,13 +16,14 @@ memory learns what tends to follow what in those columns; and a classifier turns
 the prediction into probabilities over categories. Every stage is tested, and
 each one runs twice: once in process, and once as actors passing messages.
 
-`examples/` walks the whole pipeline in twenty-one runnable programs. Five of
+`examples/` walks the whole pipeline in twenty-two runnable programs. Six of
 them measure rather than demonstrate - what learning is worth, what a learned
 pooler gives a memory, what boosting is worth, what the pooler's settings cost,
-and whether a memory beats guessing - and their numbers are pinned, so CI fails
-if one moves. A sixth, the picture retrieval benchmark, measures a corpus that is
-downloaded rather than stored (`scripts/fetch-images.sh`), and so prints its
-numbers rather than pinning them.
+whether a memory beats guessing, and how far a picture fingerprint drifts under
+distortion - and their numbers are pinned, so CI fails if one moves. A seventh,
+the picture retrieval benchmark, measures a corpus that is downloaded rather
+than stored (`scripts/fetch-images.sh`), and so prints its numbers rather than
+pinning them.
 
 Three things are deliberately absent, and the [documentation](https://d-led.github.io/htm.pony/)
 says why for each: the **graph encoder** is not written, the **date encoder** has
