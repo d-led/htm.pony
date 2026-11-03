@@ -67,6 +67,33 @@ Two rules that keep the repository honest, both enforced by tests:
 
 ## What is left, in the order to do it
 
+**Small functions, which is a standing rule for this repository.** Every
+definition here is meant to be one thing with a name, and a pass over the
+examples and the core files took the worst of them apart: the longest example
+constructor was 73 lines and is now a handful of named phases, and `activate`,
+`compute`, `neighbours`, `_choose`, `_infer_phase2`, `pick`, the grid encoder's
+constructor and the date encoder's five-times-repeated field block are all split.
+Counted mechanically, 15 of 833 definitions are still over 40 lines, and six over
+60 - five of those are constructors that assign fields or spell out a config,
+which is dull but not tangled.
+
+**The one file that is still procedural is `htm/encoders/scalar_encoder.pony`**:
+`decode` at 193 lines, the constructor at 103, `encode_at_pos` at 77. It is the
+file that was ported line for line from Go and it mixes tabs into its four-space
+indentation, with trailing spaces on a few lines, so an edit has to reproduce
+that whitespace exactly - and an edit that nearly matches is worse than no edit.
+The way in is two commits, in this order:
+
+1. **Normalise the whitespace** of that one file - tabs to four spaces, trailing
+   spaces stripped - with no other change. The suite, the five pinned studies and
+   the twenty example outputs say whether it was only whitespace.
+2. **Then split it.** `decode` is three phases already, in three commented
+   blocks: fill the holes a learned representation left (`_filled`, `_fill_linear`,
+   `_fill_periodic`), find the runs of set bits (`_runs`, and the periodic merge
+   at the edges), and turn each run into a range (`_ranges`, `_edges`,
+   `_in_input_space`). The constructor is a validation, a warm-up and a handful
+   of derived widths. `encode_at_pos` is a first-bit search and a fill.
+
 Items 1 to 7 are in: the CLA temporal pooler in seven slices, the region's
 deadline and retry, multi-step prediction, `SDRMerger`, the fixed-width category
 encoder, the graph encoder, and the smaller things item 7 diagnoses. What each
