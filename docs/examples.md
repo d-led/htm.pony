@@ -246,12 +246,12 @@ it knocks bits out of every symbol and scores the sequence again:
 
 ```
 seed    clean: L  W         1 bit: L  W         2 bits: L  W
-3       0.000     0.109     0.033     0.154     0.054      0.164
-5       0.221     0.000     0.267     0.073     0.326      0.114
-11      0.000     0.000     0.064     0.056     0.126      0.108
-23      0.000     0.000     0.056     0.019     0.102      0.065
-41      0.000     0.000     0.019     0.108     0.038      0.065
-mean    0.044     0.022     0.088     0.082     0.129      0.103
+3       0.000     0.109     0.033     0.192     0.054      0.209
+5       0.221     0.000     0.320     0.143     0.388      0.249
+11      0.000     0.000     0.064     0.116     0.188      0.193
+23      0.000     0.000     0.107     0.042     0.274      0.108
+41      0.000     0.000     0.019     0.164     0.038      0.194
+mean    0.044     0.022     0.109     0.131     0.188      0.191
 ```
 
 `L` is the watcher whose pooler learned, `W` the one whose pooler only looked, and
@@ -262,20 +262,28 @@ Most seeds learn the cycle to nothing on both sides. Seed 5 does not: its learne
 watcher scores 0.221 on the clean cycle while the wired one scores nothing, which
 is the one result here large enough to stand out from the spread.
 
-What is left is not a difference between the two watchers. At one bit of damage
-the learned pooler averages 0.088 against 0.082 and is better on two of five
-seeds; at two bits 0.129 against 0.103, which is the wired one ahead. This study
-used to show a clearer benefit - 0.051 against 0.189 at one bit - and that result
-came from a pooler whose ties were broken by column index: with a frozen pooler
-the same low-numbered columns keep winning, which is a stable representation for
-a memory to learn and not a property of learning. Give ties to a nudge instead
-and the advantage disappears into the spread.
+What is left is a direction rather than a margin. At one bit of damage the
+learned pooler averages 0.109 against 0.131 and is better on three of five seeds;
+at two bits 0.188 against 0.191, again better on three of five. One seed at the
+wrong end would flip either comparison, and seed 5's clean-side outlier is larger
+than the difference being claimed.
 
-The absolute numbers have moved since: both sides now score about half what they
-did, because the memory learned from winner cells rather than from every active
-cell, and a sequence it has learned is followed rather than alternated with
-bursts. The comparison between the two watchers is what this study is for, and it
-has not changed.
+This study used to show a clearer benefit - 0.051 against 0.189 at one bit - and
+that result came from a pooler whose ties were broken by column index: with a
+frozen pooler the same low-numbered columns keep winning, which is a stable
+representation for a memory to learn and not a property of learning. Give ties to
+a nudge instead and most of that advantage goes.
+
+The absolute numbers have moved twice since. First both sides fell by about half
+when the memory learned from winner cells rather than from every active cell, so
+that a learned sequence was followed rather than alternated with bursts; on those
+numbers learning bought nothing measurable at one bit. Then they rose again when
+the memory began strengthening only the synapses its own prediction had already
+connected, which is the reference's rule: a synapse a punishment has pushed below
+the connection threshold now decays instead of climbing back, so what a segment
+ends up reaching is what it was rewarded for. That is the state above, and it is
+the first form of this study in which the learned pooler comes out ahead at both
+levels of damage.
 
 The lesson is about the study, not the code: a comparison that rests on one
 mechanism being switched off is worth re-running when the mechanism next to it

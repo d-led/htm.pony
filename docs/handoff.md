@@ -351,16 +351,19 @@ cycle now predicts every step with nothing bursting, which is what
 `test/temporal_memory_test.pony` states, and the region still agrees with the
 memory step for step.
 
-What it moved, and both are brought along: `sequence-training-value` now has
-every side scoring about half what it did - 0.088 against 0.082 at one bit of
-damage, where it was 0.131 against 0.153 - while the claim the study exists for
-(which of the two watchers follows the sequence better) is as weak as it was;
-`docs/examples.md` says so in place. `pooler-settings-value` did not move.
+What it moved, and both are brought along: `sequence-training-value` had every
+side scoring about half what it did - 0.088 against 0.082 at one bit of damage,
+where it was 0.131 against 0.153 - while the claim the study exists for (which of
+the two watchers follows the sequence better) was as weak as it was;
+`docs/examples.md` said so in place. `pooler-settings-value` did not move. (Those
+numbers rose again with the strengthening fix in item 9; the page carries the
+current ones.)
 
 ### 9. What the same audit found beside the winner cells
 
 Comparing `temporalMemory.go` with the port function by function after the winner
-cell fix, three differences are left, and none of them showed a defect:
+cell fix, three differences were left. One of them is now closed; the other two
+stand, and neither showed a defect:
 
 - **`LearningRadius` is never read.** The reference declares it, defaults it to
   2048, and uses it nowhere. Dropped here, the same way the pooler's `burnIn`
@@ -371,16 +374,21 @@ cell fix, three differences are left, and none of them showed a defect:
   so its own answer is not reproducible - and this repository pins its studies to
   exact numbers. Worth revisiting only if a stream shows the in-order choice
   biasing which cells a segment reaches.
-- **`strengthen` increments any synapse whose source was active**, where the
+- **`strengthen` incremented any synapse whose source was active**, where the
   reference's `adaptSegment` increments only the *connected* active ones and
-  decrements everything else. The two agree for a synapse that is connected, which
-  is where a fresh one starts (`initial_permanence` is the connection threshold);
-  they disagree once a punishment has pushed one below the threshold, where this
-  port lets it climb back while its source keeps firing and the reference lets it
-  decay away. **Not measured, and not changed**: a learned sequence is followed at
-  every step with the rule as it is, so there is no symptom to fix. If somebody
-  wants this port to match the reference to the letter, this is the one place it
-  does not, and the two studies will move when it does.
+  decrements everything else. **Closed.** `strengthen(previous, connected,
+  increment, decrement)` now tests `permanence >= connected_threshold` before it
+  learns, so a synapse a punishment has pushed below the threshold decays while
+  its source keeps firing, as the reference does, instead of climbing back.
+  Measured: the suite goes from 253 to 255 tests, the two new ones stating the
+  rule against a segment on either side of the threshold, `pooler-settings-value`
+  does not move, and `sequence-training-value` moves again - 0.109 against 0.131
+  at one bit of damage and 0.188 against 0.191 at two, the learned pooler ahead
+  on three of five seeds at each. That is the first form of the study in which
+  learning buys anything, and it is a direction rather than a margin;
+  `docs/examples.md` carries the table and says as much. The only behavioural
+  difference from `temporalMemory.go` left is the ordering in the bullet above,
+  which exists so the studies stay reproducible.
 
 ## Decisions already made — do not reverse them silently
 

@@ -239,7 +239,10 @@ class TemporalColumn
     prediction rather than a burst.
     """
     segment.strengthen(
-      previous, _params.permanence_increment, _params.permanence_decrement)
+      previous,
+      _params.connected_threshold,
+      _params.permanence_increment,
+      _params.permanence_decrement)
     segment.connect_to(
       previous_winners, _params.initial_permanence, _params.max_synapses)
     segment.prune()

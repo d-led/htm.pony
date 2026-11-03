@@ -4,12 +4,12 @@ an anomaly score is the share of a step's columns the
 memory did not expect: lower means the sequence was followed
 
 seed    clean: L  W         1 bit: L  W         2 bits: L  W
-3       0.000     0.109     0.033     0.154     0.054      0.164
-5       0.221     0.000     0.267     0.073     0.326      0.114
-11      0.000     0.000     0.064     0.056     0.126      0.108
-23      0.000     0.000     0.056     0.019     0.102      0.065
-41      0.000     0.000     0.019     0.108     0.038      0.065
-mean    0.044     0.022     0.088     0.082     0.129      0.103
+3       0.000     0.109     0.033     0.192     0.054      0.209
+5       0.221     0.000     0.320     0.143     0.388      0.249
+11      0.000     0.000     0.064     0.116     0.188      0.193
+23      0.000     0.000     0.107     0.042     0.274      0.108
+41      0.000     0.000     0.019     0.164     0.038      0.194
+mean    0.044     0.022     0.109     0.131     0.188      0.191
 
-the learned pooler gave a better sequence on 2 of 5 seeds at one bit of damage,
-and on 2 of 5 at two.
+the learned pooler gave a better sequence on 3 of 5 seeds at one bit of damage,
+and on 3 of 5 at two.

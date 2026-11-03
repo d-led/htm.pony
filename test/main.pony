@@ -26,6 +26,7 @@ actor Main is TestList
     PoolerTest.tests(test)
     PoolerLearningTest.tests(test)
     ImageEncoderTest.tests(test)
+    TemporalSegmentTest.tests(test)
     TemporalMemoryTest.tests(test)
     TemporalPoolerConfigTest.tests(test)
     ClaSegmentTest.tests(test)

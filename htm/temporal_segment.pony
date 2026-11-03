@@ -32,13 +32,26 @@ class TemporalSegment
     end
     count
 
-  fun ref strengthen(previous: ReadSeq[Bool], increment: F64, decrement: F64) =>
+  fun ref strengthen(
+    previous: ReadSeq[Bool],
+    connected: F64,
+    increment: F64,
+    decrement: F64)
+  =>
     """
-    Move every synapse towards or away from connection, depending on whether
-    the cell it reaches was active.
+    Move towards connection the synapses that reach a cell which was active and
+    are already connected, and away from it every other one.
+
+    A synapse that reaches an active cell but is not yet connected does not learn
+    from that: it decays instead, and is pruned if nothing rescues it. That is the
+    reference's rule, and it is what stops a weak synapse pointing at a cell that
+    keeps firing from climbing back on the strength of the activity alone.
     """
     for synapse in synapses.values() do
-      if _was_active(previous, synapse.source) then
+      if
+        _was_active(previous, synapse.source)
+          and (synapse.permanence >= connected)
+      then
         synapse.permanence = _clipped(synapse.permanence + increment)
       else
         synapse.permanence = _clipped(synapse.permanence - decrement)
