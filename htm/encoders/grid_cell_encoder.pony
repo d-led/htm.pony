@@ -169,13 +169,13 @@ class GridCellEncoder
       module = module + 1
       let stop = ((module * size) / periods.size())
 
-      modules.push(
-        GridModule(
-          start,
-          stop,
-          period,
-          2.0 * 3.141592653589793 * random.real(),
-          _phases(start, stop, reach, random)))
+      // the phases first and the orientation second: the same order the draws
+      // were made in when this was one body, so the same seed still gives the
+      // same layer
+      let phases = _phases(start, stop, reach, random)
+      let angle = 2.0 * 3.141592653589793 * random.real()
+
+      modules.push(GridModule(start, stop, period, angle, phases))
       start = stop
     end
 
@@ -214,48 +214,75 @@ class GridCellEncoder
     A location that is not a number activates nothing rather than an arbitrary
     part of the layer: a missing position is not a position.
     """
-    let active: Array[USize] iso = recover iso Array[USize] end
+    let active: Array[USize] ref = Array[USize]
 
-    if x.nan() or y.nan() then
-      return consume active
-    end
-
-    for module in _modules.values() do
-      let cos = @cos(module.angle)
-      let sin = @sin(module.angle)
-      let radius = module.period / 2.0
-      let gaps: Array[(F64, USize)] ref = Array[(F64, USize)]
-
-      var cell: USize = module.start
-      for (phase_x, phase_y) in module.phases.values() do
-        // the module's orientation is a rotation of the lattice, so rotating
-        // the offset into the lattice's frame is the same as rotating it by
-        // the opposite angle, which is the cheaper way round
-        let offset_x = x - phase_x
-        let offset_y = y - phase_y
-        let turned_x = (cos * offset_x) - (sin * offset_y)
-        let turned_y = (sin * offset_x) + (cos * offset_y)
-
-        (let node_x, let node_y) = HexLattice.nearest(turned_x, turned_y, radius)
-        let gap_x = turned_x - node_x
-        let gap_y = turned_y - node_y
-
-        gaps.push((((gap_x * gap_x) + (gap_y * gap_y)), cell))
-        cell = cell + 1
-      end
-
-      _by_nearness(gaps)?
-      let firing = _firing(module)
-
-      var taken: USize = 0
-      for (_, cell') in gaps.values() do
-        if taken >= firing then break end
-        active.push(cell')
-        taken = taken + 1
+    if not (x.nan() or y.nan()) then
+      for module in _modules.values() do
+        _add_module(module, x, y, active)?
       end
     end
 
-    consume active
+    _frozen(active)
+
+  fun _frozen(cells: Array[USize] ref): Array[USize] iso^ =>
+    let fixed: Array[USize] iso = recover iso Array[USize] end
+    for cell in cells.values() do
+      fixed.push(cell)
+    end
+    fixed
+
+  fun _add_module(
+    module: GridModule val,
+    x: F64,
+    y: F64,
+    active: Array[USize] ref)
+  ?
+  =>
+    """
+    The cells of one module that fire here: the `firing` nearest of its lattice
+    nodes, which is what a grid cell module does.
+    """
+    let gaps = _gaps(module, x, y)
+    _by_nearness(gaps)?
+
+    let firing = _firing(module)
+    var taken: USize = 0
+
+    for (_, cell) in gaps.values() do
+      if taken >= firing then break end
+      active.push(cell)
+      taken = taken + 1
+    end
+
+  fun _gaps(module: GridModule val, x: F64, y: F64): Array[(F64, USize)] ref =>
+    """
+    How far each of the module's cells is from the nearest node of the lattice
+    it carries, and which cell that is - the distance is what decides who fires.
+    """
+    let cos = @cos(module.angle)
+    let sin = @sin(module.angle)
+    let radius = module.period / 2.0
+    let gaps: Array[(F64, USize)] ref = Array[(F64, USize)]
+
+    var cell: USize = module.start
+    for (phase_x, phase_y) in module.phases.values() do
+      // the module's orientation is a rotation of the lattice, so rotating the
+      // offset into the lattice's frame is the same as rotating it by the
+      // opposite angle, which is the cheaper way round
+      let offset_x = x - phase_x
+      let offset_y = y - phase_y
+      let turned_x = (cos * offset_x) - (sin * offset_y)
+      let turned_y = (sin * offset_x) + (cos * offset_y)
+
+      (let node_x, let node_y) = HexLattice.nearest(turned_x, turned_y, radius)
+      let gap_x = turned_x - node_x
+      let gap_y = turned_y - node_y
+
+      gaps.push((((gap_x * gap_x) + (gap_y * gap_y)), cell))
+      cell = cell + 1
+    end
+
+    gaps
 
   fun _firing(module: GridModule): USize =>
     """How many of a module's cells fire: its share of `sparsity`."""
