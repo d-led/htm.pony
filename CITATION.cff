@@ -8,6 +8,9 @@ authors:
     website: "https://github.com/d-led"
 repository-code: "https://github.com/d-led/htm.pony"
 license: MPL-2.0
+version: "0.1.0"
+date-released: "2026-11-17"
+doi: 10.5281/zenodo.24313648
 abstract: >-
   An HTM implementation in Pony: encoders, spatial pooler, temporal memory, SDR
   classifier and streaming anomaly detection, each running in process and on
@@ -19,8 +22,7 @@ keywords:
   - temporal memory
   - anomaly detection
   - Pony
-# Zenodo mints a DOI for each GitHub release; add it as `doi:` once the first
-# release has been archived.
+# `doi` is the concept DOI: it always resolves to the latest archived release.
 references:
   - type: article
     title: "Why Neurons Have Thousands of Synapses, a Theory of Sequence Memory in Neocortex"
