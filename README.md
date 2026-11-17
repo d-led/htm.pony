@@ -109,6 +109,45 @@ actually does, including the parts that are present but empty.
   domain, or MIT where a jurisdiction does not allow that), which is compiled
   beside the package it belongs to
 
+## Citation
+
+HTM comes from Numenta's papers, and each stage here follows one of them. If you
+use this library in your work, cite them. The library itself is citable too:
+[`CITATION.cff`](CITATION.cff) is what GitHub's *Cite this repository* button
+reads, and Zenodo mints a DOI for each release.
+
+```bibtex
+@article{hawkins2016whyneurons,
+  title   = {Why Neurons Have Thousands of Synapses, a Theory of Sequence Memory in Neocortex},
+  author  = {Hawkins, Jeff and Ahmad, Subutai},
+  journal = {Frontiers in Neural Circuits},
+  volume  = {10},
+  pages   = {23},
+  year    = {2016},
+  doi     = {10.3389/fncir.2016.00023}
+}
+
+@article{cui2017spatialpooler,
+  title   = {The HTM Spatial Pooler—A Neocortical Algorithm for Online Sparse Distributed Coding},
+  author  = {Cui, Yuwei and Ahmad, Subutai and Hawkins, Jeff},
+  journal = {Frontiers in Computational Neuroscience},
+  volume  = {11},
+  pages   = {111},
+  year    = {2017},
+  doi     = {10.3389/fncom.2017.00111}
+}
+
+@article{ahmad2017anomaly,
+  title   = {Unsupervised real-time anomaly detection for streaming data},
+  author  = {Ahmad, Subutai and Lavin, Alexander and Purdy, Scott and Agha, Zuhad},
+  journal = {Neurocomputing},
+  volume  = {262},
+  pages   = {134--147},
+  year    = {2017},
+  doi     = {10.1016/j.neucom.2017.04.070}
+}
+```
+
 ## License
 
 - [Mozilla Public License 2.0](LICENSE): file-level copyleft, so changes to these

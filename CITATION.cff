@@ -1,0 +1,70 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite the papers it follows."
+title: "HTM.Pony"
+type: software
+authors:
+  - family-names: Ledentsov
+    given-names: Dmitry
+    website: "https://github.com/d-led"
+repository-code: "https://github.com/d-led/htm.pony"
+license: MPL-2.0
+abstract: >-
+  An HTM implementation in Pony: encoders, spatial pooler, temporal memory, SDR
+  classifier and streaming anomaly detection, each running in process and on
+  actors.
+keywords:
+  - HTM
+  - hierarchical temporal memory
+  - spatial pooler
+  - temporal memory
+  - anomaly detection
+  - Pony
+# Zenodo mints a DOI for each GitHub release; add it as `doi:` once the first
+# release has been archived.
+references:
+  - type: article
+    title: "Why Neurons Have Thousands of Synapses, a Theory of Sequence Memory in Neocortex"
+    authors:
+      - family-names: Hawkins
+        given-names: Jeff
+      - family-names: Ahmad
+        given-names: Subutai
+    journal: Frontiers in Neural Circuits
+    volume: 10
+    start: 23
+    year: 2016
+    doi: 10.3389/fncir.2016.00023
+    url: "https://doi.org/10.3389/fncir.2016.00023"
+  - type: article
+    title: "The HTM Spatial Pooler—A Neocortical Algorithm for Online Sparse Distributed Coding"
+    authors:
+      - family-names: Cui
+        given-names: Yuwei
+      - family-names: Ahmad
+        given-names: Subutai
+      - family-names: Hawkins
+        given-names: Jeff
+    journal: Frontiers in Computational Neuroscience
+    volume: 11
+    start: 111
+    year: 2017
+    doi: 10.3389/fncom.2017.00111
+    url: "https://doi.org/10.3389/fncom.2017.00111"
+  - type: article
+    title: "Unsupervised real-time anomaly detection for streaming data"
+    authors:
+      - family-names: Ahmad
+        given-names: Subutai
+      - family-names: Lavin
+        given-names: Alexander
+      - family-names: Purdy
+        given-names: Scott
+      - family-names: Agha
+        given-names: Zuhad
+    journal: Neurocomputing
+    volume: 262
+    start: 134
+    end: 147
+    year: 2017
+    doi: 10.1016/j.neucom.2017.04.070
+    url: "https://doi.org/10.1016/j.neucom.2017.04.070"
